@@ -348,7 +348,7 @@ def handle_notifications():
         import time
         
         notification = {
-            "id": notification_counter[0],
+            "id": notification_counter,
             "title": title,
             "message": message,
             "timestamp": time.time(),
@@ -356,7 +356,7 @@ def handle_notifications():
         }
         
         notification_queue.append(notification)
-        notification_counter[0] += 1
+        notification_counter += 1
         
         print(f"🔔 Notificación agregada desde admin_routes: {title}")
         
