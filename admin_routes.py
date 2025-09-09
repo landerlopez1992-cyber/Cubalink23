@@ -20,6 +20,11 @@ except ImportError:
 # Variable global para modo mantenimiento
 MAINTENANCE_MODE = False
 
+# Variables globales para actualizaciones forzadas
+FORCE_UPDATE_MODE = False
+IOS_APP_URL = ""
+ANDROID_APP_URL = ""
+
 
 def get_admin_user_id():
     """Obtener ID del usuario admin"""
@@ -1390,6 +1395,55 @@ def toggle_maintenance_mode():
         
     except Exception as e:
         print(f"❌ Error toggling maintenance mode: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ===== ENDPOINTS DE ACTUALIZACIONES FORZADAS =====
+
+@admin.route('/api/force-update/status', methods=['GET'])
+def get_force_update_status():
+    """Obtener estado del modo actualización forzada"""
+    global FORCE_UPDATE_MODE, IOS_APP_URL, ANDROID_APP_URL
+    return jsonify({
+        'force_update_mode': FORCE_UPDATE_MODE,
+        'ios_app_url': IOS_APP_URL,
+        'android_app_url': ANDROID_APP_URL,
+        'message': 'Actualización forzada activa' if FORCE_UPDATE_MODE else 'Sistema operativo'
+    })
+
+@admin.route('/api/force-update/toggle', methods=['POST'])
+def toggle_force_update_mode():
+    """Activar/desactivar modo actualización forzada"""
+    global FORCE_UPDATE_MODE, IOS_APP_URL, ANDROID_APP_URL
+    
+    try:
+        data = request.get_json() or {}
+        new_status = data.get('enabled', not FORCE_UPDATE_MODE)
+        ios_url = data.get('ios_url', IOS_APP_URL)
+        android_url = data.get('android_url', ANDROID_APP_URL)
+        
+        FORCE_UPDATE_MODE = new_status
+        IOS_APP_URL = ios_url
+        ANDROID_APP_URL = android_url
+        
+        status_text = "ACTIVADO" if FORCE_UPDATE_MODE else "DESACTIVADO"
+        print(f"🔄 Modo actualización forzada {status_text}")
+        print(f"📱 iOS URL: {IOS_APP_URL}")
+        print(f"🤖 Android URL: {ANDROID_APP_URL}")
+        
+        return jsonify({
+            'success': True,
+            'force_update_mode': FORCE_UPDATE_MODE,
+            'ios_app_url': IOS_APP_URL,
+            'android_app_url': ANDROID_APP_URL,
+            'message': f'Modo actualización forzada {status_text.lower()}'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error toggling force update mode: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
