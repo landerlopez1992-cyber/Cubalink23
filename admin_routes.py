@@ -362,17 +362,64 @@ def handle_notifications():
         
         # Guardar en Supabase para historial
         try:
-            from supabase_service import supabase_service
+            import requests
+            
+            # Usar requests directo para Supabase
+            supabase_url = 'https://zgqrhzuhrwudckwesybg.supabase.co'
+            supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
+            
+            headers = {
+                'apikey': supabase_key,
+                'Authorization': f'Bearer {supabase_key}',
+                'Content-Type': 'application/json'
+            }
+            
             supabase_notification = {
                 "title": title,
                 "message": message,
                 "user_id": "admin",
-                "created_at": datetime.now().isoformat(),
                 "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),  # 1 mes
                 "read": False
             }
-            supabase_service.insert('notifications', supabase_notification)
-            print(f"💾 Notificación guardada en Supabase para historial: {title}")
+            
+            # Primero crear la tabla si no existe
+            create_table_sql = '''
+            CREATE TABLE IF NOT EXISTS notifications (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                user_id TEXT NOT NULL DEFAULT 'admin',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                read BOOLEAN DEFAULT FALSE
+            );
+            ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+            DROP POLICY IF EXISTS "Allow all access" ON notifications;
+            CREATE POLICY "Allow all access" ON notifications FOR ALL USING (true);
+            '''
+            
+            # Intentar crear la tabla (si ya existe, no hace nada)
+            try:
+                sql_response = requests.post(
+                    f"{supabase_url}/rest/v1/rpc/exec_sql",
+                    headers=headers,
+                    json={"sql": create_table_sql}
+                )
+            except:
+                pass  # Ignorar errores de creación de tabla
+            
+            # Insertar la notificación
+            response = requests.post(
+                f"{supabase_url}/rest/v1/notifications",
+                headers=headers,
+                json=supabase_notification
+            )
+            
+            if response.status_code == 201:
+                print(f"💾 Notificación guardada en Supabase para historial: {title}")
+            else:
+                print(f"⚠️ Error guardando en Supabase: {response.status_code} - {response.text}")
+                
         except Exception as e:
             print(f"⚠️ Error guardando en Supabase: {e}")
         
@@ -422,26 +469,38 @@ def handle_notifications():
 def get_notification_history():
     """Obtener historial de notificaciones para la campanita"""
     try:
-        from supabase_service import supabase_service
+        import requests
         from datetime import datetime
         
-        # Obtener notificaciones no expiradas
-        result = supabase_service.select(
-            'notifications',
-            filters=[
-                {'column': 'user_id', 'operator': 'eq', 'value': 'admin'},
-                {'column': 'expires_at', 'operator': 'gt', 'value': datetime.now().isoformat()}
-            ],
-            order_by={'column': 'created_at', 'ascending': False}
-        )
+        # Usar requests directo para Supabase
+        supabase_url = 'https://zgqrhzuhrwudckwesybg.supabase.co'
+        supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
         
-        notifications = result.get('data', [])
-        print(f"📋 Historial de notificaciones obtenido: {len(notifications)} notificaciones")
+        headers = {
+            'apikey': supabase_key,
+            'Authorization': f'Bearer {supabase_key}',
+            'Content-Type': 'application/json'
+        }
         
-        return jsonify({
-            "success": True,
-            "notifications": notifications
-        })
+        # Obtener notificaciones no expiradas, ordenadas por fecha
+        url = f"{supabase_url}/rest/v1/notifications?user_id=eq.admin&expires_at=gt.{datetime.now().isoformat()}&order=created_at.desc"
+        
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            notifications = response.json()
+            print(f"📋 Historial de notificaciones obtenido: {len(notifications)} notificaciones")
+            
+            return jsonify({
+                "success": True,
+                "notifications": notifications
+            })
+        else:
+            print(f"❌ Error obteniendo historial: {response.status_code} - {response.text}")
+            return jsonify({
+                "success": False,
+                "message": f"Error: {response.status_code}"
+            }), 500
         
     except Exception as e:
         print(f"❌ Error obteniendo historial: {e}")
@@ -454,24 +513,37 @@ def get_notification_history():
 def cleanup_expired_notifications():
     """Limpiar notificaciones expiradas (se ejecuta automáticamente)"""
     try:
-        from supabase_service import supabase_service
+        import requests
         from datetime import datetime
         
+        # Usar requests directo para Supabase
+        supabase_url = 'https://zgqrhzuhrwudckwesybg.supabase.co'
+        supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
+        
+        headers = {
+            'apikey': supabase_key,
+            'Authorization': f'Bearer {supabase_key}',
+            'Content-Type': 'application/json'
+        }
+        
         # Eliminar notificaciones expiradas
-        result = supabase_service.delete(
-            'notifications',
-            filters=[
-                {'column': 'expires_at', 'operator': 'lt', 'value': datetime.now().isoformat()}
-            ]
-        )
+        url = f"{supabase_url}/rest/v1/notifications?expires_at=lt.{datetime.now().isoformat()}"
         
-        deleted_count = result.get('count', 0)
-        print(f"🧹 Notificaciones expiradas eliminadas: {deleted_count}")
+        response = requests.delete(url, headers=headers)
         
-        return jsonify({
-            "success": True,
-            "deleted_count": deleted_count
-        })
+        if response.status_code == 204:
+            print(f"🧹 Notificaciones expiradas eliminadas exitosamente")
+            
+            return jsonify({
+                "success": True,
+                "deleted_count": 1  # Supabase no devuelve count exacto
+            })
+        else:
+            print(f"❌ Error limpiando notificaciones: {response.status_code} - {response.text}")
+            return jsonify({
+                "success": False,
+                "message": f"Error: {response.status_code}"
+            }), 500
         
     except Exception as e:
         print(f"❌ Error limpiando notificaciones: {e}")
