@@ -377,17 +377,17 @@ def handle_notifications():
             supabase_notification = {
                 "title": title,
                 "message": message,
-                "user_id": "00000000-0000-0000-0000-000000000000",  # UUID válido para admin
+                "user_id": "admin",  # String simple para compatibilidad
                 "read": False
             }
             
-            # Primero crear la tabla si no existe (con UUID para user_id)
+            # Primero crear la tabla si no existe (con TEXT para user_id)
             create_table_sql = '''
             CREATE TABLE IF NOT EXISTS notifications (
                 id SERIAL PRIMARY KEY,
                 title TEXT NOT NULL,
                 message TEXT NOT NULL,
-                user_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+                user_id TEXT NOT NULL DEFAULT 'admin',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 read BOOLEAN DEFAULT FALSE
             );
@@ -483,9 +483,8 @@ def get_notification_history():
             'Content-Type': 'application/json'
         }
         
-        # Obtener todas las notificaciones (con UUID)
-        admin_uuid = "00000000-0000-0000-0000-000000000000"
-        url = f"{supabase_url}/rest/v1/notifications?user_id=eq.{admin_uuid}&order=created_at.desc"
+        # Obtener todas las notificaciones (con string)
+        url = f"{supabase_url}/rest/v1/notifications?user_id=eq.admin&order=created_at.desc"
         
         print(f"🔍 URL de consulta: {url}")
         response = requests.get(url, headers=headers)
