@@ -378,11 +378,10 @@ def handle_notifications():
                 "title": title,
                 "message": message,
                 "user_id": "admin",
-                "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),  # 1 mes
                 "read": False
             }
             
-            # Primero crear la tabla si no existe
+            # Primero crear la tabla si no existe (sin expires_at)
             create_table_sql = '''
             CREATE TABLE IF NOT EXISTS notifications (
                 id SERIAL PRIMARY KEY,
@@ -390,7 +389,6 @@ def handle_notifications():
                 message TEXT NOT NULL,
                 user_id TEXT NOT NULL DEFAULT 'admin',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
                 read BOOLEAN DEFAULT FALSE
             );
             ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
@@ -532,8 +530,9 @@ def cleanup_expired_notifications():
             'Content-Type': 'application/json'
         }
         
-        # Eliminar notificaciones expiradas
-        url = f"{supabase_url}/rest/v1/notifications?expires_at=lt.{datetime.now().isoformat()}"
+        # Eliminar notificaciones antiguas (más de 30 días)
+        thirty_days_ago = (datetime.now() - timedelta(days=30)).isoformat()
+        url = f"{supabase_url}/rest/v1/notifications?created_at=lt.{thirty_days_ago}"
         
         response = requests.delete(url, headers=headers)
         
