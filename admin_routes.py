@@ -363,19 +363,31 @@ def handle_notifications():
         return jsonify({'success': True, 'message': 'Notificación enviada'})
     
     elif request.method == 'GET':
-        # Obtener notificaciones para la app
+        # Obtener notificaciones para la app (solo para clientes móviles)
         from app import notification_queue
         
+        # Verificar si es la app móvil (User-Agent contiene "Dart")
+        user_agent = request.headers.get('User-Agent', '')
+        is_mobile_app = 'Dart' in user_agent
+        
         try:
-            if notification_queue:
+            if is_mobile_app and notification_queue:
                 notification = notification_queue.popleft()
-                print(f"📱 Notificación enviada a la app desde admin_routes: {notification['title']}")
+                print(f"📱 Notificación enviada a la APP MÓVIL: {notification['title']}")
                 
                 return jsonify({
                     "success": True,
                     "notifications": [notification]
                 })
+            elif is_mobile_app:
+                print("📱 App móvil consultó, pero no hay notificaciones")
+                return jsonify({
+                    "success": True,
+                    "notifications": []
+                })
             else:
+                # Para navegadores web, no dar notificaciones
+                print(f"🌐 Navegador web consultó (User-Agent: {user_agent[:50]}...), ignorando")
                 return jsonify({
                     "success": True,
                     "notifications": []
