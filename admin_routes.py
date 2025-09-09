@@ -334,12 +334,59 @@ def api_config():
                 return jsonify(json.load(f))
         return jsonify({'app_name': 'Cubalink23', 'maintenance_mode': False})
 
-@admin.route('/api/notifications', methods=['POST'])
-def send_notification():
-    """Enviar notificaciones a usuarios"""
-    data = request.json
-    # Aquí implementarías el envío de notificaciones push
-    return jsonify({'success': True, 'message': 'Notificación enviada'})
+@admin.route('/api/notifications', methods=['POST', 'GET'])
+def handle_notifications():
+    """Manejar notificaciones - POST para enviar, GET para obtener"""
+    if request.method == 'POST':
+        # Enviar notificación
+        data = request.json
+        title = data.get('title', 'Sin título')
+        message = data.get('message', 'Sin mensaje')
+        
+        # Agregar a la cola de notificaciones (importar desde app.py)
+        from app import notification_queue, notification_counter
+        import time
+        
+        notification = {
+            "id": notification_counter[0],
+            "title": title,
+            "message": message,
+            "timestamp": time.time(),
+            "user_id": "admin"
+        }
+        
+        notification_queue.append(notification)
+        notification_counter[0] += 1
+        
+        print(f"🔔 Notificación agregada desde admin_routes: {title}")
+        
+        return jsonify({'success': True, 'message': 'Notificación enviada'})
+    
+    elif request.method == 'GET':
+        # Obtener notificaciones para la app
+        from app import notification_queue
+        
+        try:
+            if notification_queue:
+                notification = notification_queue.popleft()
+                print(f"📱 Notificación enviada a la app desde admin_routes: {notification['title']}")
+                
+                return jsonify({
+                    "success": True,
+                    "notifications": [notification]
+                })
+            else:
+                return jsonify({
+                    "success": True,
+                    "notifications": []
+                })
+                
+        except Exception as e:
+            print(f"❌ Error obteniendo notificaciones: {e}")
+            return jsonify({
+                "success": False,
+                "message": f"Error: {str(e)}"
+            }), 500
 
 @admin.route('/api/maintenance', methods=['POST'])
 def toggle_maintenance():
