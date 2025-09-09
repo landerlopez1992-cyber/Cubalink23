@@ -9,6 +9,8 @@ import 'package:cubalink23/services/notification_manager.dart';
 import 'package:cubalink23/services/firebase_messaging_service.dart';
 import 'package:cubalink23/models/store_product.dart';
 import 'package:cubalink23/screens/shopping/product_details_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class WelcomeScreen extends StatefulWidget {
   @override
@@ -65,6 +67,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     // Cargar productos reales de Supabase inmediatamente
     _loadRealProductsFromSupabase();
     _loadCategoriesAndBestSellers();
+    _loadNotificationsCount(); // Cargar contador de notificaciones
     _loadBannersFromSupabase();
     _loadFlightsBannersFromSupabase();
     
@@ -146,17 +149,32 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
 
   Future<void> _loadNotificationsCount() async {
-    if (_currentUserId == null) return;
+    // No necesitamos verificar _currentUserId para obtener notificaciones
+    // ya que todas las notificaciones son para 'admin' por defecto
 
     try {
-      // Por ahora, usar 0 como placeholder hasta implementar notificaciones en Supabase
-      final count = 0;
-      if (mounted) {
-        setState(() {
-          _unreadNotificationsCount = count;
-        });
+      // Obtener historial de notificaciones desde el backend
+      final response = await http.get(
+        Uri.parse('https://cubalink23-backend.onrender.com/admin/api/notifications/history'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final notifications = data['notifications'] as List? ?? [];
+        
+        // Contar notificaciones no leídas
+        final unreadCount = notifications.where((n) => n['read'] == false).length;
+        
+        if (mounted) {
+          setState(() {
+            _unreadNotificationsCount = unreadCount;
+          });
+        }
+        print('🔔 Unread notifications count: $unreadCount');
+      } else {
+        print('❌ Error getting notifications: ${response.statusCode}');
       }
-      print('🔔 Unread notifications count: $count');
     } catch (e) {
       print('❌ Error loading notifications count: $e');
     }
@@ -254,21 +272,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         'id': 'ferreteria',
         'name': 'Ferretería',
         'description': 'Herramientas y accesorios',
-        'icon': 'build',
+        'icon': 'hardware',
         'color': 0xFFFF8F00,
       },
       {
         'id': 'farmacia',
         'name': 'Farmacia',
         'description': 'Medicinas y productos de salud',
-        'icon': 'healing',
+        'icon': 'local_pharmacy',
         'color': 0xFF26A69A,
       },
       {
         'id': 'electronicos',
         'name': 'Electrónicos',
         'description': 'Dispositivos y accesorios',
-        'icon': 'phone_android',
+        'icon': 'devices',
         'color': 0xFF42A5F5,
       },
       {
@@ -810,6 +828,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   SizedBox(height: 20),
                   // Sección "Renta Car"
                   _buildRentaCarSection(),
+                  SizedBox(height: 20),
+                  // Banner "Trabaja con nosotros"
+                  _buildWorkWithUsBanner(),
+                  SizedBox(height: 20),
+                  // Sección de términos y condiciones
+                  _buildTermsAndConditionsSection(),
                   SizedBox(height: 30), // Espacio adicional al final
                 ],
               ),
@@ -1610,19 +1634,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     IconData _getIconFromString(String iconName) {
       switch (iconName) {
         case 'restaurant':
-          return Icons.restaurant;
+          return Icons.restaurant_menu_rounded;
         case 'build':
-          return Icons.build;
+          return Icons.construction_rounded;
         case 'hardware':
-          return Icons.hardware;
+          return Icons.handyman_rounded;
         case 'local_pharmacy':
-          return Icons.local_pharmacy;
+          return Icons.medication_rounded;
         case 'devices':
-          return Icons.devices;
+          return Icons.phone_android_rounded;
         case 'spa':
-          return Icons.spa;
+          return Icons.spa_rounded;
+        case 'shopping_bag':
+          return Icons.shopping_bag_rounded;
+        case 'construction':
+          return Icons.construction_rounded;
+        case 'healing':
+          return Icons.medication_rounded;
+        case 'phone_android':
+          return Icons.phone_android_rounded;
+        case 'category':
+          return Icons.category_rounded;
         default:
-          return Icons.category;
+          return Icons.category_rounded;
       }
     }
 
@@ -1648,7 +1682,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
         SizedBox(height: 12),
         Container(
-          height: 120,
+          height: 140,
           child: _categories.isEmpty
               ? Center(
                   child: CircularProgressIndicator(
@@ -1670,16 +1704,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         Navigator.pushNamed(context, '/store');
                       },
                       child: Container(
-                        width: 100,
+                        width: 110,
                         margin: EdgeInsets.only(right: 12),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity( 0.15),
-                              blurRadius: 6,
-                              offset: Offset(0, 2),
+                              color: Colors.grey.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: Offset(0, 3),
                             ),
                           ],
                         ),
@@ -1687,23 +1721,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              width: 50,
-                              height: 50,
+                              width: 60,
+                              height: 60,
                               decoration: BoxDecoration(
-                                color: color.withOpacity( 0.1),
+                                color: color.withOpacity(0.15),
                                 shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: color.withOpacity(0.3),
+                                  width: 2,
+                                ),
                               ),
                               child: Icon(
                                 iconData,
                                 color: color,
-                                size: 28,
+                                size: 32,
                               ),
                             ),
-                            SizedBox(height: 8),
+                            SizedBox(height: 10),
                             Text(
                               category['name'] ?? 'Categoría',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black87,
                               ),
@@ -1938,23 +1976,45 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
-          child: Center(
-            child: Text(
-              'Renta Car',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Autos',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
-            ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RentaCarScreen(),
+                    ),
+                  );
+                },
+                child: Text(
+                  'Ver todos',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.blue,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         SizedBox(height: 16),
         Container(
-          height: 200, // Aumentado de 180 a 200 para más espacio
+          height: 220,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 20),
             itemCount: _getRentaCarData().length,
             itemBuilder: (context, index) {
               final car = _getRentaCarData()[index];
@@ -1967,9 +2027,285 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildRentaCarCard(Map<String, dynamic> car) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RentaCarScreen(),
+          ),
+        );
+      },
+      child: Container(
+        width: 180,
+        margin: EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.15),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Imagen del auto
+            Container(
+              height: 140,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                color: car['color'],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                child: Image.network(
+                  car['image'],
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: car['color'],
+                      child: Center(
+                        child: Icon(
+                          Icons.directions_car,
+                          size: 50,
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            // Información del auto
+            Padding(
+              padding: EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    car['price'],
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    car['type'],
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _getRentaCarData() {
+    return [
+      {
+        'price': '\$107.00 /día',
+        'type': 'Económico Manual',
+        'color': Colors.grey[400],
+        'image': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop&crop=center',
+      },
+      {
+        'price': '\$113.00 /día',
+        'type': 'Económico Automático',
+        'color': Colors.white,
+        'image': 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=400&h=300&fit=crop&crop=center',
+      },
+      {
+        'price': '\$105.00 /día',
+        'type': 'Medio Automático',
+        'color': Colors.grey[300],
+        'image': 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=400&h=300&fit=crop&crop=center',
+      },
+      {
+        'price': '\$152.00 /día',
+        'type': 'SUV Automático',
+        'color': Colors.grey[500],
+        'image': 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=300&fit=crop&crop=center',
+      },
+    ];
+  }
+
+  Widget _buildWorkWithUsBanner() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, '/work_selection');
+      },
+      child: Container(
+        height: 180,
+        margin: EdgeInsets.symmetric(horizontal: 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF2E7D32), // Verde oscuro
+              Color(0xFF4CAF50), // Verde medio
+              Color(0xFF66BB6A), // Verde claro
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.withOpacity(0.3),
+              blurRadius: 12,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Decoración con iconos de trabajo
+            Positioned(
+              right: 20,
+              top: 15,
+              child: Icon(
+                Icons.work_outline,
+                size: 60,
+                color: Colors.white.withOpacity(0.3),
+              ),
+            ),
+            Positioned(
+              right: 60,
+              bottom: 20,
+              child: Icon(
+                Icons.delivery_dining,
+                size: 40,
+                color: Colors.white.withOpacity(0.2),
+              ),
+            ),
+            Positioned(
+              right: 100,
+              top: 50,
+              child: Icon(
+                Icons.storefront,
+                size: 35,
+                color: Colors.white.withOpacity(0.25),
+              ),
+            ),
+            // Contenido principal
+            Positioned(
+              left: 20,
+              top: 20,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Text(
+                      '💼 OPORTUNIDADES',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    '🚀 Trabaja con Nosotros',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Vendedor • Repartidor',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '💰 Ingresos extras • Horarios flexibles',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '📱 Regístrate ahora y comienza',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Botón de acción
+            Positioned(
+              right: 20,
+              bottom: 20,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Aplicar Ahora',
+                      style: TextStyle(
+                        color: Color(0xFF2E7D32),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Color(0xFF2E7D32),
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTermsAndConditionsSection() {
     return Container(
-      width: 160,
-      margin: EdgeInsets.only(right: 16),
+      margin: EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1984,77 +2320,168 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Imagen del auto
-          Container(
-            height: 100,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              color: car['color'],
-            ),
-            child: Center(
-              child: Icon(
-                Icons.directions_car,
-                size: 50,
-                color: Colors.white,
+          // Título de la sección
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Color(0xFF2E7D32),
+                size: 20,
               ),
-            ),
+              SizedBox(width: 8),
+              Text(
+                'Información Legal',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E7D32),
+                ),
+              ),
+            ],
           ),
-          // Información del auto
-          Padding(
-            padding: EdgeInsets.all(10), // Aumentado de 8 a 10
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  car['price'],
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[700],
-                  ),
+          SizedBox(height: 16),
+          
+          // Enlaces de términos y condiciones
+          _buildLegalLink('Términos y Condiciones', Icons.description_outlined),
+          _buildLegalLink('Política de Privacidad', Icons.privacy_tip_outlined),
+          _buildLegalLink('Términos para Vendedores', Icons.store_outlined),
+          _buildLegalLink('Términos para Repartidores', Icons.delivery_dining_outlined),
+          
+          SizedBox(height: 16),
+          
+          // Divider
+          Container(
+            height: 1,
+            color: Colors.grey[300],
+          ),
+          
+          SizedBox(height: 16),
+          
+          // Información de contacto
+          Row(
+            children: [
+              Icon(
+                Icons.contact_phone,
+                color: Color(0xFF2E7D32),
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Contacto',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E7D32),
                 ),
-                SizedBox(height: 2),
-                Text(
-                  car['type'],
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          
+          // Teléfono
+          Row(
+            children: [
+              Icon(
+                Icons.phone,
+                color: Colors.grey[600],
+                size: 16,
+              ),
+              SizedBox(width: 8),
+              Text(
+                '+1 561 593 6776',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w500,
                 ),
-                SizedBox(height: 8), // Aumentado de 6 a 8
-                SizedBox(
-                  width: double.infinity,
-                  height: 36, // Aumentado de 32 a 36
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => RentaCarScreen(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Agregado padding
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8), // Aumentado de 6 a 8
-                      ),
-                      elevation: 2, // Agregada elevación
-                    ),
-                    child: Text(
-                      'Reservar',
-                      style: TextStyle(
-                        fontSize: 12, // Aumentado de 11 a 12
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+              ),
+            ],
+          ),
+          SizedBox(height: 4),
+          
+          // Email
+          Row(
+            children: [
+              Icon(
+                Icons.email,
+                color: Colors.grey[600],
+                size: 16,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'info@cubalink23.com',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
+              ),
+            ],
+          ),
+          
+          SizedBox(height: 16),
+          
+          // Divider
+          Container(
+            height: 1,
+            color: Colors.grey[300],
+          ),
+          
+          SizedBox(height: 16),
+          
+          // Acreditaciones
+          Row(
+            children: [
+              Icon(
+                Icons.verified,
+                color: Color(0xFF2E7D32),
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Acreditaciones',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E7D32),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          
+          // IATA
+          Row(
+            children: [
+              Icon(
+                Icons.flight,
+                color: Colors.grey[600],
+                size: 16,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Miembro IATA',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: 16),
+          
+          // Copyright
+          Center(
+            child: Text(
+              '© 2024 CubaLink23. Todos los derechos reservados.',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -2062,28 +2489,44 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  List<Map<String, dynamic>> _getRentaCarData() {
-    return [
-      {
-        'price': '\$107.00 /día',
-        'type': 'Económico Manual',
-        'color': Colors.grey[400],
-      },
-      {
-        'price': '\$113.00 /día',
-        'type': 'Económico Automático',
-        'color': Colors.white,
-      },
-      {
-        'price': '\$105.00 /día',
-        'type': 'Medio Automático',
-        'color': Colors.grey[300],
-      },
-      {
-        'price': '\$152.00 /día',
-        'type': 'SUV Automático',
-        'color': Colors.grey[500],
-      },
-    ];
+  Widget _buildLegalLink(String title, IconData icon) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: () {
+          // Aquí puedes agregar la navegación a las pantallas correspondientes
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$title - Próximamente disponible'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: Colors.grey[600],
+              size: 16,
+            ),
+            SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Spacer(),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey[400],
+              size: 12,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

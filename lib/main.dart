@@ -25,6 +25,9 @@ import 'package:cubalink23/screens/shopping/amazon_shopping_screen.dart';
 import 'package:cubalink23/screens/welcome/welcome_screen.dart';
 import 'package:cubalink23/screens/auth/login_screen.dart';
 import 'package:cubalink23/screens/auth/register_screen.dart';
+// import 'package:cubalink23/screens/work/work_selection_screen.dart';
+// import 'package:cubalink23/screens/work/seller_application_screen.dart';
+// import 'package:cubalink23/screens/work/delivery_application_screen.dart';
 import 'package:cubalink23/theme.dart';
 import 'package:cubalink23/models/user.dart';
 import 'package:cubalink23/models/flight_offer.dart';
@@ -106,6 +109,9 @@ class CubaLink23App extends StatelessWidget {
         '/welcome': (context) => WelcomeScreen(),
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
+        // '/work_selection': (context) => WorkSelectionScreen(),
+        // '/seller_application': (context) => SellerApplicationScreen(),
+        // '/delivery_application': (context) => DeliveryApplicationScreen(),
       },
     );
   }

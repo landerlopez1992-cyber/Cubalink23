@@ -1,0 +1,577 @@
+import 'package:flutter/material.dart';
+
+class DeliveryApplicationScreen extends StatefulWidget {
+  const DeliveryApplicationScreen({Key? key}) : super(key: key);
+
+  @override
+  State<DeliveryApplicationScreen> createState() => _DeliveryApplicationScreenState();
+}
+
+class _DeliveryApplicationScreenState extends State<DeliveryApplicationScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _vehicleController = TextEditingController();
+  final _licenseController = TextEditingController();
+  
+  String _selectedProvince = 'La Habana';
+  String _selectedVehicleType = 'Bicicleta';
+  String _selectedAvailability = 'Tiempo Completo';
+  List<String> _selectedProvinces = ['La Habana'];
+
+  final List<String> _provinces = [
+    'La Habana',
+    'Santiago de Cuba',
+    'Camagüey',
+    'Holguín',
+    'Villa Clara',
+    'Pinar del Río',
+    'Matanzas',
+    'Cienfuegos',
+    'Sancti Spíritus',
+    'Ciego de Ávila',
+    'Las Tunas',
+    'Granma',
+    'Guantánamo',
+    'Artemisa',
+    'Mayabeque',
+    'Isla de la Juventud',
+  ];
+
+  final List<String> _vehicleTypes = [
+    'Bicicleta',
+    'Motocicleta',
+    'Automóvil',
+    'Caminando',
+  ];
+
+  final List<String> _availabilityOptions = [
+    'Tiempo Completo',
+    'Medio Tiempo',
+    'Fines de Semana',
+    'Horarios Flexibles',
+  ];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _vehicleController.dispose();
+    _licenseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: Text(
+          'Aplicar como Repartidor',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Color(0xFFFF9800),
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 40),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header con logo
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFFF9800),
+                        Color(0xFFFFB74D),
+                        Color(0xFFFFCC80),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      // Logo
+                      Container(
+                        width: 60,
+                        height: 60,
+                        child: Image.asset(
+                          'assets/images/assets_task_01k3m7yveaebmtdrdnybpe7ngv_1756247471_img_1.webp',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFFFF9800), Color(0xFFFFB74D)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'CubaLink23',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '🚚 Repartidor en CubaLink23',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'Gana dinero repartiendo en tu provincia',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              
+              SizedBox(height: 20),
+              
+              // Información personal
+              _buildSectionTitle('Información Personal'),
+              SizedBox(height: 12),
+              
+              _buildTextField(
+                controller: _nameController,
+                label: 'Nombre Completo',
+                hint: 'Ingresa tu nombre completo',
+                icon: Icons.person,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu nombre';
+                  }
+                  return null;
+                },
+              ),
+              
+              SizedBox(height: 16),
+              
+              _buildTextField(
+                controller: _emailController,
+                label: 'Correo Electrónico',
+                hint: 'tu@email.com',
+                icon: Icons.email,
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Por favor ingresa un email válido';
+                  }
+                  return null;
+                },
+              ),
+              
+              SizedBox(height: 16),
+              
+              _buildTextField(
+                controller: _phoneController,
+                label: 'Teléfono',
+                hint: '+53 5X XXX XXXX',
+                icon: Icons.phone,
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu teléfono';
+                  }
+                  return null;
+                },
+              ),
+              
+              SizedBox(height: 16),
+              
+              // Provincia principal
+              _buildDropdown(
+                label: 'Provincia Principal',
+                value: _selectedProvince,
+                items: _provinces,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedProvince = value!;
+                  });
+                },
+                icon: Icons.location_on,
+              ),
+              
+              SizedBox(height: 30),
+              
+              // Información del vehículo
+              _buildSectionTitle('Información del Vehículo'),
+              SizedBox(height: 16),
+              
+              _buildDropdown(
+                label: 'Tipo de Vehículo',
+                value: _selectedVehicleType,
+                items: _vehicleTypes,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedVehicleType = value!;
+                  });
+                },
+                icon: Icons.directions_bike,
+              ),
+              
+              SizedBox(height: 16),
+              
+              _buildTextField(
+                controller: _vehicleController,
+                label: 'Descripción del Vehículo',
+                hint: 'Marca, modelo, color, etc.',
+                icon: Icons.directions_car,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor describe tu vehículo';
+                  }
+                  return null;
+                },
+              ),
+              
+              if (_selectedVehicleType == 'Motocicleta' || _selectedVehicleType == 'Automóvil') ...[
+                SizedBox(height: 16),
+                _buildTextField(
+                  controller: _licenseController,
+                  label: 'Número de Licencia',
+                  hint: 'Número de tu licencia de conducir',
+                  icon: Icons.credit_card,
+                  validator: (value) {
+                    if ((_selectedVehicleType == 'Motocicleta' || _selectedVehicleType == 'Automóvil') && 
+                        (value == null || value.isEmpty)) {
+                      return 'Por favor ingresa tu número de licencia';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+              
+              SizedBox(height: 30),
+              
+              // Disponibilidad
+              _buildSectionTitle('Disponibilidad'),
+              SizedBox(height: 16),
+              
+              _buildDropdown(
+                label: 'Disponibilidad',
+                value: _selectedAvailability,
+                items: _availabilityOptions,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedAvailability = value!;
+                  });
+                },
+                icon: Icons.schedule,
+              ),
+              
+              SizedBox(height: 16),
+              
+              // Provincias donde puede repartir
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.map, color: Color(0xFFFF9800)),
+                        SizedBox(width: 8),
+                        Text(
+                          'Provincias donde puedes repartir',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _provinces.map((province) {
+                        final isSelected = _selectedProvinces.contains(province);
+                        return FilterChip(
+                          label: Text(province),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedProvinces.add(province);
+                              } else {
+                                _selectedProvinces.remove(province);
+                              }
+                            });
+                          },
+                          selectedColor: Color(0xFFFF9800).withOpacity(0.2),
+                          checkmarkColor: Color(0xFFFF9800),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Color(0xFFFF9800) : Colors.grey[600],
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              
+              SizedBox(height: 40),
+              
+              // Botón de envío
+              Container(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _submitApplication,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFFF9800),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.send, color: Colors.white),
+                      SizedBox(width: 12),
+                      Text(
+                        'Enviar Aplicación',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              SizedBox(height: 20),
+              
+              // Información adicional
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info, color: Color(0xFFFF9800)),
+                        SizedBox(width: 8),
+                        Text(
+                          'Proceso de Aprobación',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF9800),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      '• Revisaremos tu aplicación en 2-3 días hábiles\n'
+                      '• Te contactaremos por email o teléfono\n'
+                      '• Una vez aprobado, podrás editar tu perfil\n'
+                      '• Recibirás órdenes en las provincias seleccionadas\n'
+                      '• Ganas por cada entrega completada',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFFFF9800),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon: Icon(icon, color: Color(0xFFFF9800)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    required IconData icon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Color(0xFFFF9800)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        items: items.map((String item) {
+          return DropdownMenuItem<String>(
+            value: item,
+            child: Text(item),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _submitApplication() {
+    if (_formKey.currentState!.validate()) {
+      if (_selectedProvinces.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Por favor selecciona al menos una provincia donde puedas repartir'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      
+      // Mostrar diálogo de confirmación
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green),
+                SizedBox(width: 8),
+                Text('Aplicación Enviada'),
+              ],
+            ),
+            content: Text(
+              'Tu aplicación ha sido enviada exitosamente. Te contactaremos en 2-3 días hábiles para continuar con el proceso.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
+                child: Text('Entendido'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+}
