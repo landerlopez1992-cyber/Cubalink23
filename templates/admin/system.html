@@ -78,6 +78,9 @@
                         <button class="btn btn-success" onclick="saveAllSettings()">
                             <i class="fas fa-save"></i> Guardar Todo
                         </button>
+                        <button class="btn btn-warning" id="maintenanceBtn" onclick="toggleMaintenanceMode()">
+                            <i class="fas fa-tools"></i> <span id="maintenanceText">Modo Mantenimiento</span>
+                        </button>
                     </div>
                 </div>
 
@@ -653,6 +656,7 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
         document.addEventListener('DOMContentLoaded', function() {
             loadSystemData();
             loadNotificationHistory();
+            loadMaintenanceStatus();
         });
 
         function loadSystemData() {
@@ -666,6 +670,63 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
         function refreshSystem() {
             loadSystemData();
             alert('Sistema actualizado');
+        }
+
+        // Funciones para modo mantenimiento
+        function loadMaintenanceStatus() {
+            fetch('/admin/api/maintenance/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateMaintenanceButton(data.maintenance_mode);
+                })
+                .catch(error => {
+                    console.error('Error cargando estado de mantenimiento:', error);
+                });
+        }
+
+        function updateMaintenanceButton(isMaintenanceMode) {
+            const btn = document.getElementById('maintenanceBtn');
+            const text = document.getElementById('maintenanceText');
+            
+            if (isMaintenanceMode) {
+                btn.className = 'btn btn-danger';
+                text.textContent = 'Desactivar Mantenimiento';
+                btn.innerHTML = '<i class="fas fa-tools"></i> <span id="maintenanceText">Desactivar Mantenimiento</span>';
+            } else {
+                btn.className = 'btn btn-warning';
+                text.textContent = 'Activar Mantenimiento';
+                btn.innerHTML = '<i class="fas fa-tools"></i> <span id="maintenanceText">Activar Mantenimiento</span>';
+            }
+        }
+
+        function toggleMaintenanceMode() {
+            fetch('/admin/api/maintenance/status')
+                .then(response => response.json())
+                .then(data => {
+                    const newStatus = !data.maintenance_mode;
+                    
+                    return fetch('/admin/api/maintenance/toggle', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ enabled: newStatus })
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateMaintenanceButton(data.maintenance_mode);
+                        const status = data.maintenance_mode ? 'ACTIVADO' : 'DESACTIVADO';
+                        alert(`Modo mantenimiento ${status}`);
+                    } else {
+                        alert('Error al cambiar modo mantenimiento: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al cambiar modo mantenimiento');
+                });
         }
 
         function saveAllSettings() {

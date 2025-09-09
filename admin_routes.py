@@ -17,6 +17,9 @@ except ImportError:
     IMPROVED_UPLOAD_AVAILABLE = False
     print("⚠️ Sistema mejorado de upload no disponible - usando método básico")
 
+# Variable global para modo mantenimiento
+MAINTENANCE_MODE = False
+
 
 def get_admin_user_id():
     """Obtener ID del usuario admin"""
@@ -1352,3 +1355,42 @@ def upload_banners():
         print(f"Error en upload_image_to_supabase: {e}")
         # Usar placeholder como fallback
         return f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center'
+
+
+# ===== ENDPOINTS DE MODO MANTENIMIENTO =====
+
+@admin.route('/api/maintenance/status', methods=['GET'])
+def get_maintenance_status():
+    """Obtener estado del modo mantenimiento"""
+    global MAINTENANCE_MODE
+    return jsonify({
+        'maintenance_mode': MAINTENANCE_MODE,
+        'message': 'Modo mantenimiento activo' if MAINTENANCE_MODE else 'Sistema operativo'
+    })
+
+@admin.route('/api/maintenance/toggle', methods=['POST'])
+def toggle_maintenance_mode():
+    """Activar/desactivar modo mantenimiento"""
+    global MAINTENANCE_MODE
+    
+    try:
+        data = request.get_json() or {}
+        new_status = data.get('enabled', not MAINTENANCE_MODE)
+        
+        MAINTENANCE_MODE = new_status
+        
+        status_text = "ACTIVADO" if MAINTENANCE_MODE else "DESACTIVADO"
+        print(f"🔧 Modo mantenimiento {status_text}")
+        
+        return jsonify({
+            'success': True,
+            'maintenance_mode': MAINTENANCE_MODE,
+            'message': f'Modo mantenimiento {status_text.lower()}'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error toggling maintenance mode: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
