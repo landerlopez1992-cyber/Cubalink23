@@ -16,7 +16,7 @@ class PushNotificationService {
       print('🔔 Obteniendo notificaciones push pendientes...');
       
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/push-notifications'),
+        Uri.parse('$_baseUrl/admin/api/notifications'),
         headers: {
           'Content-Type': 'application/json',
         },
