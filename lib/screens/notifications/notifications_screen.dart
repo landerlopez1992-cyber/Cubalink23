@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cubalink23/services/supabase_service.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/services/auth_guard_service.dart';
+import 'package:cubalink23/services/notification_history_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
   @override
@@ -31,10 +32,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       setState(() => isLoading = true);
       
-      final currentUser = SupabaseAuthService.instance.currentUser;
-      if (currentUser == null) return;
-      
-      final loadedNotifications = await SupabaseService.instance.getUserNotifications(currentUser.id);
+      // Usar el nuevo servicio de historial de notificaciones
+      final loadedNotifications = await NotificationHistoryService().getNotificationHistory();
       
       setState(() {
         notifications = loadedNotifications;
@@ -48,10 +47,40 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _markAsRead(String notificationId) async {
     try {
-      await SupabaseService.instance.markNotificationAsRead(notificationId);
+      await NotificationHistoryService().markNotificationAsRead(notificationId);
       _loadNotifications(); // Recargar
     } catch (e) {
       print('Error marking notification as read: $e');
+    }
+  }
+
+  Future<void> _cleanupExpiredNotifications() async {
+    try {
+      final success = await NotificationHistoryService().cleanupExpiredNotifications();
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Notificaciones expiradas eliminadas'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadNotifications(); // Recargar
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al limpiar notificaciones'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error cleaning up notifications: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al limpiar notificaciones'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -67,6 +96,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
+          IconButton(
+            icon: Icon(Icons.cleaning_services),
+            onPressed: _cleanupExpiredNotifications,
+            tooltip: 'Limpiar notificaciones expiradas',
+          ),
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: _loadNotifications,

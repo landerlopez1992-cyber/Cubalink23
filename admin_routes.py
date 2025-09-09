@@ -346,6 +346,7 @@ def handle_notifications():
         # Agregar a la cola de notificaciones (importar desde app.py)
         from app import notification_queue, notification_counter
         import time
+        from datetime import datetime, timedelta
         
         notification = {
             "id": notification_counter,
@@ -355,8 +356,25 @@ def handle_notifications():
             "user_id": "admin"
         }
         
+        # Agregar a la cola para notificación inmediata
         notification_queue.append(notification)
         notification_counter += 1
+        
+        # Guardar en Supabase para historial
+        try:
+            from supabase_service import supabase_service
+            supabase_notification = {
+                "title": title,
+                "message": message,
+                "user_id": "admin",
+                "created_at": datetime.now().isoformat(),
+                "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),  # 1 mes
+                "read": False
+            }
+            supabase_service.insert('notifications', supabase_notification)
+            print(f"💾 Notificación guardada en Supabase para historial: {title}")
+        except Exception as e:
+            print(f"⚠️ Error guardando en Supabase: {e}")
         
         print(f"🔔 Notificación agregada desde admin_routes: {title}")
         
@@ -399,6 +417,68 @@ def handle_notifications():
                 "success": False,
                 "message": f"Error: {str(e)}"
             }), 500
+
+@admin.route('/api/notifications/history', methods=['GET'])
+def get_notification_history():
+    """Obtener historial de notificaciones para la campanita"""
+    try:
+        from supabase_service import supabase_service
+        from datetime import datetime
+        
+        # Obtener notificaciones no expiradas
+        result = supabase_service.select(
+            'notifications',
+            filters=[
+                {'column': 'user_id', 'operator': 'eq', 'value': 'admin'},
+                {'column': 'expires_at', 'operator': 'gt', 'value': datetime.now().isoformat()}
+            ],
+            order_by={'column': 'created_at', 'ascending': False}
+        )
+        
+        notifications = result.get('data', [])
+        print(f"📋 Historial de notificaciones obtenido: {len(notifications)} notificaciones")
+        
+        return jsonify({
+            "success": True,
+            "notifications": notifications
+        })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo historial: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }), 500
+
+@admin.route('/api/notifications/cleanup', methods=['POST'])
+def cleanup_expired_notifications():
+    """Limpiar notificaciones expiradas (se ejecuta automáticamente)"""
+    try:
+        from supabase_service import supabase_service
+        from datetime import datetime
+        
+        # Eliminar notificaciones expiradas
+        result = supabase_service.delete(
+            'notifications',
+            filters=[
+                {'column': 'expires_at', 'operator': 'lt', 'value': datetime.now().isoformat()}
+            ]
+        )
+        
+        deleted_count = result.get('count', 0)
+        print(f"🧹 Notificaciones expiradas eliminadas: {deleted_count}")
+        
+        return jsonify({
+            "success": True,
+            "deleted_count": deleted_count
+        })
+        
+    except Exception as e:
+        print(f"❌ Error limpiando notificaciones: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }), 500
 
 @admin.route('/api/maintenance', methods=['POST'])
 def toggle_maintenance():
