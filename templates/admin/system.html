@@ -818,7 +818,7 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
                 is_urgent: urgent
             };
             
-            fetch('/api/push-notifications', {
+            fetch('/admin/api/notifications', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -846,7 +846,7 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
         }
 
         function loadNotificationHistory() {
-            fetch('/api/push-notifications')
+            fetch('/admin/api/notifications')
             .then(response => response.json())
             .then(data => {
                 const tbody = document.getElementById('notificationHistory');
@@ -876,7 +876,7 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
 
         function deleteNotification(notificationId) {
             if (confirm('¿Estás seguro de que quieres eliminar esta notificación?')) {
-                fetch(`/api/push-notifications/${notificationId}`, {
+                fetch(`/admin/api/notifications/${notificationId}`, {
                     method: 'DELETE'
                 })
                 .then(response => response.json())
