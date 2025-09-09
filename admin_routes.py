@@ -381,9 +381,10 @@ def handle_notifications():
                 "read": False
             }
             
-            # Primero crear la tabla si no existe (con TEXT para user_id)
+            # ELIMINAR tabla existente y crear nueva con TEXT para user_id
             create_table_sql = '''
-            CREATE TABLE IF NOT EXISTS notifications (
+            DROP TABLE IF EXISTS notifications CASCADE;
+            CREATE TABLE notifications (
                 id SERIAL PRIMARY KEY,
                 title TEXT NOT NULL,
                 message TEXT NOT NULL,
