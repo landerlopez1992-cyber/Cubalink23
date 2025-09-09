@@ -78,9 +78,6 @@
                         <button class="btn btn-success" onclick="saveAllSettings()">
                             <i class="fas fa-save"></i> Guardar Todo
                         </button>
-                        <button class="btn btn-warning" id="maintenanceBtn" onclick="toggleMaintenanceMode()">
-                            <i class="fas fa-tools"></i> <span id="maintenanceText">Modo Mantenimiento</span>
-                        </button>
                     </div>
                 </div>
 
@@ -207,7 +204,7 @@
                                         <div class="mb-3">
                                             <label class="form-label">Modo de Mantenimiento</label>
                                             <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="maintenance-mode">
+                                                <input class="form-check-input" type="checkbox" id="maintenance-mode" onchange="toggleMaintenanceMode()">
                                                 <label class="form-check-label" for="maintenance-mode">
                                                     Activar modo mantenimiento
                                                 </label>
@@ -677,57 +674,46 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
             fetch('/admin/api/maintenance/status')
                 .then(response => response.json())
                 .then(data => {
-                    updateMaintenanceButton(data.maintenance_mode);
+                    const checkbox = document.getElementById('maintenance-mode');
+                    if (checkbox) {
+                        checkbox.checked = data.maintenance_mode;
+                    }
                 })
                 .catch(error => {
                     console.error('Error cargando estado de mantenimiento:', error);
                 });
         }
 
-        function updateMaintenanceButton(isMaintenanceMode) {
-            const btn = document.getElementById('maintenanceBtn');
-            const text = document.getElementById('maintenanceText');
+        function toggleMaintenanceMode() {
+            const checkbox = document.getElementById('maintenance-mode');
+            const newStatus = checkbox.checked;
             
-            if (isMaintenanceMode) {
-                btn.className = 'btn btn-danger';
-                text.textContent = 'Desactivar Mantenimiento';
-                btn.innerHTML = '<i class="fas fa-tools"></i> <span id="maintenanceText">Desactivar Mantenimiento</span>';
-            } else {
-                btn.className = 'btn btn-warning';
-                text.textContent = 'Activar Mantenimiento';
-                btn.innerHTML = '<i class="fas fa-tools"></i> <span id="maintenanceText">Activar Mantenimiento</span>';
-            }
+            fetch('/admin/api/maintenance/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ enabled: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const status = data.maintenance_mode ? 'ACTIVADO' : 'DESACTIVADO';
+                    alert(`Modo mantenimiento ${status}`);
+                } else {
+                    alert('Error al cambiar modo mantenimiento: ' + data.error);
+                    // Revertir checkbox si hay error
+                    checkbox.checked = !newStatus;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cambiar modo mantenimiento');
+                // Revertir checkbox si hay error
+                checkbox.checked = !newStatus;
+            });
         }
 
-        function toggleMaintenanceMode() {
-            fetch('/admin/api/maintenance/status')
-                .then(response => response.json())
-                .then(data => {
-                    const newStatus = !data.maintenance_mode;
-                    
-                    return fetch('/admin/api/maintenance/toggle', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ enabled: newStatus })
-                    });
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateMaintenanceButton(data.maintenance_mode);
-                        const status = data.maintenance_mode ? 'ACTIVADO' : 'DESACTIVADO';
-                        alert(`Modo mantenimiento ${status}`);
-                    } else {
-                        alert('Error al cambiar modo mantenimiento: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error al cambiar modo mantenimiento');
-                });
-        }
 
         function saveAllSettings() {
             // Recopilar información de contacto

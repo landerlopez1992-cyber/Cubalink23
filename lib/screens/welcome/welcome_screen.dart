@@ -11,6 +11,7 @@ import 'package:cubalink23/models/store_product.dart';
 import 'package:cubalink23/screens/shopping/product_details_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 
 class WelcomeScreen extends StatefulWidget {
   @override
@@ -36,6 +37,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   List<Map<String, dynamic>> _bestSellers = [];
   List<StoreProduct> _realFoodProducts = [];
   bool _loadingProducts = true;
+  Timer? _maintenanceCheckTimer;
 
   @override
   void initState() {
@@ -64,6 +66,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       NotificationManager().initialize(context);
     });
     
+    // Verificar modo mantenimiento primero
+    _checkMaintenanceMode();
+    
+    // Iniciar timer para verificar mantenimiento continuamente
+    _startMaintenanceCheckTimer();
+    
     // Cargar productos reales de Supabase inmediatamente
     _loadRealProductsFromSupabase();
     _loadCategoriesAndBestSellers();
@@ -81,6 +89,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     _flightsBannerController.dispose();
     _cartService.removeListener(_updateCartCount);
     NotificationManager().dispose();
+    _maintenanceCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -147,6 +156,37 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
 
 
+
+  Future<void> _checkMaintenanceMode() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://cubalink23-backend.onrender.com/admin/api/maintenance/status'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final isMaintenanceMode = data['maintenance_mode'] as bool? ?? false;
+        
+        print('🔧 Modo mantenimiento: $isMaintenanceMode');
+        
+        if (isMaintenanceMode && mounted) {
+          print('🔧 ACTIVANDO pantalla de mantenimiento...');
+          Navigator.of(context).pushReplacementNamed('/maintenance');
+        }
+      }
+    } catch (e) {
+      print('❌ Error verificando modo mantenimiento: $e');
+    }
+  }
+
+  void _startMaintenanceCheckTimer() {
+    // Verificar cada 5 segundos si el modo mantenimiento se activa
+    _maintenanceCheckTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+      print('🔧 Timer verificando mantenimiento...');
+      _checkMaintenanceMode();
+    });
+  }
 
   Future<void> _loadNotificationsCount() async {
     // No necesitamos verificar _currentUserId para obtener notificaciones
@@ -832,7 +872,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   // Banner "Trabaja con nosotros"
                   _buildWorkWithUsBanner(),
                   SizedBox(height: 20),
-                  // Sección de términos y condiciones
+                  // Sección de Términos y Condiciones
                   _buildTermsAndConditionsSection(),
                   SizedBox(height: 30), // Espacio adicional al final
                 ],
@@ -2145,6 +2185,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget _buildWorkWithUsBanner() {
     return GestureDetector(
       onTap: () {
+        // Navegar a la pantalla de selección de trabajo
         Navigator.pushNamed(context, '/work_selection');
       },
       child: Container(
@@ -2302,10 +2343,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
+
   Widget _buildTermsAndConditionsSection() {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16),
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(12), // Reduced padding
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -2318,183 +2360,107 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Título de la sección
+          // Primera fila: Términos y Contacto
           Row(
             children: [
-              Icon(
-                Icons.info_outline,
-                color: Color(0xFF2E7D32),
-                size: 20,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Información Legal',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E7D32),
+              // Columna izquierda: Términos
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Color(0xFF2E7D32), size: 16),
+                        SizedBox(width: 6),
+                        Text('Legal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    _buildCompactLegalLink('Términos y Condiciones'),
+                    _buildCompactLegalLink('Política de Privacidad'),
+                    _buildCompactLegalLink('Términos Vendedores'),
+                    _buildCompactLegalLink('Términos Repartidores'),
+                  ],
                 ),
               ),
-            ],
-          ),
-          SizedBox(height: 16),
-          
-          // Enlaces de términos y condiciones
-          _buildLegalLink('Términos y Condiciones', Icons.description_outlined),
-          _buildLegalLink('Política de Privacidad', Icons.privacy_tip_outlined),
-          _buildLegalLink('Términos para Vendedores', Icons.store_outlined),
-          _buildLegalLink('Términos para Repartidores', Icons.delivery_dining_outlined),
-          
-          SizedBox(height: 16),
-          
-          // Divider
-          Container(
-            height: 1,
-            color: Colors.grey[300],
-          ),
-          
-          SizedBox(height: 16),
-          
-          // Información de contacto
-          Row(
-            children: [
-              Icon(
-                Icons.contact_phone,
-                color: Color(0xFF2E7D32),
-                size: 18,
+              
+              // Separador vertical
+              Container(
+                width: 1,
+                height: 80,
+                color: Colors.grey[300],
+                margin: EdgeInsets.symmetric(horizontal: 12),
               ),
-              SizedBox(width: 8),
-              Text(
-                'Contacto',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E7D32),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          
-          // Teléfono
-          Row(
-            children: [
-              Icon(
-                Icons.phone,
-                color: Colors.grey[600],
-                size: 16,
-              ),
-              SizedBox(width: 8),
-              Text(
-                '+1 561 593 6776',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 4),
-          
-          // Email
-          Row(
-            children: [
-              Icon(
-                Icons.email,
-                color: Colors.grey[600],
-                size: 16,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'info@cubalink23.com',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500,
+              
+              // Columna derecha: Contacto
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.contact_phone, color: Color(0xFF2E7D32), size: 16),
+                        SizedBox(width: 6),
+                        Text('Contacto', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.phone, color: Colors.grey[600], size: 14),
+                        SizedBox(width: 6),
+                        Expanded(child: Text('+1 561 593 6776', style: TextStyle(fontSize: 11, color: Colors.grey[700], fontWeight: FontWeight.w500))),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.email, color: Colors.grey[600], size: 14),
+                        SizedBox(width: 6),
+                        Expanded(child: Text('info@cubalink23.com', style: TextStyle(fontSize: 11, color: Colors.grey[700], fontWeight: FontWeight.w500))),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           
-          SizedBox(height: 16),
+          SizedBox(height: 12),
           
-          // Divider
-          Container(
-            height: 1,
-            color: Colors.grey[300],
-          ),
+          // Divider horizontal
+          Container(height: 1, color: Colors.grey[300]),
           
-          SizedBox(height: 16),
+          SizedBox(height: 12),
           
-          // Acreditaciones
+          // Segunda fila: Acreditaciones y Copyright
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                Icons.verified,
-                color: Color(0xFF2E7D32),
-                size: 18,
+              // Acreditaciones
+              Row(
+                children: [
+                  Icon(Icons.verified, color: Color(0xFF2E7D32), size: 16),
+                  SizedBox(width: 6),
+                  Text('Miembro IATA', style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w500)),
+                ],
               ),
-              SizedBox(width: 8),
-              Text(
-                'Acreditaciones',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E7D32),
-                ),
-              ),
+              
+              // Copyright
+              Text('© 2024 CubaLink23', style: TextStyle(fontSize: 10, color: Colors.grey[500], fontStyle: FontStyle.italic)),
             ],
-          ),
-          SizedBox(height: 8),
-          
-          // IATA
-          Row(
-            children: [
-              Icon(
-                Icons.flight,
-                color: Colors.grey[600],
-                size: 16,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Miembro IATA',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          
-          SizedBox(height: 16),
-          
-          // Copyright
-          Center(
-            child: Text(
-              '© 2024 CubaLink23. Todos los derechos reservados.',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[500],
-                fontStyle: FontStyle.italic,
-              ),
-              textAlign: TextAlign.center,
-            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLegalLink(String title, IconData icon) {
+  Widget _buildCompactLegalLink(String title) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 4),
       child: GestureDetector(
         onTap: () {
-          // Aquí puedes agregar la navegación a las pantallas correspondientes
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('$title - Próximamente disponible'),
@@ -2502,29 +2468,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
           );
         },
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: Colors.grey[600],
-              size: 16,
-            ),
-            SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[700],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Spacer(),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.grey[400],
-              size: 12,
-            ),
-          ],
+        child: Text(
+          '• $title',
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey[700],
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
