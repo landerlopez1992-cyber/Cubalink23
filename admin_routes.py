@@ -381,10 +381,9 @@ def handle_notifications():
                 "read": False
             }
             
-            # ELIMINAR tabla existente y crear nueva con TEXT para user_id
+            # CREAR nueva tabla con nombre diferente y TEXT para user_id
             create_table_sql = '''
-            DROP TABLE IF EXISTS notifications CASCADE;
-            CREATE TABLE notifications (
+            CREATE TABLE IF NOT EXISTS notifications_v2 (
                 id SERIAL PRIMARY KEY,
                 title TEXT NOT NULL,
                 message TEXT NOT NULL,
@@ -392,9 +391,9 @@ def handle_notifications():
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 read BOOLEAN DEFAULT FALSE
             );
-            ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-            DROP POLICY IF EXISTS "Allow all access" ON notifications;
-            CREATE POLICY "Allow all access" ON notifications FOR ALL USING (true);
+            ALTER TABLE notifications_v2 ENABLE ROW LEVEL SECURITY;
+            DROP POLICY IF EXISTS "Allow all access" ON notifications_v2;
+            CREATE POLICY "Allow all access" ON notifications_v2 FOR ALL USING (true);
             '''
             
             # Intentar crear la tabla (si ya existe, no hace nada)
@@ -409,7 +408,7 @@ def handle_notifications():
             
             # Insertar la notificación
             response = requests.post(
-                f"{supabase_url}/rest/v1/notifications",
+                f"{supabase_url}/rest/v1/notifications_v2",
                 headers=headers,
                 json=supabase_notification
             )
@@ -484,8 +483,8 @@ def get_notification_history():
             'Content-Type': 'application/json'
         }
         
-        # Obtener todas las notificaciones (con string)
-        url = f"{supabase_url}/rest/v1/notifications?user_id=eq.admin&order=created_at.desc"
+        # Obtener todas las notificaciones (tabla notifications_v2)
+        url = f"{supabase_url}/rest/v1/notifications_v2?user_id=eq.admin&order=created_at.desc"
         
         print(f"🔍 URL de consulta: {url}")
         response = requests.get(url, headers=headers)
