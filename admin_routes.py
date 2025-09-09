@@ -415,6 +415,9 @@ def handle_notifications():
                 json=supabase_notification
             )
             
+            print(f"🔍 Status code al guardar: {response.status_code}")
+            print(f"🔍 Response al guardar: {response.text[:200]}...")
+            
             if response.status_code == 201:
                 print(f"💾 Notificación guardada en Supabase para historial: {title}")
             else:
@@ -482,10 +485,13 @@ def get_notification_history():
             'Content-Type': 'application/json'
         }
         
-        # Obtener notificaciones no expiradas, ordenadas por fecha
-        url = f"{supabase_url}/rest/v1/notifications?user_id=eq.admin&expires_at=gt.{datetime.now().isoformat()}&order=created_at.desc"
+        # Obtener todas las notificaciones (simplificado)
+        url = f"{supabase_url}/rest/v1/notifications?user_id=eq.admin&order=created_at.desc"
         
+        print(f"🔍 URL de consulta: {url}")
         response = requests.get(url, headers=headers)
+        print(f"🔍 Status code: {response.status_code}")
+        print(f"🔍 Response: {response.text[:200]}...")
         
         if response.status_code == 200:
             notifications = response.json()
@@ -499,7 +505,7 @@ def get_notification_history():
             print(f"❌ Error obteniendo historial: {response.status_code} - {response.text}")
             return jsonify({
                 "success": False,
-                "message": f"Error: {response.status_code}"
+                "message": f"Error: {response.status_code} - {response.text}"
             }), 500
         
     except Exception as e:
