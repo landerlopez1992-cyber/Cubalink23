@@ -65,16 +65,16 @@ notification_counter = 0
 def home():
     """🏠 Página principal"""
     return jsonify({
-        "message": "CubaLink23 Backend - MANTIENE TODO LO EXISTENTE + BANNERS + PUSH NOTIFICATIONS",
+        "message": "CubaLink23 Backend - CON NOTIFICACIONES FUNCIONANDO - VERSION CORRECTA",
         "status": "online",
         "timestamp": datetime.now().isoformat(),
-        "version": "PUSH_NOTIFICATIONS_READY_2025",
+        "version": "NOTIFICATIONS_WORKING_V2",
         "endpoints": [
             "/api/health", 
             "/admin/api/flights/search", 
             "/admin/api/flights/airports",
-            "/api/push-notifications",
-            "/api/test-push"
+            "/api/supabase-notifications",
+            "/api/notifications/next"
         ]
     })
 
