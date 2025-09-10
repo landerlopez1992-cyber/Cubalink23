@@ -20,6 +20,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   intl: ^0.19.0
   share_plus: ^7.2.2
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -30,6 +31,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/logo_app.png
+    - assets/images/wallet_icon.png
     - assets/documents/
     - assets/text/
     - assets/other/

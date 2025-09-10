@@ -23,6 +23,17 @@ class CartItem {
     this.additionalData,
   });
 
+  // Getter para obtener vendorId basado en el tipo o additionalData
+  String? get vendorId {
+    // Primero intentar obtenerlo de additionalData
+    if (additionalData != null && additionalData!['vendorId'] != null) {
+      return additionalData!['vendorId'] as String;
+    }
+    
+    // Si no está en additionalData, usar el tipo como vendorId
+    return type;
+  }
+
   CartItem copyWith({
     String? id,
     String? name,

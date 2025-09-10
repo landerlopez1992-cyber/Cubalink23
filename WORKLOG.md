@@ -5,12 +5,26 @@
 ✅ PROTEGIDO: Backend con sistema de backup y rollback
 ✅ DEPLOYADO: Cambios del panel admin desplegados a Render.com de forma segura
 ✅ VERIFICADO: Todas las APIs funcionando correctamente después del deploy
+✅ INSTALADO: Asset logo_app.png - SHA256: 96d92902c73ed50ae98c13ce0aa81f829971546635c235f6e372f3d8b0ff6cd0
+✅ INSTALADO: Asset wallet_icon.png - SHA256: ee60a04b21b07c810e8d5454ede0ec26afffc55f186c10b3919f6ecfb2aa0750
 🔄 EN PROGRESO: Sistema de Me gusta y Compartir en productos - implementando funcionalidad completa
 
 # Qué se hizo hoy
 - ✅ Identificado y arreglado el problema del carrito: error de restricción UNIQUE en Supabase
 - ✅ Modificado CartService para usar UPDATE/INSERT en lugar de UPSERT problemático
 - ✅ Agregado logging detallado para debugging del carrito
+- ✅ INSTALADO ASSET: logo_app.png (2025-01-27)
+  - Ruta: assets/images/logo_app.png
+  - SHA256: 96d92902c73ed50ae98c13ce0aa81f829971546635c235f6e372f3d8b0ff6cd0
+  - Uso: Splash, AppBar, Drawer y Home
+  - Declarado en pubspec.yaml
+  - Copiado exactamente sin modificaciones
+- ✅ INSTALADO ASSET: wallet_icon.png (2025-01-27)
+  - Ruta: assets/images/wallet_icon.png
+  - SHA256: ee60a04b21b07c810e8d5454ede0ec26afffc55f186c10b3919f6ecfb2aa0750
+  - Uso: Icono de billetera en WelcomeScreen
+  - Declarado en pubspec.yaml
+  - Copiado exactamente desde ~/Desktop/billetera-3d.png
 - ✅ Implementado carga de banners reales desde Supabase en WelcomeScreen
 - ✅ Agregado FirebaseRepository para acceder a banners
 - ✅ Creado función _loadBannersFromSupabase() con auto-scroll

@@ -676,6 +676,40 @@ CREATE POLICY "Allow authenticated users to manage products" ON store_products
     }
   }
 
+  /// Get vendor products by vendor ID
+  Future<List<StoreProduct>> getVendorProducts(String vendorId) async {
+    try {
+      print('📦 Obteniendo productos del vendedor: $vendorId');
+      
+      if (_client == null) {
+        print('⚠️ Supabase no disponible, retornando productos por defecto');
+        return _getAllDefaultProducts();
+      }
+      
+      final response = await _client!
+        .from('store_products')
+        .select('*')
+        .eq('vendor_id', vendorId)
+        .eq('is_active', true)
+        .order('name');
+
+      final products = <StoreProduct>[];
+      for (final item in response) {
+        try {
+          products.add(StoreProduct.fromMap(item));
+        } catch (e) {
+          print('⚠️ Error parsing vendor product: $e');
+        }
+      }
+
+      print('✅ ${products.length} productos del vendedor obtenidos');
+      return products;
+    } catch (e) {
+      print('❌ Error obteniendo productos del vendedor: $e');
+      return [];
+    }
+  }
+
   /// Create a new product in Supabase
   Future<bool> createProduct(StoreProduct product) async {
     try {

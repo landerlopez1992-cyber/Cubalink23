@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cubalink23/models/user.dart' as UserModel;
 import 'package:cubalink23/models/payment_card.dart';
 import 'package:cubalink23/supabase/supabase_config.dart';
+import 'package:cubalink23/services/user_role_service.dart';
 import 'dart:typed_data';
 
 /// Simplified authentication service using Supabase
@@ -17,6 +18,7 @@ class SupabaseAuthService {
 
   UserModel.User? _currentUser;
   double _userBalance = 0.0;
+  final UserRoleService _roleService = UserRoleService();
 
   /// Safe auth getter - returns null if Supabase not initialized
   GoTrueClient? get _auth => _client?.auth;
@@ -43,6 +45,13 @@ class SupabaseAuthService {
     if (isLoggedIn && supabaseUser != null && _isSupabaseAvailable) {
       // Load current user data
       await loadCurrentUserData();
+      
+      // Cargar datos de rol del usuario
+      if (supabaseUser.email != null) {
+        await _roleService.initialize();
+        await _roleService.getUserByEmail(supabaseUser.email!);
+      }
+      
       return _currentUser != null;
     }
 
@@ -64,6 +73,7 @@ class SupabaseAuthService {
     await prefs.remove(_userIdKey);
     _currentUser = null;
     _userBalance = 0.0;
+    await _roleService.clearUserData();
   }
 
   /// Logout user
@@ -243,6 +253,14 @@ class SupabaseAuthService {
 
         // Load user data from database
         await loadCurrentUserData();
+        
+        // Cargar datos de rol del usuario
+        final userEmail = response?.user?.email ?? email ?? '';
+        if (userEmail.isNotEmpty) {
+          await _roleService.initialize();
+          await _roleService.getUserByEmail(userEmail);
+          print('✅ Datos de rol cargados para: $userEmail');
+        }
 
         if (_currentUser != null) {
           // Save login state

@@ -126,7 +126,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     try {
       final productName = widget.productTitle ?? widget.product?['title'] ?? widget.product?['name'] ?? 'Producto';
       final productPrice = widget.productPrice ?? widget.product?['price']?.toDouble() ?? 0.0;
-      final productImage = widget.productImage ?? widget.product?['image'] ?? widget.product?['imageUrl'] ?? '';
+      // final productImage = widget.productImage ?? widget.product?['image'] ?? widget.product?['imageUrl'] ?? '';
       
       final shareText = '''
 🛍️ ¡Mira este producto en CubaLink23!
@@ -519,6 +519,9 @@ Descarga la app CubaLink23 para ver más productos increíbles! 🚀
                                     ),
                                 ],
                               ),
+                              // Vendor Information
+                              SizedBox(height: 12),
+                              _buildVendorInfo(),
                               // Weight indicator
                               if (weight != null)
                                 Padding(
@@ -856,5 +859,69 @@ Descarga la app CubaLink23 para ver más productos increíbles! 🚀
 
     // Navigate back or show success
     Navigator.pop(context);
+  }
+
+  Widget _buildVendorInfo() {
+    // Obtener información del vendedor del producto
+    final String vendorName = widget.product?['vendor_name'] ?? 'Vendedor Local';
+    final String vendorId = widget.product?['vendor_id'] ?? 'vendor_001';
+    
+    return GestureDetector(
+      onTap: () {
+        // Navegar a la pantalla de detalles del vendedor
+        Navigator.pushNamed(
+          context,
+          '/vendor_detail',
+          arguments: {
+            'vendorId': vendorId,
+            'vendorName': vendorName,
+          },
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.blue[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.blue[200]!,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.store,
+              size: 16,
+              color: Colors.blue[700],
+            ),
+            SizedBox(width: 6),
+            Text(
+              'Vendedor: ',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              vendorName,
+              style: TextStyle(
+                color: Colors.blue[700],
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(width: 4),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 12,
+              color: Colors.blue[700],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cubalink23/services/auth_service.dart';
 import 'package:cubalink23/services/store_service.dart';
-import 'package:cubalink23/screens/vendor/vendor_products_screen.dart';
-import 'package:cubalink23/screens/vendor/vendor_orders_screen.dart';
-import 'package:cubalink23/screens/vendor/vendor_analytics_screen.dart';
-import 'package:cubalink23/screens/vendor/vendor_settings_screen.dart';
 
 class VendorDashboardScreen extends StatefulWidget {
   const VendorDashboardScreen({Key? key}) : super(key: key);
@@ -15,7 +11,6 @@ class VendorDashboardScreen extends StatefulWidget {
 
 class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   final StoreService _storeService = StoreService();
-  final AuthService _authService = AuthService();
   
   int _totalProducts = 0;
   int _activeProducts = 0;
@@ -35,7 +30,8 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
       
       // Cargar productos del vendedor
       final products = await _storeService.getAllProducts();
-      final vendorProducts = products.where((p) => p.vendorId == _authService.currentUser?.id).toList();
+      // TODO: Filtrar productos del vendedor cuando tengamos el campo vendorId
+      final vendorProducts = products; // Temporalmente todos los productos
       
       setState(() {
         _totalProducts = vendorProducts.length;
@@ -67,23 +63,25 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadDashboardData,
+            icon: Icon(Icons.notifications, color: Colors.white),
+            onPressed: () {
+              // TODO: Implementar notificaciones
+            },
           ),
         ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Saludo del vendedor
+                  // Saludo y resumen
                   _buildWelcomeCard(),
                   SizedBox(height: 20),
                   
-                  // Estadísticas
+                  // Estadísticas principales
                   _buildStatsGrid(),
                   SizedBox(height: 20),
                   
@@ -91,8 +89,8 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                   _buildQuickActions(),
                   SizedBox(height: 20),
                   
-                  // Productos recientes
-                  _buildRecentProducts(),
+                  // Órdenes recientes
+                  _buildRecentOrders(),
                 ],
               ),
             ),
@@ -100,52 +98,54 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   }
 
   Widget _buildWelcomeCard() {
-    final user = _authService.currentUser;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
             color: Colors.green.withOpacity(0.3),
             blurRadius: 10,
-            offset: Offset(0, 5),
+            spreadRadius: 2,
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            '¡Bienvenido!',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Gestiona tus productos y ventas desde aquí',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 15,
+            ),
+          ),
+          SizedBox(height: 16),
           Row(
             children: [
-              Icon(Icons.store, color: Colors.white, size: 32),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '¡Hola, ${user?.name ?? 'Vendedor'}!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Gestiona tu tienda desde aquí',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
+              Icon(Icons.account_balance_wallet, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Saldo disponible: \$${_totalSales.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -160,14 +160,14 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 1.5,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.4,
       children: [
         _buildStatCard(
           'Productos',
           _totalProducts.toString(),
-          Icons.inventory_2,
+          Icons.inventory,
           Colors.blue,
         ),
         _buildStatCard(
@@ -184,7 +184,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         ),
         _buildStatCard(
           'Ventas',
-          '\$${_totalSales.toStringAsFixed(2)}',
+          '\$${_totalSales.toStringAsFixed(0)}',
           Icons.attach_money,
           Colors.purple,
         ),
@@ -194,7 +194,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -202,27 +202,27 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            spreadRadius: 2,
           ),
         ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 32),
-          SizedBox(height: 8),
+          Icon(icon, color: color, size: 28),
+          SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.grey[800],
             ),
           ),
           Text(
             title,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               color: Colors.grey[600],
             ),
           ),
@@ -238,9 +238,9 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         Text(
           'Acciones Rápidas',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Colors.grey[800],
           ),
         ),
         SizedBox(height: 12),
@@ -248,25 +248,19 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           children: [
             Expanded(
               child: _buildActionCard(
-                'Gestionar Productos',
-                Icons.inventory_2,
+                'Agregar Producto',
+                Icons.add_box,
                 Colors.blue,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => VendorProductsScreen()),
-                ),
+                () => Navigator.pushNamed(context, '/vendor-products'),
               ),
             ),
             SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
-                'Ver Órdenes',
+                'Mis Órdenes',
                 Icons.shopping_cart,
                 Colors.orange,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => VendorOrdersScreen()),
-                ),
+                () => Navigator.pushNamed(context, '/vendor-orders'),
               ),
             ),
           ],
@@ -276,25 +270,19 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           children: [
             Expanded(
               child: _buildActionCard(
-                'Analíticas',
-                Icons.analytics,
-                Colors.purple,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => VendorAnalyticsScreen()),
-                ),
+                'Mi Billetera',
+                Icons.account_balance_wallet,
+                Colors.green,
+                () => Navigator.pushNamed(context, '/vendor-wallet'),
               ),
             ),
             SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
-                'Configuración',
-                Icons.settings,
-                Colors.grey,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => VendorSettingsScreen()),
-                ),
+                'Soporte',
+                Icons.support_agent,
+                Colors.purple,
+                () => Navigator.pushNamed(context, '/vendor-support'),
               ),
             ),
           ],
@@ -307,7 +295,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -315,22 +303,22 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),
               blurRadius: 8,
-              offset: Offset(0, 2),
+              spreadRadius: 2,
             ),
           ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 32),
-            SizedBox(height: 8),
+            Icon(icon, color: color, size: 28),
+            SizedBox(height: 6),
             Text(
               title,
-              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: Colors.grey[800],
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -338,88 +326,57 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
     );
   }
 
-  Widget _buildRecentProducts() {
+  Widget _buildRecentOrders() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Productos Recientes',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => VendorProductsScreen()),
-              ),
-              child: Text('Ver todos'),
-            ),
-          ],
+        Text(
+          'Órdenes Recientes',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[800],
+          ),
         ),
         SizedBox(height: 12),
         Container(
-          height: 120,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: 3, // Mostrar solo 3 productos recientes
-            itemBuilder: (context, index) {
-              return Container(
-                width: 200,
-                margin: EdgeInsets.only(right: 12),
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+          padding: EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 8,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.shopping_cart_outlined,
+                size: 40,
+                color: Colors.grey[400],
+              ),
+              SizedBox(height: 10),
+              Text(
+                'No hay órdenes recientes',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey[600],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Producto ${index + 1}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Precio: \$0.00',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    Spacer(),
-                    Row(
-                      children: [
-                        Icon(Icons.check_circle, color: Colors.green, size: 16),
-                        SizedBox(width: 4),
-                        Text(
-                          'Activo',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+              ),
+              SizedBox(height: 6),
+              Text(
+                'Tus órdenes aparecerán aquí cuando los clientes compren tus productos',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[500],
                 ),
-              );
-            },
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ],

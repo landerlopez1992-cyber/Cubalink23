@@ -9,7 +9,6 @@ class DeliveryDashboardScreen extends StatefulWidget {
 }
 
 class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
-  final AuthService _authService = AuthService();
   
   double _currentBalance = 0.0;
   int _pendingOrders = 0;
@@ -60,31 +59,25 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadDashboardData,
-          ),
-          IconButton(
-            icon: Icon(Icons.support_agent, color: Colors.white),
-            onPressed: _openSupportChat,
+            icon: Icon(Icons.notifications, color: Colors.white),
+            onPressed: () {
+              // TODO: Implementar notificaciones
+            },
           ),
         ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Saludo del repartidor
+                  // Saludo y resumen
                   _buildWelcomeCard(),
                   SizedBox(height: 20),
                   
-                  // Balance actual
-                  _buildBalanceCard(),
-                  SizedBox(height: 20),
-                  
-                  // Estadísticas
+                  // Estadísticas principales
                   _buildStatsGrid(),
                   SizedBox(height: 20),
                   
@@ -92,8 +85,8 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
                   _buildQuickActions(),
                   SizedBox(height: 20),
                   
-                  // Órdenes pendientes
-                  _buildPendingOrders(),
+                  // Órdenes asignadas
+                  _buildAssignedOrders(),
                 ],
               ),
             ),
@@ -101,128 +94,54 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
   }
 
   Widget _buildWelcomeCard() {
-    final user = _authService.currentUser;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
             color: Colors.blue.withOpacity(0.3),
             blurRadius: 10,
-            offset: Offset(0, 5),
+            spreadRadius: 2,
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.delivery_dining, color: Colors.white, size: 32),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '¡Hola, ${user?.name ?? 'Repartidor'}!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Gestiona tus entregas desde aquí',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBalanceCard() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.account_balance_wallet, color: Color(0xFF1976D2), size: 28),
-              SizedBox(width: 12),
-              Text(
-                'Balance Actual',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
           Text(
-            '\$${_currentBalance.toStringAsFixed(2)}',
+            '¡Hola Repartidor!',
             style: TextStyle(
-              fontSize: 32,
+              color: Colors.white,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1976D2),
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Gestiona tus entregas y pedidos desde aquí',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 15,
             ),
           ),
           SizedBox(height: 16),
           Row(
             children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _transferMoney,
-                  icon: Icon(Icons.send, size: 18),
-                  label: Text('Transferir'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF1976D2),
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _withdrawMoney,
-                  icon: Icon(Icons.money_off, size: 18),
-                  label: Text('Retirar'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                  ),
+              Icon(Icons.account_balance_wallet, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Saldo disponible: \$${_currentBalance.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -236,10 +155,10 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
     return GridView.count(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
-      crossAxisCount: 3,
+      crossAxisCount: 2,
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.2,
+      childAspectRatio: 1.4,
       children: [
         _buildStatCard(
           'Pendientes',
@@ -259,13 +178,19 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
           Icons.cancel,
           Colors.red,
         ),
+        _buildStatCard(
+          'Ganancias',
+          '\$${_currentBalance.toStringAsFixed(0)}',
+          Icons.attach_money,
+          Colors.purple,
+        ),
       ],
     );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -273,7 +198,7 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            spreadRadius: 2,
           ),
         ],
       ),
@@ -281,22 +206,21 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: color, size: 28),
-          SizedBox(height: 8),
+          SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.grey[800],
             ),
           ),
           Text(
             title,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               color: Colors.grey[600],
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -310,9 +234,9 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
         Text(
           'Acciones Rápidas',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Colors.grey[800],
           ),
         ),
         SizedBox(height: 12),
@@ -320,20 +244,59 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
           children: [
             Expanded(
               child: _buildActionCard(
-                'Ver Órdenes',
-                Icons.list_alt,
-                Colors.blue,
-                _viewOrders,
+                'Notificaciones',
+                Icons.notifications,
+                Colors.red,
+                () => Navigator.pushNamed(context, '/delivery-notifications'),
               ),
             ),
             SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
-                'Chat Soporte',
-                Icons.support_agent,
-                Colors.green,
-                _openSupportChat,
+                'Órdenes Asignadas',
+                Icons.assignment,
+                Colors.blue,
+                () => Navigator.pushNamed(context, '/delivery-orders'),
               ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                'Mi Billetera',
+                Icons.account_balance_wallet,
+                Colors.green,
+                () => Navigator.pushNamed(context, '/delivery-wallet'),
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: _buildActionCard(
+                'Mi Perfil',
+                Icons.person,
+                Colors.purple,
+                () => Navigator.pushNamed(context, '/delivery-profile'),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                'Soporte',
+                Icons.support_agent,
+                Colors.orange,
+                () => Navigator.pushNamed(context, '/delivery-support'),
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Container(), // Espacio vacío para mantener el diseño
             ),
           ],
         ),
@@ -345,7 +308,7 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -353,22 +316,22 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),
               blurRadius: 8,
-              offset: Offset(0, 2),
+              spreadRadius: 2,
             ),
           ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 32),
-            SizedBox(height: 8),
+            Icon(icon, color: color, size: 28),
+            SizedBox(height: 6),
             Text(
               title,
-              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: Colors.grey[800],
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -376,221 +339,60 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen> {
     );
   }
 
-  Widget _buildPendingOrders() {
+  Widget _buildAssignedOrders() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Órdenes Pendientes',
+          'Órdenes Asignadas',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Colors.grey[800],
           ),
         ),
         SizedBox(height: 12),
         Container(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _pendingOrders,
-            itemBuilder: (context, index) {
-              return Container(
-                width: 280,
-                margin: EdgeInsets.only(right: 12),
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+          padding: EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 8,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.local_shipping_outlined,
+                size: 40,
+                color: Colors.grey[400],
+              ),
+              SizedBox(height: 10),
+              Text(
+                'No hay órdenes asignadas',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey[600],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.shopping_bag, color: Colors.blue, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Orden #${1000 + index}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Spacer(),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.orange,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'Pendiente',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Cliente: Cliente ${index + 1}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    Text(
-                      'Dirección: Dirección ${index + 1}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    Text(
-                      'Total: \$25.50',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    Spacer(),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () => _acceptOrder(index),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 8),
-                            ),
-                            child: Text('Aceptar'),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () => _rejectOrder(index),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 8),
-                            ),
-                            child: Text('Rechazar'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+              ),
+              SizedBox(height: 6),
+              Text(
+                'Las órdenes aparecerán aquí cuando el sistema te asigne entregas según tu ubicación y calificación',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[500],
                 ),
-              );
-            },
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ],
-    );
-  }
-
-  void _transferMoney() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Transferir Dinero'),
-        content: Text('Funcionalidad de transferencia en desarrollo'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _withdrawMoney() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Retirar Dinero'),
-        content: Text('Funcionalidad de retiro en desarrollo'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _viewOrders() {
-    // TODO: Navegar a pantalla de órdenes
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Pantalla de órdenes en desarrollo'),
-        backgroundColor: Colors.blue,
-      ),
-    );
-  }
-
-  void _openSupportChat() {
-    // TODO: Abrir chat de soporte
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Chat de soporte en desarrollo'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  void _acceptOrder(int orderIndex) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Orden #${1000 + orderIndex} aceptada'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    _loadDashboardData();
-  }
-
-  void _rejectOrder(int orderIndex) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Rechazar Orden'),
-        content: Text('¿Estás seguro de que quieres rechazar esta orden?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Orden #${1000 + orderIndex} rechazada'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              _loadDashboardData();
-            },
-            child: Text('Rechazar', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
   }
 }

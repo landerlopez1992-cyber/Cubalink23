@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 
 class ForceUpdateScreen extends StatefulWidget {
@@ -6,308 +11,295 @@ class ForceUpdateScreen extends StatefulWidget {
   _ForceUpdateScreenState createState() => _ForceUpdateScreenState();
 }
 
-class _ForceUpdateScreenState extends State<ForceUpdateScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _danceController;
-  late AnimationController _bounceController;
-  late AnimationController _pulseController;
-  
-  late Animation<double> _danceAnimation;
-  late Animation<double> _bounceAnimation;
-  late Animation<double> _pulseAnimation;
-
-  bool get isAndroid => Platform.isAndroid;
-  bool get isIOS => Platform.isIOS;
+class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
+  Timer? _checkTimer;
+  bool _isChecking = false;
+  String _iosAppUrl = '';
+  String _androidAppUrl = '';
+  String _currentVersion = '1.0.0'; // Versión actual de la app
 
   @override
   void initState() {
     super.initState();
-    
-    // Controlador para la animación de baile
-    _danceController = AnimationController(
-      duration: Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    
-    // Controlador para la animación de rebote
-    _bounceController = AnimationController(
-      duration: Duration(milliseconds: 800),
-      vsync: this,
-    );
-    
-    // Controlador para la animación de pulso
-    _pulseController = AnimationController(
-      duration: Duration(seconds: 1),
-      vsync: this,
-    );
-
-    // Animación de baile (rotación y movimiento)
-    _danceAnimation = Tween<double>(
-      begin: -0.1,
-      end: 0.1,
-    ).animate(CurvedAnimation(
-      parent: _danceController,
-      curve: Curves.elasticInOut,
-    ));
-
-    // Animación de rebote
-    _bounceAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _bounceController,
-      curve: Curves.bounceOut,
-    ));
-
-    // Animación de pulso para el texto
-    _pulseAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.2,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
-
-    // Iniciar animaciones
-    _startAnimations();
-  }
-
-  void _startAnimations() {
-    // Animación continua de baile
-    _danceController.repeat(reverse: true);
-    
-    // Animación de rebote cada 2 segundos
-    _bounceController.repeat(reverse: true);
-    
-    // Animación de pulso continua
-    _pulseController.repeat(reverse: true);
+    _startUpdateCheck();
+    _getCurrentAppVersion();
   }
 
   @override
   void dispose() {
-    _danceController.dispose();
-    _bounceController.dispose();
-    _pulseController.dispose();
+    _checkTimer?.cancel();
     super.dispose();
+  }
+
+  void _getCurrentAppVersion() {
+    // Obtener versión actual de la app
+    // En un proyecto real, esto vendría del pubspec.yaml o package_info_plus
+    setState(() {
+      _currentVersion = '1.0.0'; // Versión hardcodeada por ahora
+    });
+  }
+
+  void _startUpdateCheck() {
+    // Verificar cada 10 segundos si el modo actualización forzada sigue activo
+    _checkTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      print('🔄 Timer verificando actualizaciones forzadas...');
+      _checkForceUpdateStatus();
+    });
+    
+    // Verificar inmediatamente
+    _checkForceUpdateStatus();
+  }
+
+  Future<void> _checkForceUpdateStatus() async {
+    if (_isChecking) return;
+    
+    setState(() {
+      _isChecking = true;
+    });
+
+    try {
+      final response = await http.get(
+        Uri.parse('https://cubalink23-backend.onrender.com/admin/api/force-update/status'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final isForceUpdateMode = data['force_update_mode'] as bool? ?? false;
+        final iosUrl = data['ios_app_url'] as String? ?? '';
+        final androidUrl = data['android_app_url'] as String? ?? '';
+        
+        print('🔄 Modo actualización forzada: $isForceUpdateMode');
+        print('📱 iOS URL: $iosUrl');
+        print('🤖 Android URL: $androidUrl');
+        
+        setState(() {
+          _iosAppUrl = iosUrl;
+          _androidAppUrl = androidUrl;
+        });
+        
+        // Si el modo actualización forzada se desactivó, volver a la app
+        if (!isForceUpdateMode) {
+          print('🔄 Modo actualización forzada DESACTIVADO - volviendo a Welcome');
+          _checkTimer?.cancel();
+          Navigator.of(context).pushReplacementNamed('/welcome');
+        } else {
+          print('🔄 Modo actualización forzada ACTIVO - permaneciendo en pantalla');
+        }
+      }
+    } catch (e) {
+      print('❌ Error verificando estado actualización forzada: $e');
+    } finally {
+      setState(() {
+        _isChecking = false;
+      });
+    }
+  }
+
+  Future<void> _launchStore() async {
+    String storeUrl = '';
+    
+    if (Platform.isIOS && _iosAppUrl.isNotEmpty) {
+      storeUrl = _iosAppUrl;
+    } else if (Platform.isAndroid && _androidAppUrl.isNotEmpty) {
+      storeUrl = _androidAppUrl;
+    } else {
+      // Fallback a URLs genéricas
+      if (Platform.isIOS) {
+        storeUrl = 'https://apps.apple.com/';
+      } else {
+        storeUrl = 'https://play.google.com/store';
+      }
+    }
+
+    try {
+      final Uri url = Uri.parse(storeUrl);
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        print('❌ No se pudo abrir la tienda: $storeUrl');
+        _showErrorDialog();
+      }
+    } catch (e) {
+      print('❌ Error abriendo tienda: $e');
+      _showErrorDialog();
+    }
+  }
+
+  void _showErrorDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text('No se pudo abrir la tienda. Por favor, busca "Cubalink23" manualmente en tu tienda de aplicaciones.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: isAndroid ? Colors.green[50] : Colors.grey[50],
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isAndroid ? [
-              Colors.green[100]!,
-              Colors.lightGreen[50]!,
-              Colors.green[50]!,
-            ] : [
-              Colors.grey[100]!,
-              Colors.grey[50]!,
-              Colors.white,
-            ],
+    return WillPopScope(
+      onWillPop: () async {
+        // Prevenir que el usuario salga de la pantalla
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.blue.shade50,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.blue.shade100,
+                Colors.blue.shade200,
+              ],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(height: 40),
-                  
-                  // Icono de actualización
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+                  // Logo oficial de Cubalink23 (MÁS GRANDE)
                   Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: isAndroid ? Colors.green[200] : Colors.grey[200],
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: (isAndroid ? Colors.green : Colors.grey).withOpacity(0.3),
-                          blurRadius: 20,
-                          offset: Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.system_update,
-                      size: 60,
-                      color: isAndroid ? Colors.green[800] : Colors.grey[800],
+                    width: 150,
+                    height: 150,
+                    child: Image.asset(
+                      'assets/images/app_logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback si no se encuentra el logo
+                        return Container(
+                          width: 150,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade600,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.system_update,
+                            size: 80,
+                            color: Colors.white,
+                          ),
+                        );
+                      },
                     ),
                   ),
                   
-                  SizedBox(height: 40),
+                  SizedBox(height: 15),
                   
-                  // Título principal
-                  AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _pulseAnimation.value,
-                        child: Text(
-                          'ACTUALIZACIÓN REQUERIDA',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: isAndroid ? Colors.green[800] : Colors.grey[800],
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                      );
-                    },
+                  // Nombre de la app
+                  Text(
+                    'Cubalink23',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                      letterSpacing: 1.2,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                   
                   SizedBox(height: 20),
                   
-                  // Subtítulo
-                  Text(
-                    'Una nueva versión está disponible',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: isAndroid ? Colors.green[700] : Colors.grey[700],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  SizedBox(height: 8),
-                  
-                  Text(
-                    'Actualiza la app para disfrutar de las últimas funciones',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isAndroid ? Colors.green[600] : Colors.grey[600],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  SizedBox(height: 40),
-                  
-                  // Animación del Android/Apple bailando
+                  // Logo de la plataforma (Android/Apple)
                   Container(
-                    height: 200,
-                    width: double.infinity,
-                    child: Stack(
-                      children: [
-                        // Suelo
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: isAndroid ? Colors.green[300] : Colors.grey[300],
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: List.generate(8, (index) {
-                                  return Container(
-                                    width: 4,
-                                    height: 20,
-                                    color: isAndroid ? Colors.green[400] : Colors.grey[400],
-                                  );
-                                }),
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        // Android/Apple bailando
-                        AnimatedBuilder(
-                          animation: _danceAnimation,
-                          builder: (context, child) {
-                            return Positioned(
-                              left: MediaQuery.of(context).size.width / 2 - 40,
-                              bottom: 40,
-                              child: Transform.rotate(
-                                angle: _danceAnimation.value,
-                                child: Transform.translate(
-                                  offset: Offset(0, _bounceAnimation.value * -10),
-                                  child: isAndroid ? _buildAndroid() : _buildApple(),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        
-                        // Partículas de celebración
-                        ...List.generate(6, (index) {
-                          return AnimatedBuilder(
-                            animation: _bounceController,
-                            builder: (context, child) {
-                              final delay = index * 0.2;
-                              final animationValue = (_bounceController.value + delay) % 1.0;
-                              return Positioned(
-                                left: MediaQuery.of(context).size.width / 2 - 20 + (index * 15),
-                                bottom: 60 + (animationValue * 30),
-                                child: Opacity(
-                                  opacity: 1 - animationValue,
-                                  child: Container(
-                                    width: 4,
-                                    height: 4,
-                                    decoration: BoxDecoration(
-                                      color: isAndroid ? Colors.green[600] : Colors.grey[600],
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                  
-                  SizedBox(height: 40),
-                  
-                  // Mensaje de actualización
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    width: 70,
+                    height: 70,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      color: Platform.isIOS ? Colors.black : Colors.green.shade600,
+                      shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: (isAndroid ? Colors.green : Colors.grey).withOpacity(0.2),
+                          color: Platform.isIOS ? Colors.grey.shade400 : Colors.green.shade300,
+                          blurRadius: 15,
+                          spreadRadius: 3,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Platform.isIOS ? Icons.apple : Icons.android,
+                      size: 35,
+                      color: Colors.white,
+                    ),
+                  ),
+                  
+                  SizedBox(height: 20),
+                  
+                  // Título
+                  Text(
+                    'ACTUALIZACIÓN REQUERIDA',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                      letterSpacing: 0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  
+                  SizedBox(height: 15),
+                  
+                  // Mensaje principal
+                  Text(
+                    '¡Nueva versión disponible con mejoras increíbles!',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.blue.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  
+                  SizedBox(height: 12),
+                  
+                  // Mensaje explicativo sobre la actualización
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.shade200,
                           blurRadius: 10,
-                          offset: Offset(0, 5),
+                          spreadRadius: 2,
                         ),
                       ],
                     ),
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.store,
-                          color: isAndroid ? Colors.green[600] : Colors.grey[600],
-                          size: 32,
-                        ),
-                        SizedBox(height: 12),
                         Text(
-                          'Ve a la tienda de aplicaciones',
+                          '🚀 NUEVOS SERVICIOS Y OFERTAS',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 15,
+                            color: Colors.blue.shade800,
                             fontWeight: FontWeight.bold,
-                            color: isAndroid ? Colors.green[800] : Colors.grey[800],
                           ),
+                          textAlign: TextAlign.center,
                         ),
                         SizedBox(height: 8),
                         Text(
-                          isAndroid 
-                            ? 'Google Play Store'
-                            : 'App Store',
+                          '• Nuevos servicios de viaje y compras\n• Ofertas exclusivas y descuentos\n• Diseño más moderno y fácil de usar\n• Mejoras en rendimiento y estabilidad',
                           style: TextStyle(
-                            fontSize: 14,
-                            color: isAndroid ? Colors.green[600] : Colors.grey[600],
+                            fontSize: 13,
+                            color: Colors.blue.shade700,
+                            height: 1.4,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -315,59 +307,136 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen>
                     ),
                   ),
                   
-                  SizedBox(height: 40),
+                  SizedBox(height: 12),
                   
-                  // Botón de actualizar
-                  Container(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: Implementar lógica de actualización
-                        _showUpdateDialog();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isAndroid ? Colors.green[600] : Colors.grey[600],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 8,
-                        shadowColor: (isAndroid ? Colors.green : Colors.grey).withOpacity(0.3),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.download,
-                            size: 24,
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            'Actualizar la App',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                  // Mensaje de acción
+                  Text(
+                    'Para disfrutar de todas estas mejoras, actualiza la aplicación ahora.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.blue.shade600,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   
                   SizedBox(height: 20),
                   
-                  // Texto de estado
-                  Text(
-                    '¡No te pierdas las nuevas funciones!',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isAndroid ? Colors.green[500] : Colors.grey[500],
-                      fontStyle: FontStyle.italic,
+                  // Información de versión
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(25),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.shade200,
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Versión actual: $_currentVersion',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                   
-                  SizedBox(height: 40),
+                  SizedBox(height: 25),
+                  
+                  // Botón de actualización mejorado
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _launchStore,
+                      icon: Icon(
+                        Platform.isIOS ? Icons.apple : Icons.android,
+                        size: 20,
+                      ),
+                      label: Text(
+                        'Actualizar Ahora',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Platform.isIOS ? Colors.black : Colors.green.shade600,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        elevation: 6,
+                        shadowColor: Platform.isIOS ? Colors.grey.shade400 : Colors.green.shade300,
+                      ),
+                    ),
+                  ),
+                  
+                  SizedBox(height: 15),
+                  
+                  // Indicador de verificación
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.shade200,
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_isChecking)
+                          SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
+                            ),
+                          )
+                        else
+                          Icon(
+                            Icons.refresh,
+                            size: 12,
+                            color: Colors.blue.shade600,
+                          ),
+                        SizedBox(width: 6),
+                        Text(
+                          _isChecking ? 'Verificando...' : 'Verificando automáticamente',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.blue.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  SizedBox(height: 10),
+                  
+                  // Información adicional
+                  Text(
+                    'La aplicación se reanudará automáticamente cuando se complete la actualización',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.blue.shade500,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
@@ -376,378 +445,4 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen>
       ),
     );
   }
-
-  Widget _buildAndroid() {
-    return Container(
-      width: 80,
-      height: 100,
-      child: Stack(
-        children: [
-          // Cuerpo del Android
-          Positioned(
-            bottom: 0,
-            left: 20,
-            child: Container(
-              width: 40,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.green[600],
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-          ),
-          
-          // Cabeza del Android
-          Positioned(
-            bottom: 55,
-            left: 25,
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: Colors.green[600],
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          
-          // Antenas del Android
-          Positioned(
-            bottom: 80,
-            left: 30,
-            child: Container(
-              width: 3,
-              height: 15,
-              decoration: BoxDecoration(
-                color: Colors.green[800],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          
-          Positioned(
-            bottom: 80,
-            right: 30,
-            child: Container(
-              width: 3,
-              height: 15,
-              decoration: BoxDecoration(
-                color: Colors.green[800],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          
-          // Ojos del Android
-          Positioned(
-            bottom: 65,
-            left: 32,
-            child: Container(
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          
-          Positioned(
-            bottom: 65,
-            right: 32,
-            child: Container(
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          
-          // Sonrisa del Android
-          Positioned(
-            bottom: 60,
-            left: 35,
-            child: Container(
-              width: 10,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(5),
-                  bottomRight: Radius.circular(5),
-                ),
-              ),
-            ),
-          ),
-          
-          // Brazos del Android
-          Positioned(
-            bottom: 40,
-            left: 10,
-            child: Container(
-              width: 8,
-              height: 20,
-              decoration: BoxDecoration(
-                color: Colors.green[600],
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          
-          Positioned(
-            bottom: 40,
-            right: 10,
-            child: Container(
-              width: 8,
-              height: 20,
-              decoration: BoxDecoration(
-                color: Colors.green[600],
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          
-          // Piernas del Android
-          Positioned(
-            bottom: 0,
-            left: 25,
-            child: Container(
-              width: 8,
-              height: 25,
-              decoration: BoxDecoration(
-                color: Colors.green[600],
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          
-          Positioned(
-            bottom: 0,
-            right: 25,
-            child: Container(
-              width: 8,
-              height: 25,
-              decoration: BoxDecoration(
-                color: Colors.green[600],
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildApple() {
-    return Container(
-      width: 80,
-      height: 100,
-      child: Stack(
-        children: [
-          // Cuerpo de la manzana
-          Positioned(
-            bottom: 0,
-            left: 20,
-            child: Container(
-              width: 40,
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-          ),
-          
-          // Cabeza de la manzana
-          Positioned(
-            bottom: 45,
-            left: 25,
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          
-          // Tallo de la manzana
-          Positioned(
-            bottom: 70,
-            left: 35,
-            child: Container(
-              width: 3,
-              height: 10,
-              decoration: BoxDecoration(
-                color: Colors.green[700],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          
-          // Hoja de la manzana
-          Positioned(
-            bottom: 75,
-            left: 30,
-            child: Container(
-              width: 8,
-              height: 6,
-              decoration: BoxDecoration(
-                color: Colors.green[600],
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-          
-          // Ojos de la manzana
-          Positioned(
-            bottom: 60,
-            left: 32,
-            child: Container(
-              width: 3,
-              height: 3,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          
-          Positioned(
-            bottom: 60,
-            right: 32,
-            child: Container(
-              width: 3,
-              height: 3,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          
-          // Sonrisa de la manzana
-          Positioned(
-            bottom: 55,
-            left: 35,
-            child: Container(
-              width: 10,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(4),
-                  bottomRight: Radius.circular(4),
-                ),
-              ),
-            ),
-          ),
-          
-          // Brazos de la manzana
-          Positioned(
-            bottom: 35,
-            left: 10,
-            child: Container(
-              width: 6,
-              height: 15,
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-          
-          Positioned(
-            bottom: 35,
-            right: 10,
-            child: Container(
-              width: 6,
-              height: 15,
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-          
-          // Piernas de la manzana
-          Positioned(
-            bottom: 0,
-            left: 30,
-            child: Container(
-              width: 6,
-              height: 20,
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-          
-          Positioned(
-            bottom: 0,
-            right: 30,
-            child: Container(
-              width: 6,
-              height: 20,
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showUpdateDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                color: isAndroid ? Colors.green[600] : Colors.grey[600],
-              ),
-              SizedBox(width: 8),
-              Text('Actualización'),
-            ],
-          ),
-          content: Text(
-            'Esta función abrirá la tienda de aplicaciones para que puedas actualizar la app.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // TODO: Implementar apertura de tienda
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isAndroid ? Colors.green[600] : Colors.grey[600],
-                foregroundColor: Colors.white,
-              ),
-              child: Text('Ir a la Tienda'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
-

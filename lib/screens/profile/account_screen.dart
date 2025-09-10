@@ -3,6 +3,8 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:cubalink23/services/auth_service.dart';
 import 'package:cubalink23/services/auth_service_bypass.dart';
+import 'package:cubalink23/services/user_role_service.dart';
+import 'package:cubalink23/services/profile_image_service.dart';
 import 'package:cubalink23/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cubalink23/screens/profile/addresses_screen.dart';
@@ -26,6 +28,8 @@ class _AccountScreenState extends State<AccountScreen> {
   String? profileImagePath;  // Ruta local como fallback
   String? profileImageUrl;   // URL de Supabase Storage
   final ImagePicker _picker = ImagePicker();
+  final UserRoleService _roleService = UserRoleService();
+  final ProfileImageService _profileImageService = ProfileImageService.instance;
 
   @override
   void initState() {
@@ -47,13 +51,25 @@ class _AccountScreenState extends State<AccountScreen> {
         setState(() {
           _nameController.text = user.name;
           _emailController.text = user.email;
-          _phoneController.text = user.phone ?? '';
+          _phoneController.text = user.phone;
           currentUser = user;
-          profileImageUrl = user.profilePhotoUrl; // Cargar URL de Supabase
         });
         
-        // Cargar foto de perfil local como fallback
-        await _loadLocalProfileImage(user.id);
+        // Cargar foto de perfil desde Supabase primero
+        profileImageUrl = await _profileImageService.getProfileImageUrl(user.id);
+        
+        // Cargar datos de rol del usuario
+        await _roleService.initialize();
+        await _roleService.getUserByEmail(user.email);
+        
+        // Cargar foto de perfil local como fallback si no hay en Supabase
+        if (profileImageUrl == null) {
+          await _loadLocalProfileImage(user.id);
+        }
+        
+        if (mounted) {
+          setState(() {}); // Actualizar UI con datos de rol
+        }
       } else if (mounted) {
         // Si no hay usuario, redirigir al login
         Navigator.pushReplacementNamed(context, '/login');
@@ -168,14 +184,14 @@ class _AccountScreenState extends State<AccountScreen> {
                       ),
                       SizedBox(height: 12), // Reducido de 16 a 12
                       Text(
-                        _nameController.text.isNotEmpty ? _nameController.text : 'Usuario',
+                        _roleService.displayName,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 20, // Reducido de 24 a 20
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 3), // Reducido de 4 a 3
+                      SizedBox(height: 2),
                       Text(
                         _emailController.text,
                         style: TextStyle(
@@ -183,6 +199,25 @@ class _AccountScreenState extends State<AccountScreen> {
                           fontSize: 14, // Reducido de 16 a 14
                         ),
                       ),
+                      if (_roleService.currentUserRole != null)
+                        Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              _roleService.roleDisplayText,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -356,6 +391,34 @@ class _AccountScreenState extends State<AccountScreen> {
                           onTap: _changePassword,
                         ),
                         
+                        // Botones de acceso a paneles según rol
+                        if (_roleService.isVendor)
+                          _buildOptionTile(
+                            icon: Icons.store,
+                            title: 'Panel de Vendedor',
+                            subtitle: 'Gestiona tus productos y ventas',
+                            onTap: _goToVendorPanel,
+                            color: Color(0xFF2E7D32), // Verde para vendedor
+                          ),
+                        
+                        if (_roleService.isDelivery)
+                          _buildOptionTile(
+                            icon: Icons.local_shipping,
+                            title: 'Panel de Repartidor',
+                            subtitle: 'Gestiona tus entregas y pedidos',
+                            onTap: _goToDeliveryPanel,
+                            color: Color(0xFF1976D2), // Azul para repartidor
+                          ),
+                        
+                        if (_roleService.isAdmin)
+                          _buildOptionTile(
+                            icon: Icons.admin_panel_settings,
+                            title: 'Panel de Administrador',
+                            subtitle: 'Acceso completo al sistema',
+                            onTap: _goToAdminPanel,
+                            color: Color(0xFF7B1FA2), // Púrpura para admin
+                          ),
+                        
                         SizedBox(height: 8), // Reducido de 16 a 8 para subir botón cerrar sesión
 
                         // Botón Cerrar Sesión
@@ -491,6 +554,7 @@ class _AccountScreenState extends State<AccountScreen> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Color? color,
   }) {
     return Container(
       margin: EdgeInsets.only(bottom: 4), // Reducido de 8 a 4 para subir botón cerrar sesión
@@ -499,12 +563,12 @@ class _AccountScreenState extends State<AccountScreen> {
           width: 40, // Reducido de 48 a 40
           height: 40, // Reducido de 48 a 40
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity( 0.1),
+            color: (color ?? Theme.of(context).colorScheme.primary).withOpacity(0.1),
             borderRadius: BorderRadius.circular(10), // Reducido de 12 a 10
           ),
           child: Icon(
             icon,
-            color: Theme.of(context).colorScheme.primary,
+            color: color ?? Theme.of(context).colorScheme.primary,
             size: 20, // Reducido de 24 a 20
           ),
         ),
@@ -571,6 +635,24 @@ class _AccountScreenState extends State<AccountScreen> {
     Navigator.pushNamed(context, '/change-password');
   }
 
+  Future<void> _goToVendorPanel() async {
+    Navigator.pushNamed(context, '/vendor-dashboard');
+  }
+
+  Future<void> _goToDeliveryPanel() async {
+    Navigator.pushNamed(context, '/delivery-dashboard');
+  }
+
+  Future<void> _goToAdminPanel() async {
+    // TODO: Implementar pantalla de administrador
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Panel de administrador próximamente'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+  }
+
   Future<void> _logout() async {
     // Mostrar diálogo de confirmación
     final shouldLogout = await showDialog<bool>(
@@ -597,8 +679,9 @@ class _AccountScreenState extends State<AccountScreen> {
 
     if (shouldLogout == true) {
       try {
-        // Cerrar sesión en Supabase
+        // Cerrar sesión en Supabase y limpiar datos de rol
         await AuthServiceBypass.instance.signOut();
+        await _roleService.clearUserData();
         
         // Navegar a login y limpiar stack
         if (context.mounted) {
@@ -676,10 +759,6 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
-  Future<void> _requestPermissions() async {
-    // Los permisos se manejan automáticamente por image_picker
-    // No necesitamos solicitar permisos manualmente
-  }
 
   Future<void> _pickAndSaveImageLocally(ImageSource source) async {
     if (!mounted) return;
@@ -697,9 +776,6 @@ class _AccountScreenState extends State<AccountScreen> {
         setState(() => isLoading = true);
         
         try {
-          // Leer bytes de la imagen
-          final imageBytes = await image.readAsBytes();
-          
           if (!mounted) return;
           
           // Guardar localmente primero como backup
@@ -711,14 +787,16 @@ class _AccountScreenState extends State<AccountScreen> {
             profileImagePath = image.path;
           });
           
-          // Intentar subir a Supabase en segundo plano
+          // Subir a Supabase usando ProfileImageService
           try {
-            // BYPASS: Skip image upload for now - just use local placeholder
-            final imageUrl = 'local_image_uploaded';
+            final imageUrl = await _profileImageService.uploadProfileImage(
+              imageFile: File(image.path),
+              userId: currentUser!.id,
+            );
             
-            if (mounted) {
+            if (imageUrl != null && mounted) {
               setState(() {
-                // profileImageUrl = imageUrl; // Skip for bypass
+                profileImageUrl = imageUrl;
                 isLoading = false;
               });
 
@@ -734,7 +812,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 setState(() => isLoading = false);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('⚠️ Foto guardada localmente'),
+                    content: Text('⚠️ Foto guardada localmente - Error subiendo a servidor'),
                     backgroundColor: Colors.orange,
                     duration: Duration(seconds: 2),
                   ),

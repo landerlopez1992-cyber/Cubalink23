@@ -23,7 +23,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   bool _isLoading = true;
   int _unreadNotificationsCount = 0;
   int _cartItemsCount = 0;
-  String? _currentUserId;
+  // String? _currentUserId;
   List<String> _bannerUrls = [];
   List<String> _flightsBannerUrls = [];
   final CartService _cartService = CartService();
@@ -38,6 +38,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   List<StoreProduct> _realFoodProducts = [];
   bool _loadingProducts = true;
   Timer? _maintenanceCheckTimer;
+  Timer? _forceUpdateCheckTimer;
 
   @override
   void initState() {
@@ -72,6 +73,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     // Iniciar timer para verificar mantenimiento continuamente
     _startMaintenanceCheckTimer();
     
+    // Iniciar timer para verificar actualizaciones forzadas
+    _startForceUpdateCheckTimer();
+    
     // Cargar productos reales de Supabase inmediatamente
     _loadRealProductsFromSupabase();
     _loadCategoriesAndBestSellers();
@@ -90,6 +94,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     _cartService.removeListener(_updateCartCount);
     NotificationManager().dispose();
     _maintenanceCheckTimer?.cancel();
+    _forceUpdateCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -186,6 +191,37 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       print('🔧 Timer verificando mantenimiento...');
       _checkMaintenanceMode();
     });
+  }
+
+  void _startForceUpdateCheckTimer() {
+    // Verificar cada 10 segundos si hay actualizaciones forzadas
+    _forceUpdateCheckTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      print('🔄 Timer verificando actualizaciones forzadas...');
+      _checkForceUpdateMode();
+    });
+  }
+
+  Future<void> _checkForceUpdateMode() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://cubalink23-backend.onrender.com/admin/api/force-update/status'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final isForceUpdateMode = data['force_update_mode'] as bool? ?? false;
+        
+        print('🔄 Modo actualización forzada: $isForceUpdateMode');
+        
+        if (isForceUpdateMode && mounted) {
+          print('🔄 ACTIVANDO pantalla de actualización forzada...');
+          Navigator.of(context).pushReplacementNamed('/force-update');
+        }
+      }
+    } catch (e) {
+      print('❌ Error verificando modo actualización forzada: $e');
+    }
   }
 
   Future<void> _loadNotificationsCount() async {
@@ -757,6 +793,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           icon: Icons.account_balance_wallet,
                           title: 'Agregar Balance',
                           gradient: [Colors.green.shade400, Colors.green.shade600],
+                          customIcon: 'assets/images/wallet_icon.png',
                           onTap: () {
                             Navigator.pushNamed(context, '/add-balance');
                           },
@@ -931,6 +968,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     required String title,
     required VoidCallback onTap,
     List<Color>? gradient,
+    String? customIcon,
   }) {
     final cardGradient = gradient ?? [Colors.grey.shade100, Colors.grey.shade200];
     
@@ -969,11 +1007,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ],
               ),
-              child: Icon(
-                icon,
-                size: 28,
-                color: Colors.white,
-              ),
+              child: customIcon != null
+                  ? Image.asset(
+                      customIcon,
+                      width: 28,
+                      height: 28,
+                      fit: BoxFit.contain,
+                    )
+                  : Icon(
+                      icon,
+                      size: 28,
+                      color: Colors.white,
+                    ),
             ),
             SizedBox(height: 10), // Reducido de 12 a 10
             Padding(
@@ -2461,12 +2506,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       padding: EdgeInsets.only(bottom: 4),
       child: GestureDetector(
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$title - Próximamente disponible'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          // Navegar a la pantalla correspondiente
+          String route = _getRouteForTitle(title);
+          if (route.isNotEmpty) {
+            Navigator.pushNamed(context, route);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('$title - Próximamente disponible'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
         },
         child: Text(
           '• $title',
@@ -2478,5 +2529,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
       ),
     );
+  }
+
+  String _getRouteForTitle(String title) {
+    switch (title) {
+      case 'Términos y Condiciones':
+        return '/terms_conditions';
+      case 'Política de Privacidad':
+        return '/privacy_policy';
+      case 'Términos Vendedores':
+        return '/vendor_terms';
+      case 'Términos Repartidores':
+        return '/delivery_terms';
+      default:
+        return '';
+    }
   }
 }
