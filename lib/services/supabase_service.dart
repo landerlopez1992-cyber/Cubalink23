@@ -789,6 +789,11 @@ class SupabaseService {
   /// Get user payment cards
   Future<List<Map<String, dynamic>>> getUserPaymentCards(String userId) async {
     try {
+      print('🔍 === DEBUGGING getUserPaymentCards ===');
+      print('🔍 User ID recibido: $userId');
+      print('🔍 Supabase Auth User: ${_client.auth.currentUser?.id}');
+      print('🔍 Supabase Auth Email: ${_client.auth.currentUser?.email}');
+      
       final data = await select(
         'payment_cards',
         where: 'user_id',
@@ -796,9 +801,14 @@ class SupabaseService {
         orderBy: 'created_at',
         ascending: false,
       );
+      
+      print('🔍 Respuesta de Supabase: $data');
+      print('🔍 Número de tarjetas: ${data.length}');
+      
       return data;
     } catch (e) {
-      print('❌ Error getting payment cards: $e');
+      print('🔍 Error cargando tarjetas de pago: $e');
+      print('🔍 Stack trace: ${StackTrace.current}');
       return [];
     }
   }
@@ -806,10 +816,18 @@ class SupabaseService {
   /// Save payment card
   Future<Map<String, dynamic>?> savePaymentCard(Map<String, dynamic> cardData) async {
     try {
+      print('💳 === DEBUGGING PAYMENT CARD SAVE ===');
+      print('💳 Card data: $cardData');
+      print('💳 User authenticated: ${SupabaseConfig.client.auth.currentUser != null}');
+      print('💳 User ID: ${SupabaseConfig.client.auth.currentUser?.id}');
+      
       final result = await insert('payment_cards', cardData);
+      print('💳 Insert result: $result');
       return result;
     } catch (e) {
       print('❌ Error saving payment card: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      print('❌ Error details: ${e.toString()}');
       return null;
     }
   }

@@ -54,7 +54,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white, // Fondo blanco puro como en los diseños modernos
       body: CustomScrollView(
         slivers: [
           // Header moderno estilo referencia
@@ -79,15 +79,8 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.primary.withOpacity( 0.9),
-                      Theme.of(context).colorScheme.secondary.withOpacity( 0.1),
-                    ],
-                  ),
+                  color: Colors.blue[600], // Azul sólido moderno como en los diseños
+                  // Removemos el gradiente para un look más limpio
                 ),
                 child: SafeArea(
                   child: Padding(
@@ -135,13 +128,15 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                     Container(
                       margin: EdgeInsets.only(bottom: 16), // Reducido de 20 a 16
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.blue[50], // Fondo azul claro como en los diseños
+                        borderRadius: BorderRadius.circular(20), // Más redondeado
+                        border: Border.all(color: Colors.blue[200]!, width: 1),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity( 0.08),
-                            blurRadius: 10,
-                            offset: Offset(0, 2),
+                            color: Colors.blue.withOpacity(0.2),
+                            blurRadius: 15,
+                            offset: Offset(0, 5),
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
@@ -154,9 +149,13 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                                 padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                                 decoration: BoxDecoration(
                                   color: !_isRoundTrip 
-                                      ? Theme.of(context).colorScheme.primary 
+                                      ? Colors.blue[700] // Azul más oscuro para selección
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: !_isRoundTrip ? Colors.blue[700]! : Colors.blue[300]!,
+                                    width: 2,
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -372,13 +371,15 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                     Container(
                       margin: EdgeInsets.only(bottom: 12), // Reducido de 20 a 12
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.blue[50], // Fondo azul claro como en los diseños
+                        borderRadius: BorderRadius.circular(20), // Más redondeado
+                        border: Border.all(color: Colors.blue[200]!, width: 1),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity( 0.08),
-                            blurRadius: 10,
-                            offset: Offset(0, 2),
+                            color: Colors.blue.withOpacity(0.2),
+                            blurRadius: 15,
+                            offset: Offset(0, 5),
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
@@ -472,20 +473,21 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                               // Dropdown de resultados "Desde" - RECUADRO LIMPIO
                               if (_showFromDropdown)
                                 Container(
-                                  margin: EdgeInsets.only(top: 8),
+                                  margin: EdgeInsets.only(top: 80, left: 20, right: 20), // Separación máxima + márgenes laterales
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.grey[200]!),
+                                    borderRadius: BorderRadius.circular(20), // Más redondeado
+                                    border: Border.all(color: Colors.blue[400]!, width: 3), // Borde azul más visible
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 8,
-                                        offset: Offset(0, 2),
+                                        color: Colors.blue.withOpacity(0.3),
+                                        blurRadius: 20,
+                                        offset: Offset(0, 10),
+                                        spreadRadius: 5,
                                       ),
                                     ],
                                   ),
-                                  constraints: BoxConstraints(maxHeight: 200),
+                                  constraints: BoxConstraints(maxHeight: 500), // Altura máxima para evitar overlap
                                   child: ListView.builder(
                                     shrinkWrap: true,
                                     padding: EdgeInsets.zero,
@@ -514,20 +516,33 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                                             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                           ),
                                           onTap: () {
-                                            print('🔍 DEBUG: Aeropuerto FROM seleccionado:');
-                                            print('🔍 DEBUG: - display_name: ${airport['display_name']}');
-                                            print('🔍 DEBUG: - name: ${airport['name']}');
-                                            print('🔍 DEBUG: - code: ${airport['code']}');
-                                            print('🔍 DEBUG: - iata_code: ${airport['iata_code']}');
-                                            print('🔍 DEBUG: - Estructura completa: $airport');
+                                            print('🔍 ===== DEBUG SELECCIÓN FROM =====');
+                                            print('🔍 display_name: "${airport['display_name']}"');
+                                            print('🔍 name: "${airport['name']}"');
+                                            print('🔍 iata_code: "${airport['iata_code']}"');
+                                            print('🔍 code: "${airport['code']}"');
                                             
-                                            // Usar el formato correcto: "Nombre del Aeropuerto (IATA_CODE)"
-                                            final airportName = airport['name'] ?? '';
-                                            final iataCode = airport['iata_code'] ?? airport['code'] ?? '';
-                                            final displayText = '$airportName ($iataCode)';
+                                            // LIMPIAR display_name para evitar duplicaciones
+                                            final rawDisplayName = airport['display_name'] ?? '';
+                                            String cleanText = rawDisplayName;
                                             
-                                            print('🔍 DEBUG: Texto formateado: "$displayText"');
-                                            _fromController.text = displayText;
+                                            // Detectar patrón: "Airport Name (CODE) (CODE)"
+                                            if (cleanText.contains('(') && cleanText.contains(')')) {
+                                              // Contar paréntesis
+                                              final openParens = cleanText.split('(').length - 1;
+                                              if (openParens > 1) {
+                                                // Hay duplicación - extraer solo el primer código
+                                                final firstParen = cleanText.indexOf('(');
+                                                final firstClose = cleanText.indexOf(')', firstParen);
+                                                if (firstClose != -1) {
+                                                  cleanText = cleanText.substring(0, firstClose + 1);
+                                                  print('🔍 DUPLICACIÓN REMOVIDA: "$cleanText"');
+                                                }
+                                              }
+                                            }
+                                            
+                                            print('🔍 TEXTO FINAL: "$cleanText"');
+                                            _fromController.text = cleanText;
                                             setState(() {
                                               _showFromDropdown = false;
                                             });
@@ -634,20 +649,21 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                               // Dropdown de resultados "Hasta" - RECUADRO LIMPIO
                               if (_showToDropdown)
                                 Container(
-                                  margin: EdgeInsets.only(top: 8),
+                                  margin: EdgeInsets.only(top: 80, left: 20, right: 20), // Separación máxima + márgenes laterales
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.grey[200]!),
+                                    borderRadius: BorderRadius.circular(20), // Más redondeado
+                                    border: Border.all(color: Colors.blue[400]!, width: 3), // Borde azul más visible
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 8,
-                                        offset: Offset(0, 2),
+                                        color: Colors.blue.withOpacity(0.3),
+                                        blurRadius: 20,
+                                        offset: Offset(0, 10),
+                                        spreadRadius: 5,
                                       ),
                                     ],
                                   ),
-                                  constraints: BoxConstraints(maxHeight: 200),
+                                  constraints: BoxConstraints(maxHeight: 500), // Altura máxima para evitar overlap
                                   child: ListView.builder(
                                     shrinkWrap: true,
                                     padding: EdgeInsets.zero,
@@ -676,20 +692,33 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                                             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                           ),
                                           onTap: () {
-                                            print('🔍 DEBUG: Aeropuerto TO seleccionado:');
-                                            print('🔍 DEBUG: - display_name: ${airport['display_name']}');
-                                            print('🔍 DEBUG: - name: ${airport['name']}');
-                                            print('🔍 DEBUG: - code: ${airport['code']}');
-                                            print('🔍 DEBUG: - iata_code: ${airport['iata_code']}');
-                                            print('🔍 DEBUG: - Estructura completa: $airport');
+                                            print('🔍 ===== DEBUG SELECCIÓN TO =====');
+                                            print('🔍 display_name: "${airport['display_name']}"');
+                                            print('🔍 name: "${airport['name']}"');
+                                            print('🔍 iata_code: "${airport['iata_code']}"');
+                                            print('🔍 code: "${airport['code']}"');
                                             
-                                            // Usar el formato correcto: "Nombre del Aeropuerto (IATA_CODE)"
-                                            final airportName = airport['name'] ?? '';
-                                            final iataCode = airport['iata_code'] ?? airport['code'] ?? '';
-                                            final displayText = '$airportName ($iataCode)';
+                                            // LIMPIAR display_name para evitar duplicaciones
+                                            final rawDisplayName = airport['display_name'] ?? '';
+                                            String cleanText = rawDisplayName;
                                             
-                                            print('🔍 DEBUG: Texto formateado: "$displayText"');
-                                            _toController.text = displayText;
+                                            // Detectar patrón: "Airport Name (CODE) (CODE)"
+                                            if (cleanText.contains('(') && cleanText.contains(')')) {
+                                              // Contar paréntesis
+                                              final openParens = cleanText.split('(').length - 1;
+                                              if (openParens > 1) {
+                                                // Hay duplicación - extraer solo el primer código
+                                                final firstParen = cleanText.indexOf('(');
+                                                final firstClose = cleanText.indexOf(')', firstParen);
+                                                if (firstClose != -1) {
+                                                  cleanText = cleanText.substring(0, firstClose + 1);
+                                                  print('🔍 DUPLICACIÓN REMOVIDA: "$cleanText"');
+                                                }
+                                              }
+                                            }
+                                            
+                                            print('🔍 TEXTO FINAL: "$cleanText"');
+                                            _toController.text = cleanText;
                                             setState(() {
                                               _showToDropdown = false;
                                             });

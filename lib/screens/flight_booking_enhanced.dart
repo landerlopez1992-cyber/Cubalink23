@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/flight_offer.dart';
 import '../../services/duffel_api_service.dart';
+import '../../config/payment_config.dart';
 import 'seat_selection_screen.dart';
 
 class FlightBookingEnhanced extends StatefulWidget {
@@ -1747,7 +1748,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
       print('💳 Procesando pago en la APP (simulado)...');
       
       // SIMULAR el pago en tu app (más tarde implementarás Zelle/Tarjeta/Billetera)
-      await Future.delayed(Duration(seconds: 2)); // Simular procesamiento de pago
+      await Future.delayed(Duration(seconds: PaymentConfig.PAYMENT_PROCESSING_DELAY_SECONDS)); // Simular procesamiento de pago
       
       // SIMULAR que el pago fue exitoso en tu app
       const appPaymentSuccess = true; // En producción esto vendrá de tu sistema de pagos
@@ -1755,6 +1756,15 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
       if (appPaymentSuccess) {
         print('✅ PAGO EXITOSO EN TU APP');
         print('💰 Cliente pagó: ${widget.flight.formattedPrice}');
+        
+        // 🕐 DELAY INTELIGENTE: Esperar que los fondos lleguen a tu tarjeta
+        print('⏳ Esperando ${PaymentConfig.FUNDS_DELAY_SECONDS} segundos para que los fondos lleguen a tu tarjeta...');
+        _showWaitingDialog(PaymentConfig.WAITING_FUNDS_MESSAGE);
+        
+        await Future.delayed(Duration(seconds: PaymentConfig.FUNDS_DELAY_SECONDS)); // Delay configurable
+        
+        print('✅ Delay completado - procediendo con reserva en Duffel');
+        _hideWaitingDialog();
         
         // Preparar datos de asientos seleccionados
         List<Map<String, dynamic>>? selectedSeats;
@@ -1777,9 +1787,10 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
         // Determinar método de pago según la opción seleccionada
         String paymentMethod;
         if (_paymentOption == 'pay_now') {
-          paymentMethod = 'balance'; // Tu app ya cobró, usar balance de Duffel
+          paymentMethod = PaymentConfig.DUFFEL_PAYMENT_METHOD_CARD; // Usar tarjeta fija del administrador (ya tienes fondos)
+          print('💳 Usando tarjeta fija del administrador para pagar a Duffel');
         } else {
-          paymentMethod = 'hold'; // Mantener reserva 3 días sin pago
+          paymentMethod = PaymentConfig.DUFFEL_PAYMENT_METHOD_HOLD; // Mantener reserva 3 días sin pago
         }
 
         print('📞 Solicitando a Duffel que cree la orden...');
@@ -1822,6 +1833,30 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
       print('❌ EXCEPCIÓN EN RESERVA: $e');
       _showBookingErrorDialog({'error': e.toString()});
     }
+  }
+
+  // 🕐 Diálogo de espera para delay de fondos
+  void _showWaitingDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(message),
+            SizedBox(height: 8),
+            Text('Por favor espera...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _hideWaitingDialog() {
+    Navigator.of(context).pop(); // Cerrar diálogo de espera
   }
 
   void _showBookingSuccessDialog(Map<String, dynamic> bookingResult) {

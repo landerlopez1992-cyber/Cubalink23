@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:cubalink23/services/duffel_api_service.dart';
 import 'package:cubalink23/models/flight_offer.dart';
 import 'passenger_info_screen.dart';
+import 'flight_results_screen.dart';
 
 class FlightBookingScreen extends StatefulWidget {
   @override
@@ -36,7 +36,6 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
   List<FlightOffer> _flightOffers = [];
   bool _isLoadingFlights = false;
   String? _errorMessage;
-  String? _currentOfferRequestId;
   
   // Lista de destinos populares con códigos IATA exactos
   List<Map<String, dynamic>> _popularDestinations = [
@@ -58,11 +57,22 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
   bool _isSearchingTo = false;
   bool _showFromDropdown = false;
   bool _showToDropdown = false;
+  
+  // Timers para debounce
+  Timer? _fromSearchTimer;
+  Timer? _toSearchTimer;
+
+  @override
+  void dispose() {
+    _fromSearchTimer?.cancel();
+    _toSearchTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white, // Fondo blanco puro como en los diseños modernos
       body: CustomScrollView(
         slivers: [
           // Header optimizado para Motorola Edge 2024
@@ -87,15 +97,8 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.primary.withOpacity( 0.9),
-                      Theme.of(context).colorScheme.secondary.withOpacity( 0.1),
-                    ],
-                  ),
+                  color: Colors.blue[600], // Azul sólido moderno como en los diseños
+                  // Removemos el gradiente para un look más limpio
                 ),
                 child: SafeArea(
                   child: Padding(
@@ -143,12 +146,13 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                     Container(
                       margin: EdgeInsets.only(bottom: 16), // Reducido de 20 a 16
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14), // Reducido de 16 a 14
+                        color: Colors.blue[50], // Fondo azul claro como en los diseños
+                        borderRadius: BorderRadius.circular(20), // Más redondeado
+                        border: Border.all(color: Colors.blue[200]!, width: 1),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity( 0.08),
-                            blurRadius: 8, // Reducido de 10 a 8
+                            color: Colors.blue.withOpacity(0.2),
+                            blurRadius: 15,
                             offset: Offset(0, 2),
                           ),
                         ],
@@ -162,7 +166,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                                 padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16), // Reducido padding
                                 decoration: BoxDecoration(
                                   color: !_isRoundTrip 
-                                      ? Theme.of(context).colorScheme.primary 
+                                      ? Colors.blue[700] 
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(14), // Reducido de 16 a 14
                                 ),
@@ -199,7 +203,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                                 padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16), // Reducido padding
                                 decoration: BoxDecoration(
                                   color: _isRoundTrip 
-                                      ? Theme.of(context).colorScheme.primary 
+                                      ? Colors.blue[700] 
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(14), // Reducido de 16 a 14
                                 ),
@@ -254,6 +258,19 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                             children: [
                               Container(
                                 padding: EdgeInsets.all(14), // Reducido de 16 a 14
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50], // Fondo azul claro como en los diseños
+                                  borderRadius: BorderRadius.circular(20), // Más redondeado
+                                  border: Border.all(color: Colors.blue[200]!, width: 1),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.blue.withOpacity(0.2),
+                                      blurRadius: 15,
+                                      offset: Offset(0, 5),
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -293,8 +310,14 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                                         color: Colors.grey[800],
                                       ),
                                       onChanged: (value) {
+                                        // Cancelar timer anterior
+                                        _fromSearchTimer?.cancel();
+                                        
                                         if (value.isNotEmpty) {
-                                          _searchAirportsFrom(value);
+                                          // Crear nuevo timer con delay de 800ms
+                                          _fromSearchTimer = Timer(Duration(milliseconds: 800), () {
+                                            _searchAirportsFrom(value);
+                                          });
                                         } else {
                                           setState(() {
                                             _showFromDropdown = false;
@@ -313,52 +336,101 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                               ),
                               
                               // Dropdown de resultados "Desde"
-                              if (_showFromDropdown)
-                                Positioned(
-                                  top: 70,
-                                  left: 0,
-                                  right: 0,
-                                  child: Container(
-                                    constraints: BoxConstraints(maxHeight: 200),
-                                    margin: EdgeInsets.symmetric(horizontal: 16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.grey[200]!),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity( 0.1),
-                                          blurRadius: 8,
-                                          offset: Offset(0, 2),
+                              if (_showFromDropdown && _fromSearchResults.isNotEmpty)
+                                Container(
+                                  margin: EdgeInsets.only(top: 10),
+                                  constraints: BoxConstraints(maxHeight: 300),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.blue[400]!, width: 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 8,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue[600],
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(12),
+                                            topRight: Radius.circular(12),
+                                          ),
                                         ),
-                                      ],
-                                    ),
-                                    child: ListView.builder(
-                                      shrinkWrap: true,
-                                      padding: EdgeInsets.zero,
-                                      itemCount: _fromSearchResults.length,
-                                      itemBuilder: (context, index) {
-                                        final airport = _fromSearchResults[index];
-                                        return ListTile(
-                                          dense: true,
-                                          leading: Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-                                          title: Text(
-                                            airport['display_name'] ?? airport['name'] ?? '',
-                                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                                          ),
-                                          subtitle: Text(
-                                            '${airport['code']}',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                          onTap: () {
-                                            _fromController.text = '${airport['display_name']} (${airport['code']})';
-                                            setState(() {
-                                              _showFromDropdown = false;
-                                            });
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.flight_takeoff, color: Colors.white, size: 20),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Aeropuertos encontrados',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            Spacer(),
+                                            Text(
+                                              '${_fromSearchResults.length}',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Flexible(
+                                        child: ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: _fromSearchResults.length,
+                                          itemBuilder: (context, index) {
+                                            final airport = _fromSearchResults[index];
+                                            return ListTile(
+                                              dense: false,
+                                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                              leading: Icon(Icons.flight_takeoff, color: Colors.blue[700], size: 24),
+                                              title: Text(
+                                                airport['display_name'] ?? airport['name'] ?? 'Aeropuerto',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 15,
+                                                  color: Colors.grey[800],
+                                                ),
+                                              ),
+                                              subtitle: Text(
+                                                '${airport['city'] ?? ''} ${airport['iata_code'] ?? airport['code'] ?? ''}'.trim(),
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                              hoverColor: Colors.blue[50],
+                                              focusColor: Colors.blue[50],
+                                              selectedTileColor: Colors.blue[100],
+                                              onTap: () {
+                                                String displayText = airport['display_name'] ?? '';
+                                                if (displayText.isEmpty) {
+                                                  displayText = '${airport['name']} (${airport['iata_code'] ?? airport['code']})';
+                                                }
+                                                _fromController.text = displayText;
+                                                setState(() {
+                                                  _showFromDropdown = false;
+                                                });
+                                              },
+                                            );
                                           },
-                                        );
-                                      },
-                                    ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                             ],
@@ -375,6 +447,19 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                             children: [
                               Container(
                                 padding: EdgeInsets.all(14), // Reducido de 16 a 14
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50], // Fondo azul claro como en los diseños
+                                  borderRadius: BorderRadius.circular(20), // Más redondeado
+                                  border: Border.all(color: Colors.blue[200]!, width: 1),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.blue.withOpacity(0.2),
+                                      blurRadius: 15,
+                                      offset: Offset(0, 5),
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -414,8 +499,14 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                                         color: Colors.grey[800],
                                       ),
                                       onChanged: (value) {
+                                        // Cancelar timer anterior
+                                        _toSearchTimer?.cancel();
+                                        
                                         if (value.isNotEmpty) {
-                                          _searchAirportsTo(value);
+                                          // Crear nuevo timer con delay de 800ms
+                                          _toSearchTimer = Timer(Duration(milliseconds: 800), () {
+                                            _searchAirportsTo(value);
+                                          });
                                         } else {
                                           setState(() {
                                             _showToDropdown = false;
@@ -434,52 +525,101 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                               ),
                               
                               // Dropdown de resultados "Hasta"
-                              if (_showToDropdown)
-                                Positioned(
-                                  top: 70,
-                                  left: 0,
-                                  right: 0,
-                                  child: Container(
-                                    constraints: BoxConstraints(maxHeight: 200),
-                                    margin: EdgeInsets.symmetric(horizontal: 16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.grey[200]!),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity( 0.1),
-                                          blurRadius: 8,
-                                          offset: Offset(0, 2),
+                              if (_showToDropdown && _toSearchResults.isNotEmpty)
+                                Container(
+                                  margin: EdgeInsets.only(top: 10),
+                                  constraints: BoxConstraints(maxHeight: 300),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.blue[400]!, width: 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 8,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue[600],
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(12),
+                                            topRight: Radius.circular(12),
+                                          ),
                                         ),
-                                      ],
-                                    ),
-                                    child: ListView.builder(
-                                      shrinkWrap: true,
-                                      padding: EdgeInsets.zero,
-                                      itemCount: _toSearchResults.length,
-                                      itemBuilder: (context, index) {
-                                        final airport = _toSearchResults[index];
-                                        return ListTile(
-                                          dense: true,
-                                          leading: Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-                                          title: Text(
-                                            airport['display_name'] ?? airport['name'] ?? '',
-                                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                                          ),
-                                          subtitle: Text(
-                                            '${airport['code']}',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                          onTap: () {
-                                            _toController.text = '${airport['display_name']} (${airport['code']})';
-                                            setState(() {
-                                              _showToDropdown = false;
-                                            });
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.flight_land, color: Colors.white, size: 20),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Aeropuertos encontrados',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            Spacer(),
+                                            Text(
+                                              '${_toSearchResults.length}',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Flexible(
+                                        child: ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: _toSearchResults.length,
+                                          itemBuilder: (context, index) {
+                                            final airport = _toSearchResults[index];
+                                            return ListTile(
+                                              dense: false,
+                                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                              leading: Icon(Icons.flight_land, color: Colors.blue[700], size: 24),
+                                              title: Text(
+                                                airport['display_name'] ?? airport['name'] ?? 'Aeropuerto',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 15,
+                                                  color: Colors.grey[800],
+                                                ),
+                                              ),
+                                              subtitle: Text(
+                                                '${airport['city'] ?? ''} ${airport['iata_code'] ?? airport['code'] ?? ''}'.trim(),
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                              hoverColor: Colors.blue[50],
+                                              focusColor: Colors.blue[50],
+                                              selectedTileColor: Colors.blue[100],
+                                              onTap: () {
+                                                String displayText = airport['display_name'] ?? '';
+                                                if (displayText.isEmpty) {
+                                                  displayText = '${airport['name']} (${airport['iata_code'] ?? airport['code']})';
+                                                }
+                                                _toController.text = displayText;
+                                                setState(() {
+                                                  _showToDropdown = false;
+                                                });
+                                              },
+                                            );
                                           },
-                                        );
-                                      },
-                                    ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                             ],
@@ -1030,22 +1170,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                     
                     SizedBox(height: 16), // Reducido de 20 a 16
 
-                    // Mostrar resultados de vuelos si existen
-                    if (_flightOffers.isNotEmpty) ...[
-                      SizedBox(height: 16), // Reducido de 20 a 16
-                      Text(
-                        '✈️ ${_flightOffers.length} vuelos encontrados',
-                        style: TextStyle(
-                          fontSize: 18, // Reducido de 20 a 18
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      SizedBox(height: 12), // Reducido de 16 a 12
-                      ...List.generate(_flightOffers.length, (index) => 
-                        _buildFlightOfferCard(_flightOffers[index])
-                      ),
-                    ],
+                    // Los resultados ahora se muestran en una pantalla separada
                     
                     // Mostrar error si existe
                     if (_errorMessage != null)
@@ -1151,30 +1276,46 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
         throw Exception('No se recibieron datos del servidor');
       }
       
-      final offerRequestId = searchResult['data']['id'] as String;
-      _currentOfferRequestId = offerRequestId;
+      // El backend devuelve directamente los vuelos, no necesita segundo paso
+      final flightsData = searchResult['data'];
       
-      print('✅ Offer Request creado: $offerRequestId');
-
-      // PASO 2: Obtener ofertas disponibles
-      print('🔍 Obteniendo ofertas disponibles...');
-      final offersData = await DuffelApiService.getOffers(offerRequestId);
-
-      if (offersData.isEmpty) {
+      if (flightsData is! List || flightsData.isEmpty) {
         setState(() {
           _errorMessage = 'No se encontraron vuelos disponibles para esta ruta y fecha. Intente con diferentes destinos o fechas.';
         });
         return;
       }
 
-      // Convertir a modelos FlightOffer
-      final offers = offersData.map((offerData) => FlightOffer.fromDuffelJson(offerData)).toList();
+      print('✅ Vuelos recibidos directamente del backend: ${flightsData.length}');
+
+      // Convertir a modelos FlightOffer usando los datos directos del backend
+      final offers = flightsData.map((flightData) => FlightOffer.fromBackendJson(flightData)).toList();
       
       setState(() {
         _flightOffers = offers;
       });
 
       print('🎉 ¡${offers.length} ofertas cargadas exitosamente!');
+      
+      // 🚀 NAVEGAR AUTOMÁTICAMENTE A LA PANTALLA DE RESULTADOS
+      if (offers.isNotEmpty && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FlightResultsScreen(
+              flightOffers: offers,
+              fromAirport: _fromController.text,
+              toAirport: _toController.text,
+              departureDate: _departureDate != null ? 
+                '${_departureDate!.day}/${_departureDate!.month}/${_departureDate!.year}' : '',
+              returnDate: _returnDate != null ? 
+                '${_returnDate!.day}/${_returnDate!.month}/${_returnDate!.year}' : null,
+              passengers: _getTotalPassengers(),
+              airlineType: _selectedClass,
+            ),
+          ),
+        );
+      }
 
     } catch (e) {
       print('❌ Error en búsqueda: $e');
@@ -1427,6 +1568,22 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
   }
 
   // Métodos auxiliares
+  String _cleanSearchQuery(String query) {
+    // Remover códigos IATA en paréntesis y limpiar texto
+    String cleaned = query
+        .replaceAll(RegExp(r'\([A-Z]{3}\)'), '') // Remover (MIA), (HAV), etc.
+        .replaceAll(RegExp(r'\s+'), ' ') // Normalizar espacios
+        .trim();
+    
+    // Si contiene coma, tomar solo la primera parte (nombre de ciudad)
+    if (cleaned.contains(',')) {
+      cleaned = cleaned.split(',')[0].trim();
+    }
+    
+    print('🧹 Query original: "$query" -> Query limpio: "$cleaned"');
+    return cleaned;
+  }
+
   Future<void> _searchAirportsFrom(String query) async {
     setState(() {
       _isSearchingFrom = true;
@@ -1434,15 +1591,27 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
     });
 
     try {
+      // Limpiar el query antes de usar (remover códigos IATA y caracteres especiales)
+      String cleanQuery = _cleanSearchQuery(query);
+      
+      // Si el query limpio está vacío o es muy corto, no buscar
+      if (cleanQuery.length < 2) {
+        setState(() {
+          _fromSearchResults = [];
+          _isSearchingFrom = false;
+        });
+        return;
+      }
+
       // Primero buscar en destinos populares
       final popularResults = _popularDestinations.where((airport) =>
-        airport['name'].toString().toLowerCase().contains(query.toLowerCase()) ||
-        airport['display_name'].toString().toLowerCase().contains(query.toLowerCase()) ||
-        airport['code'].toString().toLowerCase().contains(query.toLowerCase())
+        airport['name'].toString().toLowerCase().contains(cleanQuery.toLowerCase()) ||
+        airport['display_name'].toString().toLowerCase().contains(cleanQuery.toLowerCase()) ||
+        airport['code'].toString().toLowerCase().contains(cleanQuery.toLowerCase())
       ).toList();
 
-      // Luego buscar en la API de Duffel
-      final apiResults = await DuffelApiService.searchAirports(query);
+      // Luego buscar en la API de Duffel con query limpio
+      final apiResults = await DuffelApiService.searchAirports(cleanQuery);
       
       // Combinar resultados (destinos populares primero)
       final allResults = [...popularResults, ...apiResults];
@@ -1467,15 +1636,27 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
     });
 
     try {
+      // Limpiar el query antes de usar (remover códigos IATA y caracteres especiales)
+      String cleanQuery = _cleanSearchQuery(query);
+      
+      // Si el query limpio está vacío o es muy corto, no buscar
+      if (cleanQuery.length < 2) {
+        setState(() {
+          _toSearchResults = [];
+          _isSearchingTo = false;
+        });
+        return;
+      }
+
       // Primero buscar en destinos populares
       final popularResults = _popularDestinations.where((airport) =>
-        airport['name'].toString().toLowerCase().contains(query.toLowerCase()) ||
-        airport['display_name'].toString().toLowerCase().contains(query.toLowerCase()) ||
-        airport['code'].toString().toLowerCase().contains(query.toLowerCase())
+        airport['name'].toString().toLowerCase().contains(cleanQuery.toLowerCase()) ||
+        airport['display_name'].toString().toLowerCase().contains(cleanQuery.toLowerCase()) ||
+        airport['code'].toString().toLowerCase().contains(cleanQuery.toLowerCase())
       ).toList();
 
-      // Luego buscar en la API de Duffel
-      final apiResults = await DuffelApiService.searchAirports(query);
+      // Luego buscar en la API de Duffel con query limpio
+      final apiResults = await DuffelApiService.searchAirports(cleanQuery);
       
       // Combinar resultados (destinos populares primero)
       final allResults = [...popularResults, ...apiResults];

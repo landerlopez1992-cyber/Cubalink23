@@ -7,6 +7,7 @@ import 'package:cubalink23/services/store_service.dart';
 import 'package:cubalink23/services/firebase_repository.dart';
 import 'package:cubalink23/services/notification_manager.dart';
 import 'package:cubalink23/services/firebase_messaging_service.dart';
+import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/models/store_product.dart';
 import 'package:cubalink23/screens/shopping/product_details_screen.dart';
 import 'package:http/http.dart' as http;
@@ -55,6 +56,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       _cartItemsCount = _cartService.itemCount; // Inicializar contador del carrito
     });
     
+    print('🔥 === WELCOME SCREEN INIT - CARGANDO SALDO ===');
+    
+    // Cargar saldo del usuario INMEDIATAMENTE
+    _loadUserBalance();
+    
+    // También cargar saldo cuando la pantalla se vuelve visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('🔥 === POST FRAME CALLBACK - CARGANDO SALDO ===');
+      _loadUserBalance();
+    });
+    
     // Inicializar Firebase Messaging (opcional)
     try {
       FirebaseMessagingService().initialize();
@@ -98,11 +110,66 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     super.dispose();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recargar saldo cuando se regrese a esta pantalla
+    _loadUserBalance();
+  }
+
   void _updateCartCount() {
     if (mounted) {
       setState(() {
         _cartItemsCount = _cartService.itemCount;
       });
+    }
+  }
+
+  Future<void> _loadUserBalance() async {
+    try {
+      print('💰 === CARGANDO SALDO DEL USUARIO ===');
+      print('💰 Estado de autenticación: ${SupabaseAuthService.instance.isUserLoggedIn}');
+
+      // Forzar recarga del usuario
+      await SupabaseAuthService.instance.loadCurrentUserData();
+      final currentUser = SupabaseAuthService.instance.currentUser;
+
+      print('💰 Usuario después de recarga: ${currentUser != null ? "ENCONTRADO" : "NO ENCONTRADO"}');
+
+      if (currentUser != null) {
+        print('💰 Usuario encontrado: ${currentUser.name} (${currentUser.email})');
+        print('💰 Saldo actual: \$${currentUser.balance}');
+        print('💰 Tipo de saldo: ${currentUser.balance.runtimeType}');
+
+        if (mounted) {
+          setState(() {
+            _currentBalance = currentUser.balance;
+          });
+          print('💰 ✅ Saldo actualizado en la UI: \$${_currentBalance}');
+        }
+      } else {
+        print('💰 ❌ No se pudo cargar el usuario después de recarga');
+        print('💰 ❌ Intentando cargar usuario directamente desde Supabase...');
+        
+        // No usar saldo de prueba, mantener en 0 hasta cargar datos reales
+        if (mounted) {
+          setState(() {
+            _currentBalance = 0.0; // Saldo real, no de prueba
+          });
+          print('💰 ⚠️ Usando saldo real: \$${_currentBalance}');
+        }
+      }
+    } catch (e) {
+      print('💰 ❌ Error cargando saldo del usuario: $e');
+      print('💰 ❌ Stack trace: ${StackTrace.current}');
+      
+      // En caso de error, usar saldo de prueba
+      if (mounted) {
+        setState(() {
+          _currentBalance = 100.0; // Saldo de prueba más visible
+        });
+        print('💰 ⚠️ Usando saldo de prueba por error: \$${_currentBalance}');
+      }
     }
   }
 
@@ -264,8 +331,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       await _storeService.initializeDefaultCategories();
       
       // Load real categories from store service
-      final categories = await _storeService.getCategories();
+      var categories = await _storeService.getCategories();
       print('📦 Categorías cargadas: ${categories.length}');
+
+      // Filtrar categorías no deseadas
+      final disallowed = [
+        'postres', 'panaderia', 'panadería', 'frutas y verdura', 'frutas y verduras',
+        'comida rapida', 'comida rápida', 'carnes', 'bebidas'
+      ];
+      categories = categories.where((c) {
+        final n = c.name.toLowerCase().trim();
+        return !disallowed.any((bad) => n.contains(bad));
+      }).toList();
       
       // Load recent products as "best sellers"
       final recentProducts = await _storeService.getRecentProducts();
@@ -280,12 +357,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         categoriesMap = _getDefaultCategoriesMap();
       } else {
         // Convert categories to map format for compatibility
-        categoriesMap = categories.map((cat) => {
-          'id': cat.id,
-          'name': cat.name,
-          'description': cat.description,
-          'icon': cat.iconName,
-          'color': _getCategoryColor(cat.iconName),
+        categoriesMap = categories.map((cat) {
+          // Priorizar el NOMBRE visible para el mapeo de iconos
+          final visibleNameRaw = cat.name.trim();
+          final visibleName = visibleNameRaw.isNotEmpty
+              ? visibleNameRaw
+              : (cat.iconName ?? '').trim();
+          final baseIcon = visibleName.toLowerCase();
+          final customIcon = _getCustomCategoryIcon(visibleName);
+          print('🔍 Categoría: ${cat.name} | iconName: ${cat.iconName} | visibleName: $visibleName | customIcon: $customIcon');
+          return {
+            'id': cat.id,
+            'name': cat.name,
+            'description': cat.description,
+            'icon': baseIcon,
+            'color': _getCategoryColor(baseIcon),
+            'customIcon': customIcon,
+          };
         }).toList();
       }
       
@@ -336,6 +424,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         'description': 'Comida y productos básicos',
         'icon': 'restaurant',
         'color': 0xFFE57373,
+        'customIcon': 'assets/Untitled design 2/Alimentos.png',
       },
       {
         'id': 'materiales',
@@ -343,6 +432,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         'description': 'Materiales de construcción',
         'icon': 'construction',
         'color': 0xFFFF8A65,
+        'customIcon': 'assets/Untitled design 2/Materiales.png',
       },
       {
         'id': 'ferreteria',
@@ -350,6 +440,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         'description': 'Herramientas y accesorios',
         'icon': 'hardware',
         'color': 0xFFFF8F00,
+        'customIcon': 'assets/Untitled design 2/Ferreteria.png',
       },
       {
         'id': 'farmacia',
@@ -357,6 +448,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         'description': 'Medicinas y productos de salud',
         'icon': 'local_pharmacy',
         'color': 0xFF26A69A,
+        'customIcon': 'assets/Untitled design 2/Farmacia.png',
       },
       {
         'id': 'electronicos',
@@ -364,6 +456,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         'description': 'Dispositivos y accesorios',
         'icon': 'devices',
         'color': 0xFF42A5F5,
+        'customIcon': 'assets/Untitled design 2/Electronicos.png',
       },
       {
         'id': 'ropa',
@@ -371,8 +464,111 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         'description': 'Vestimenta y accesorios',
         'icon': 'shopping_bag',
         'color': 0xFFAB47BC,
+        'customIcon': 'assets/Untitled design 2/Ropa.png',
+      },
+      {
+        'id': 'restaurantes',
+        'name': 'Restaurantes',
+        'description': 'Comida preparada',
+        'icon': 'restaurant_menu',
+        'color': 0xFFFF5722,
+        'customIcon': 'assets/Untitled design 2/Restaurantes.png',
+      },
+      {
+        'id': 'deportes',
+        'name': 'Deportes',
+        'description': 'Artículos deportivos',
+        'icon': 'sports',
+        'color': 0xFF4CAF50,
+        'customIcon': 'assets/Untitled design 2/Deportes.png',
+      },
+      {
+        'id': 'hogar',
+        'name': 'Hogar',
+        'description': 'Productos para el hogar',
+        'icon': 'home',
+        'color': 0xFF9C27B0,
+        'customIcon': 'assets/Untitled design 2/Hogar.png',
+      },
+      {
+        'id': 'servicios',
+        'name': 'Servicios',
+        'description': 'Servicios profesionales',
+        'icon': 'build',
+        'color': 0xFF607D8B,
+        'customIcon': 'assets/Untitled design 2/Servicios.png',
+      },
+      {
+        'id': 'supermercado',
+        'name': 'Supermercado',
+        'description': 'Productos de supermercado',
+        'icon': 'shopping_cart',
+        'color': 0xFF795548,
+        'customIcon': 'assets/Untitled design 2/SUPERMERCADO.png',
       },
     ];
+  }
+
+  /// Retorna la ruta del ícono personalizado en assets según el nombre del ícono
+  String? _getCustomCategoryIcon(String? iconName) {
+    if (iconName == null) return null;
+    final lowerName = iconName.toLowerCase().trim();
+    print('🔍 Buscando icono para: "$lowerName"');
+    
+    // Mapeo directo por nombre exacto
+    switch (lowerName) {
+      case 'supermercado':
+        return 'assets/Untitled design 2/SUPERMERCADO.png';
+      case 'servicios':
+        return 'assets/Untitled design 2/Servicios.png';
+      case 'restaurantes':
+        return 'assets/Untitled design 2/Restaurantes.png';
+      case 'ferreteria':
+      case 'ferretería':
+        return 'assets/Untitled design 2/Ferreteria.png';
+      case 'deportes':
+        return 'assets/Untitled design 2/Deportes.png';
+      case 'alimentos':
+        return 'assets/Untitled design 2/Alimentos.png';
+      case 'materiales':
+        return 'assets/Untitled design 2/Materiales.png';
+      case 'farmacia':
+        return 'assets/Untitled design 2/Farmacia.png';
+      case 'electronicos':
+      case 'electrónicos':
+        return 'assets/Untitled design 2/Electronicos.png';
+      case 'ropa':
+        return 'assets/Untitled design 2/Ropa.png';
+      case 'hogar':
+        return 'assets/Untitled design 2/Hogar.png';
+      // Fallbacks por iconName
+      case 'restaurant':
+      case 'restaurant_menu':
+        return 'assets/Untitled design 2/Restaurantes.png';
+      case 'construction':
+        return 'assets/Untitled design 2/Materiales.png';
+      case 'hardware':
+        return 'assets/Untitled design 2/Ferreteria.png';
+      case 'local_pharmacy':
+      case 'healing':
+        return 'assets/Untitled design 2/Farmacia.png';
+      case 'devices':
+      case 'phone_android':
+        return 'assets/Untitled design 2/Electronicos.png';
+      case 'shopping_bag':
+        return 'assets/Untitled design 2/Ropa.png';
+      case 'sports':
+        return 'assets/Untitled design 2/Deportes.png';
+      case 'home':
+        return 'assets/Untitled design 2/Hogar.png';
+      case 'build':
+        return 'assets/Untitled design 2/Servicios.png';
+      case 'shopping_cart':
+        return 'assets/Untitled design 2/SUPERMERCADO.png';
+      default:
+        print('❌ No se encontró icono para: "$lowerName"');
+        return null;
+    }
   }
   
   /// Productos por defecto como fallback
@@ -588,8 +784,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   int _getCategoryColor(String iconName) {
     switch (iconName.toLowerCase()) {
       case 'restaurant': return 0xFFE57373; // Light red for food
+      case 'restaurant_menu': return 0xFFE57373;
+      case 'restaurantes': return 0xFFE57373;
       case 'construction': return 0xFFFF8A65; // Orange for construction materials
-      case 'build': return 0xFFFF8F00; // Amber for tools/hardware
+      case 'build': return 0xFF607D8B; // Services mapped to build
+      case 'hardware': return 0xFFFF8F00; // Amber for tools/hardware (Ferretería)
       case 'healing': return 0xFF26A69A; // Teal for pharmacy
       case 'local_pharmacy': return 0xFF26A69A; // Teal for pharmacy (alternative)
       case 'phone_android': return 0xFF42A5F5; // Blue for electronics
@@ -597,7 +796,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       case 'shopping_bag': return 0xFFAB47BC; // Purple for clothing
       case 'home': return 0xFF66BB6A; // Green for home products
       case 'fitness_center': return 0xFFFF7043; // Orange for sports
+      case 'sports': return 0xFFFF7043;
       case 'spa': return 0xFFE91E63; // Pink for cosmetics
+      case 'services': return 0xFF607D8B; // Services
+      case 'shopping_cart': return 0xFF795548; // Supermarket
+      case 'supermercado': return 0xFF795548;
       default: return 0xFF9E9E9E; // Gray default
     }
   }
@@ -793,7 +996,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           icon: Icons.account_balance_wallet,
                           title: 'Agregar Balance',
                           gradient: [Colors.green.shade400, Colors.green.shade600],
-                          customIcon: 'assets/images/wallet_icon.png',
+                          customIcon: 'assets/images/agregar balance.png',
                           onTap: () {
                             Navigator.pushNamed(context, '/add-balance');
                           },
@@ -803,6 +1006,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           icon: Icons.analytics,
                           title: 'Actividad',
                           gradient: [Colors.blue.shade400, Colors.blue.shade600],
+                          customIcon: 'assets/images/Actividad.png',
                           onTap: () {
                             Navigator.pushNamed(context, '/activity');
                           },
@@ -812,6 +1016,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           icon: Icons.forum,
                           title: 'Mensajería',
                           gradient: [Colors.purple.shade400, Colors.purple.shade600],
+                          customIcon: 'assets/images/Mensajeria.png',
                           onTap: () {
                             Navigator.pushNamed(context, '/communication');
                           },
@@ -821,6 +1026,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           icon: Icons.compare_arrows,
                           title: 'Transferir Saldo',
                           gradient: [Colors.indigo.shade400, Colors.indigo.shade600],
+                          customIcon: 'assets/images/Transfiere Saldo.png',
                           onTap: () {
                             Navigator.pushNamed(context, '/transfer');
                           },
@@ -830,6 +1036,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           icon: Icons.smartphone,
                           title: 'Recarga',
                           gradient: [Colors.orange.shade400, Colors.orange.shade600],
+                          customIcon: 'assets/images/Recarga.png',
                           onTap: () {
                             Navigator.push(
                               context,
@@ -844,6 +1051,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           icon: Icons.luggage,
                           title: 'Viajes',
                           gradient: [Colors.cyan.shade400, Colors.cyan.shade600],
+                          customIcon: 'assets/images/Viajes.png',
                           onTap: () {
                             Navigator.push(
                               context,
@@ -858,13 +1066,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           icon: Icons.campaign,
                           title: 'Refiere y Gana',
                           gradient: [Colors.pink.shade400, Colors.pink.shade600],
+                          customIcon: 'assets/images/Refiere y gana.png',
                           onTap: () {
                             Navigator.pushNamed(context, '/referral');
                           },
                         ),
-                        _buildAmazonCard(
+                        _buildOptionCard(
                           context,
+                          icon: Icons.shopping_cart,
                           title: 'Amazon',
+                          gradient: [Color(0xFFFF9900), Color(0xFFFF6600)],
+                          customIcon: 'assets/images/Amazon.png',
                           onTap: () {
                             Navigator.pushNamed(context, '/amazon-shopping');
                           },
@@ -874,6 +1086,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           icon: Icons.shopping_bag,
                           title: 'Tienda',
                           gradient: [Colors.teal.shade400, Colors.teal.shade600],
+                          customIcon: 'assets/images/Tienda.png',
                           onTap: () {
                             Navigator.pushNamed(context, '/store');
                           },
@@ -990,8 +1203,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: 84,
+              height: 84,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -1010,13 +1223,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               child: customIcon != null
                   ? Image.asset(
                       customIcon,
-                      width: 28,
-                      height: 28,
+                      width: 58,
+                      height: 58,
                       fit: BoxFit.contain,
                     )
                   : Icon(
                       icon,
-                      size: 28,
+                      size: 52,
                       color: Colors.white,
                     ),
             ),
@@ -1041,72 +1254,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildAmazonCard(
-    BuildContext context, {
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity( 0.15),
-              blurRadius: 12,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFFF9900), Color(0xFFFF6600)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0xFFFF9900).withOpacity( 0.3),
-                    blurRadius: 8,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.shopping_cart,
-                size: 28,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(height: 10), // Reducido de 12 a 10
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 6), // Reducido de 8 a 6
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 11, // Reducido de 12 a 11 para mejor ajuste
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildDefaultBanner() {
     return Container(
@@ -1806,8 +1953,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              width: 60,
-                              height: 60,
+                              width: 72,
+                              height: 72,
                               decoration: BoxDecoration(
                                 color: color.withOpacity(0.15),
                                 shape: BoxShape.circle,
@@ -1816,11 +1963,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   width: 2,
                                 ),
                               ),
-                              child: Icon(
-                                iconData,
-                                color: color,
-                                size: 32,
-                              ),
+                              child: category['customIcon'] != null
+                                  ? Image.asset(
+                                      category['customIcon'],
+                                      width: 44,
+                                      height: 44,
+                                      fit: BoxFit.contain,
+                                    )
+                                  : Icon(
+                                      iconData,
+                                      color: color,
+                                      size: 40,
+                                    ),
                             ),
                             SizedBox(height: 10),
                             Text(

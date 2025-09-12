@@ -67,12 +67,13 @@ void main() async {
   
   print('🚀 Inicializando CubaLink23...');
   
-  // Initialize Firebase (temporalmente deshabilitado)
+  // Initialize Firebase (temporalmente deshabilitado para evitar crashes)
   try {
     await Firebase.initializeApp();
     print('✅ Firebase inicializado');
   } catch (e) {
-    print('⚠️ Firebase no disponible: $e');
+    print('⚠️ Firebase no disponible (continuando sin Firebase): $e');
+    // Continuar sin Firebase para evitar crashes
   }
   
   // Initialize Supabase

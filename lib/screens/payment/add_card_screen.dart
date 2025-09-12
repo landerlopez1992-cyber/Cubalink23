@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/models/payment_card.dart';
-import 'package:cubalink23/services/firebase_repository.dart';
 import 'package:cubalink23/services/supabase_service.dart';
+import 'package:cubalink23/supabase/supabase_config.dart';
 
 class AddCardScreen extends StatefulWidget {
-  const AddCardScreen({Key? key}) : super(key: key);
+  final PaymentCard? editingCard;
+  
+  const AddCardScreen({Key? key, this.editingCard}) : super(key: key);
 
   @override
   State<AddCardScreen> createState() => _AddCardScreenState();
@@ -21,6 +23,21 @@ class _AddCardScreenState extends State<AddCardScreen> {
   
   bool _isLoading = false;
   String? _cardType;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Si estamos editando una tarjeta, cargar los datos
+    if (widget.editingCard != null) {
+      final card = widget.editingCard!;
+      _cardNumberController.text = '•••• •••• •••• ${card.last4}';
+      _expiryController.text = '${card.expiryMonth}/${card.expiryYear.substring(2)}';
+      _cvvController.text = '•••';
+      _cardHolderController.text = card.holderName;
+      _cardType = card.cardType;
+    }
+  }
 
   @override
   void dispose() {
@@ -86,100 +103,202 @@ class _AddCardScreenState extends State<AddCardScreen> {
   Future<void> _saveCard() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Verificar que el usuario esté autenticado
-    final currentUser = SupabaseAuthService.instance.currentUser;
-    if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debe iniciar sesión para agregar una tarjeta'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
-      // Crear objeto PaymentCard
-      final cardData = PaymentCard(
+      print('🔐 === VERIFICANDO AUTENTICACIÓN ===');
+      
+      // Verificar que el usuario esté autenticado
+      final currentUser = SupabaseAuthService.instance.currentUser;
+      print('🔐 Usuario actual: ${currentUser?.name} (${currentUser?.email})');
+      print('🔐 ID del usuario: ${currentUser?.id}');
+      print('🔐 Supabase Auth User: ${SupabaseConfig.client.auth.currentUser?.id}');
+      print('🔐 Supabase Auth Email: ${SupabaseConfig.client.auth.currentUser?.email}');
+      
+      if (currentUser == null) {
+        print('❌ Usuario no autenticado, intentando recargar datos...');
+        
+        // Intentar recargar datos del usuario
+        await SupabaseAuthService.instance.loadCurrentUserData();
+        final reloadedUser = SupabaseAuthService.instance.currentUser;
+        
+        if (reloadedUser == null) {
+          print('❌ Usuario sigue sin autenticación después de recargar');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Debe iniciar sesión para agregar una tarjeta'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        } else {
+          print('✅ Usuario recargado exitosamente: ${reloadedUser.name}');
+        }
+      }
+      
+      // Usar el usuario actualizado
+      final user = SupabaseAuthService.instance.currentUser;
+      if (user == null) {
+        throw Exception('No se pudo obtener información del usuario');
+      }
+
+      // Preparar datos de la tarjeta
+      final cardNumber = _cardNumberController.text.replaceAll(' ', '');
+      final last4 = cardNumber.length >= 4 ? cardNumber.substring(cardNumber.length - 4) : cardNumber;
+      final expiryParts = _expiryController.text.split('/');
+      
+      if (expiryParts.length != 2) {
+        throw Exception('Formato de fecha de expiración inválido');
+      }
+
+      final expiryMonth = expiryParts[0].padLeft(2, '0');
+      final expiryYear = '20${expiryParts[1]}'; // Asumir años 2000+
+
+      // Crear modelo de tarjeta
+      final paymentCard = PaymentCard(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        last4: _cardNumberController.text.replaceAll(' ', '').substring(_cardNumberController.text.replaceAll(' ', '').length - 4),
+        last4: last4,
         cardType: _cardType ?? 'Tarjeta',
-        expiryMonth: _expiryController.text.split('/')[0],
-        expiryYear: _expiryController.text.split('/')[1],
-        holderName: _cardHolderController.text,
+        expiryMonth: expiryMonth,
+        expiryYear: expiryYear,
+        holderName: _cardHolderController.text.trim(),
+        isDefault: false, // No será default por defecto
         createdAt: DateTime.now(),
       );
 
-      // 1. Primero procesar con Square (opcional - para tokenizar la tarjeta)
-      String? squareCardId;
-      try {
-        // Aquí puedes integrar con Square si necesitas tokenizar la tarjeta
-        // Por ahora saltamos este paso, pero la estructura está lista
-        // squareCardId = await SquarePaymentService.createCard(cardData);
-      } catch (e) {
-        print('Error with Square processing: $e');
-        // Continuamos sin Square si hay error
+      // Guardar en Supabase usando el método correcto
+      final cardData = {
+        'user_id': user.id,
+        'card_number': paymentCard.last4, // Cambiado: tabla usa 'card_number'
+        'card_type': paymentCard.cardType,
+        'expiry_month': paymentCard.expiryMonth,
+        'expiry_year': paymentCard.expiryYear,
+        'holder_name': paymentCard.holderName,
+        'is_default': false,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+      
+      Map<String, dynamic>? result;
+      
+      if (widget.editingCard != null) {
+        // Actualizar tarjeta existente
+        result = await SupabaseService.instance.update(
+          'payment_cards', 
+          widget.editingCard!.id, 
+          cardData
+        );
+      } else {
+        // Crear nueva tarjeta
+        result = await SupabaseService.instance.savePaymentCard(cardData);
       }
+      
+      final success = result != null;
 
-      // 2. Guardar tarjeta real en Supabase
-      final cardWithSquareId = cardData.copyWith(squareCardId: squareCardId);
-      
-      final savedCard = await SupabaseService.instance.insert('payment_cards', {
-        'user_id': currentUser.id,
-        'last_4': cardWithSquareId.last4,
-        'card_type': cardWithSquareId.cardType,
-        'expiry_month': cardWithSquareId.expiryMonth,
-        'expiry_year': cardWithSquareId.expiryYear,
-        'holder_name': cardWithSquareId.holderName,
-        'square_card_id': squareCardId,
-        'is_default': true, // Primera tarjeta es default
-      });
-      
-      if (savedCard == null) {
-        throw Exception('Error guardando tarjeta en la base de datos');
-      }
-
-      print('Card saved successfully to Supabase');
-      final defaultCard = cardWithSquareId.copyWith(id: savedCard['id'], isDefault: true);
-      
-      if (mounted) {
+      if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('✅ Tarjeta agregada exitosamente a tu perfil'),
-            backgroundColor: Theme.of(context).primaryColor,
-            duration: const Duration(seconds: 3),
+          const SnackBar(
+            content: Text('✅ Tarjeta guardada exitosamente'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
-        Navigator.pop(context, cardWithSquareId.copyWith(id: savedCard['id'])); // Retorna la tarjeta guardada
+        
+        // Regresar a la pantalla anterior con la tarjeta guardada
+        Navigator.pop(context, paymentCard);
+      } else {
+        throw Exception('Error guardando la tarjeta en la base de datos');
       }
     } catch (e) {
+      print('Error saving card: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('❌ Error: ${e.toString()}'),
+            content: Text('❌ Error guardando tarjeta: ${e.toString()}'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  String? _validateCardNumber(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Número de tarjeta requerido';
+    }
+    final cardNumber = value.replaceAll(' ', '');
+    if (cardNumber.length < 13 || cardNumber.length > 19) {
+      return 'Número de tarjeta inválido';
+    }
+    return null;
+  }
+
+  String? _validateExpiry(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Fecha de expiración requerida';
+    }
+    final parts = value.split('/');
+    if (parts.length != 2) {
+      return 'Formato MM/YY requerido';
+    }
+    final month = int.tryParse(parts[0]);
+    final year = int.tryParse(parts[1]);
+    if (month == null || year == null || month < 1 || month > 12) {
+      return 'Fecha inválida';
+    }
+    return null;
+  }
+
+  String? _validateCVV(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'CVV requerido';
+    }
+    if (value.length < 3 || value.length > 4) {
+      return 'CVV inválido';
+    }
+    return null;
+  }
+
+  String? _validateHolder(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Nombre del titular requerido';
+    }
+    if (value.length < 2) {
+      return 'Nombre muy corto';
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       appBar: AppBar(
-        title: const Text('Agregar Nueva Tarjeta'),
-        backgroundColor: theme.primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.editingCard != null ? 'Editar Tarjeta' : 'Agregar Tarjeta',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -188,214 +307,188 @@ class _AddCardScreenState extends State<AddCardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Vista previa de la tarjeta
+              // Información
               Container(
-                width: double.infinity,
-                height: 200,
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [theme.primaryColor, theme.primaryColor.withOpacity(0.7)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Tu información de tarjeta se guarda de forma segura para futuras compras.',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Tu Recarga', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                          if (_cardType != null) _getCardIcon(_cardType!),
-                        ],
-                      ),
-                      const Spacer(),
-                      Text(
-                        _cardNumberController.text.isEmpty ? '**** **** **** ****' : _formatCardNumber(_cardNumberController.text),
-                        style: const TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 2),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('TITULAR', style: TextStyle(color: Colors.white70, fontSize: 10)),
-                              Text(
-                                _cardHolderController.text.isEmpty ? 'NOMBRE APELLIDO' : _cardHolderController.text.toUpperCase(),
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('EXPIRA', style: TextStyle(color: Colors.white70, fontSize: 10)),
-                              Text(
-                                _expiryController.text.isEmpty ? 'MM/AA' : _expiryController.text,
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              ),
+              const SizedBox(height: 24),
+
+              // Número de tarjeta
+              Text(
+                'Número de Tarjeta',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              
-              const SizedBox(height: 30),
-              
-              // Formulario
-              const Text('Información de la Tarjeta', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-              
-              // Número de tarjeta
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _cardNumberController,
-                decoration: InputDecoration(
-                  labelText: 'Número de tarjeta',
-                  hintText: '1234 5678 9012 3456',
-                  prefixIcon: const Icon(Icons.credit_card),
-                  suffixIcon: _cardType != null ? _getCardIcon(_cardType!) : null,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+                onChanged: _onCardNumberChanged,
+                validator: _validateCardNumber,
                 keyboardType: TextInputType.number,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(16),
-                  _CardNumberFormatter(),
+                  LengthLimitingTextInputFormatter(19),
+                  CardNumberInputFormatter(),
                 ],
-                onChanged: _onCardNumberChanged,
-                validator: (value) {
-                  if (value?.isEmpty ?? true) return 'Ingrese el número de tarjeta';
-                  if (value!.replaceAll(' ', '').length < 13) return 'Número de tarjeta inválido';
-                  return null;
-                },
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Titular de la tarjeta
-              TextFormField(
-                controller: _cardHolderController,
                 decoration: InputDecoration(
-                  labelText: 'Nombre del titular',
-                  hintText: 'Como aparece en la tarjeta',
-                  prefixIcon: const Icon(Icons.person),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  hintText: '1234 5678 9012 3456',
+                  prefixIcon: _cardType != null ? _getCardIcon(_cardType!) : const Icon(Icons.credit_card),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                textCapitalization: TextCapitalization.words,
-                validator: (value) {
-                  if (value?.isEmpty ?? true) return 'Ingrese el nombre del titular';
-                  return null;
-                },
-                onChanged: (value) => setState(() {}),
               ),
-              
               const SizedBox(height: 16),
-              
+
               // Fecha de expiración y CVV
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _expiryController,
-                      decoration: InputDecoration(
-                        labelText: 'MM/AA',
-                        hintText: '12/27',
-                        prefixIcon: const Icon(Icons.calendar_today),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(4),
-                        _ExpiryDateFormatter(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Fecha de Expiración',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _expiryController,
+                          validator: _validateExpiry,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(4),
+                            ExpiryDateInputFormatter(),
+                          ],
+                          decoration: InputDecoration(
+                            hintText: 'MM/YY',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
                       ],
-                      validator: (value) {
-                        if (value?.isEmpty ?? true) return 'Ingrese fecha';
-                        if (value!.length < 5) return 'Fecha inválida';
-                        return null;
-                      },
-                      onChanged: (value) => setState(() {}),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: TextFormField(
-                      controller: _cvvController,
-                      decoration: InputDecoration(
-                        labelText: 'CVV',
-                        hintText: '123',
-                        prefixIcon: const Icon(Icons.lock),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      keyboardType: TextInputType.number,
-                      obscureText: true,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'CVV',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _cvvController,
+                          validator: _validateCVV,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(4),
+                          ],
+                          decoration: InputDecoration(
+                            hintText: '123',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
                       ],
-                      validator: (value) {
-                        if (value?.isEmpty ?? true) return 'Ingrese CVV';
-                        if (value!.length < 3) return 'CVV inválido';
-                        return null;
-                      },
                     ),
                   ),
                 ],
               ),
-              
-              const SizedBox(height: 30),
-              
+              const SizedBox(height: 16),
+
+              // Nombre del titular
+              Text(
+                'Nombre del Titular',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _cardHolderController,
+                validator: _validateHolder,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  hintText: 'Juan Pérez',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
               // Botón guardar
               SizedBox(
                 width: double.infinity,
-                height: 50,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveCard,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.primaryColor,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: _isLoading 
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Guardar Tarjeta', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Nota de seguridad
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.security, color: Colors.blue),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Tu información está protegida con encriptación de nivel bancario. Nunca compartimos tus datos.',
-                        style: TextStyle(color: Colors.blue, fontSize: 12),
-                      ),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ],
+                    elevation: 3,
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Guardar Tarjeta',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -404,52 +497,55 @@ class _AddCardScreenState extends State<AddCardScreen> {
       ),
     );
   }
-
-  String _formatCardNumber(String value) {
-    value = value.replaceAll(' ', '');
-    String formatted = '';
-    for (int i = 0; i < value.length; i++) {
-      if (i > 0 && i % 4 == 0) formatted += ' ';
-      formatted += value[i];
-    }
-    return formatted;
-  }
 }
 
-// Formateador para número de tarjeta
-class _CardNumberFormatter extends TextInputFormatter {
+class CardNumberInputFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    final text = newValue.text.replaceAll(' ', '');
-    String formatted = '';
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if (text.length <= 4) return newValue;
     
+    final buffer = StringBuffer();
     for (int i = 0; i < text.length; i++) {
-      if (i > 0 && i % 4 == 0) formatted += ' ';
-      formatted += text[i];
+      buffer.write(text[i]);
+      final nonZeroIndex = i + 1;
+      if (nonZeroIndex % 4 == 0 && nonZeroIndex != text.length) {
+        buffer.write(' ');
+      }
     }
     
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
+    final string = buffer.toString();
+    return newValue.copyWith(
+      text: string,
+      selection: TextSelection.collapsed(offset: string.length),
     );
   }
 }
 
-// Formateador para fecha de expiración
-class _ExpiryDateFormatter extends TextInputFormatter {
+class ExpiryDateInputFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    final text = newValue.text.replaceAll('/', '');
-    String formatted = '';
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if (text.length <= 2) return newValue;
     
-    for (int i = 0; i < text.length && i < 4; i++) {
-      if (i == 2) formatted += '/';
-      formatted += text[i];
+    final buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      buffer.write(text[i]);
+      if (i == 1 && text.length > 2) {
+        buffer.write('/');
+      }
     }
     
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
+    final string = buffer.toString();
+    return newValue.copyWith(
+      text: string,
+      selection: TextSelection.collapsed(offset: string.length),
     );
   }
 }

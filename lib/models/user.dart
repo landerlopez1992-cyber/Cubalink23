@@ -138,7 +138,7 @@ class User {
           ?.map((cardJson) => PaymentCard.fromJson(cardJson))
           .toList() ?? [],
       profilePhotoUrl: json['profilePhotoUrl'] ?? json['profile_photo_url'],
-      profileImageUrl: json['profileImageUrl'] ?? json['profile_image_url'] ?? json['profilePhotoUrl'],
+      profileImageUrl: json['profileImageUrl'] ?? json['profilePhotoUrl'],
       address: json['address'],
       role: json['role'] ?? 'Usuario',
       isBlocked: json['isBlocked'] ?? false,

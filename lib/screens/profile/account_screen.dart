@@ -9,6 +9,7 @@ import 'package:cubalink23/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cubalink23/screens/profile/addresses_screen.dart';
 import 'package:cubalink23/screens/profile/order_tracking_screen.dart';
+import 'package:cubalink23/screens/wallet/saved_cards_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({Key? key}) : super(key: key);
@@ -613,7 +614,10 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _goToSavedCards() async {
-    Navigator.pushNamed(context, '/payment_method');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => SavedCardsScreen()),
+    );
   }
 
   Future<void> _goToTransactionHistory() async {

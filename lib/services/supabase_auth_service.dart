@@ -345,19 +345,58 @@ class SupabaseAuthService {
       print('📡 Usuario autenticado encontrado - ID: ${supabaseUser.id}');
       print('📡 Email en Auth: ${supabaseUser.email}');
 
-      // Fallback: Create user from auth data without database query
-      print('⚠️ Usando datos básicos de Auth (evitando BD por policy recursion)');
-      _currentUser = UserModel.User(
-        id: supabaseUser.id,
-        name: supabaseUser.userMetadata?['name'] ?? 'Usuario',
-        email: supabaseUser.email ?? '',
-        phone: supabaseUser.userMetadata?['phone'] ?? '',
-        createdAt: DateTime.now(),
-        country: supabaseUser.userMetadata?['country'] ?? 'Ecuador',
-        city: supabaseUser.userMetadata?['city'] ?? 'Quito',
-        role: supabaseUser.userMetadata?['role'] ?? 'Usuario',
-      );
-      _userBalance = 1000.0; // Default balance for testing
+      // Intentar cargar datos reales del usuario desde la base de datos
+      print('📊 Consultando datos del usuario en la base de datos...');
+      try {
+        final response = await _client!.from('users')
+            .select('*')
+            .eq('email', supabaseUser.email!)
+            .maybeSingle();
+
+        if (response != null) {
+          print('✅ Datos encontrados en BD para: ${supabaseUser.email}');
+          _currentUser = UserModel.User(
+            id: response['id'] ?? supabaseUser.id,
+            name: response['name'] ?? 'Usuario',
+            email: response['email'] ?? '',
+            phone: response['phone'] ?? '',
+            createdAt: DateTime.parse(response['created_at'] ?? DateTime.now().toIso8601String()),
+            country: response['country'] ?? 'Ecuador',
+            city: response['city'] ?? 'Quito',
+            role: response['role'] ?? 'Usuario',
+            balance: (response['balance'] ?? 0.0).toDouble(),
+          );
+          _userBalance = _currentUser!.balance;
+          print('💰 Saldo cargado desde BD: \$${_userBalance}');
+        } else {
+          print('⚠️ No se encontraron datos en BD, usando datos básicos de Auth');
+          _currentUser = UserModel.User(
+            id: supabaseUser.id,
+            name: supabaseUser.userMetadata?['name'] ?? 'Usuario',
+            email: supabaseUser.email ?? '',
+            phone: supabaseUser.userMetadata?['phone'] ?? '',
+            createdAt: DateTime.now(),
+            country: supabaseUser.userMetadata?['country'] ?? 'Ecuador',
+            city: supabaseUser.userMetadata?['city'] ?? 'Quito',
+            role: supabaseUser.userMetadata?['role'] ?? 'Usuario',
+          );
+          _userBalance = 0.0; // Balance por defecto si no se encuentra en BD
+        }
+      } catch (dbError) {
+        print('⚠️ Error consultando BD: $dbError');
+        print('⚠️ Usando datos básicos de Auth como fallback');
+        _currentUser = UserModel.User(
+          id: supabaseUser.id,
+          name: supabaseUser.userMetadata?['name'] ?? 'Usuario',
+          email: supabaseUser.email ?? '',
+          phone: supabaseUser.userMetadata?['phone'] ?? '',
+          createdAt: DateTime.now(),
+          country: supabaseUser.userMetadata?['country'] ?? 'Ecuador',
+          city: supabaseUser.userMetadata?['city'] ?? 'Quito',
+          role: supabaseUser.userMetadata?['role'] ?? 'Usuario',
+        );
+        _userBalance = 0.0; // Balance por defecto en caso de error
+      }
 
       print('✅ Usuario básico creado desde Auth:');
       print(' - Nombre: ${_currentUser!.name}');
@@ -381,7 +420,7 @@ class SupabaseAuthService {
           createdAt: DateTime.now(),
           role: supabaseUser.userMetadata?['role'] ?? 'Usuario',
         );
-        _userBalance = 1000.0; // Default balance for testing
+        _userBalance = 0.0; // Balance por defecto si no se puede cargar desde BD
       } else {
         _currentUser = null;
         _userBalance = 0.0;

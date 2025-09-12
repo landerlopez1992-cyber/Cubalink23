@@ -25,6 +25,93 @@ class FlightOffer {
     required this.airlineLogo,
   });
 
+  factory FlightOffer.fromBackendJson(Map<String, dynamic> json) {
+    try {
+      print('🔍 Parsing Backend JSON: ${json.keys.toList()}');
+      
+      // Extraer información básica del backend directo
+      final String id = json['id'] ?? '';
+      final String totalAmount = (json['total_amount'] ?? '0').toString();
+      final String totalCurrency = json['total_currency'] ?? 'USD';
+      
+      // Extraer información de la aerolínea del backend
+      String airline = 'Aerolínea Desconocida';
+      if (json['owner'] != null && json['owner']['name'] != null) {
+        airline = json['owner']['name'];
+      }
+      
+      // Extraer logo de aerolínea
+      String airlineLogo = '';
+      if (json['owner'] != null && json['owner']['logo_symbol_url'] != null) {
+        airlineLogo = json['owner']['logo_symbol_url'];
+      }
+      
+      // Extraer segmentos del backend
+      final slices = json['slices'] as List<dynamic>? ?? [];
+      final segments = <FlightSegment>[];
+      String duration = 'N/A';
+      String departureTime = 'N/A';
+      String arrivalTime = 'N/A';
+      int stops = 0;
+
+      if (slices.isNotEmpty) {
+        final firstSlice = slices[0] as Map<String, dynamic>;
+        duration = firstSlice['duration'] ?? 'N/A';
+        
+        final sliceSegments = firstSlice['segments'] as List<dynamic>? ?? [];
+        stops = sliceSegments.isNotEmpty ? (sliceSegments.length - 1) : 0;
+        
+        for (int i = 0; i < sliceSegments.length; i++) {
+          try {
+            final segmentData = sliceSegments[i];
+            if (segmentData != null && segmentData is Map<String, dynamic>) {
+              segments.add(FlightSegment.fromDuffelJson(segmentData));
+            }
+          } catch (e) {
+            print('⚠️ Error parseando segment $i: $e');
+          }
+        }
+
+        if (segments.isNotEmpty) {
+          departureTime = segments[0].departingAt;
+          arrivalTime = segments[segments.length - 1].arrivingAt;
+        }
+      }
+
+      print('✅ Parsed Backend: $airline - \$$totalAmount $totalCurrency');
+      
+      return FlightOffer(
+        id: id,
+        totalAmount: totalAmount,
+        totalCurrency: totalCurrency,
+        airline: airline,
+        departureTime: departureTime,
+        arrivalTime: arrivalTime,
+        duration: duration,
+        stops: stops,
+        segments: segments,
+        rawData: json,
+        airlineLogo: airlineLogo,
+      );
+    } catch (e) {
+      print('❌ Error parsing Backend FlightOffer: $e');
+      print('📋 JSON data: $json');
+      return FlightOffer(
+        id: json['id'] ?? 'unknown',
+        totalAmount: '0',
+        totalCurrency: 'USD',
+        airline: 'Error parsing',
+        departureTime: 'N/A',
+        arrivalTime: 'N/A',
+        duration: 'N/A',
+        stops: 0,
+        segments: [],
+        rawData: json,
+        airlineLogo: '',
+      );
+    }
+  }
+
   factory FlightOffer.fromDuffelJson(Map<String, dynamic> json) {
     try {
       print('🔍 Parsing JSON: ${json.keys.toList()}');
@@ -261,9 +348,7 @@ class FlightOffer {
       'BK': 'Okay Airways',
       'DR': 'Ruili Airlines',
       'GT': 'Guizhou Airlines',
-      'PN': 'China West Air',
       'RY': 'Jiangxi Air',
-      'UQ': 'Urumqi Air',
       'ZH': 'Shenzhen Airlines',
       'KN': 'China United Airlines',
       'G5': 'China Express Airlines',

@@ -24,20 +24,10 @@ class DuffelApiService {
   static DateTime? _backendStatusTimestamp;
   static const Duration _backendStatusExpiry = Duration(minutes: 2); // Backend status válido por 2 minutos
 
-  /// 🏥 Health Check - Verificar si backend está activo con caché optimizado
+  /// 🏥 Health Check - Verificar si backend está activo SIN CACHÉ
   static Future<bool> isBackendActive() async {
-    // 🚀 VERIFICAR CACHÉ DE ESTADO DEL BACKEND
-    if (_backendStatusCache != null && _backendStatusTimestamp != null) {
-      if (DateTime.now().difference(_backendStatusTimestamp!) < _backendStatusExpiry) {
-        print('⚡ Usando caché de estado del backend: $_backendStatusCache');
-        return _backendStatusCache!;
-      } else {
-        // Cache expirado, limpiar
-        _backendStatusCache = null;
-        _backendStatusTimestamp = null;
-        print('🗑️ Cache de estado del backend expirado');
-      }
-    }
+    // 🚀 SIEMPRE VERIFICAR ESTADO REAL - NO USAR CACHÉ
+    print('🔄 Verificando estado del backend en tiempo real...');
 
     try {
       print('🔗 Verificando estado del backend...');
@@ -46,31 +36,23 @@ class DuffelApiService {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/health'),
         headers: _headers,
-      ).timeout(Duration(seconds: 5)); // Timeout reducido para health check
+      ).timeout(Duration(seconds: 10)); // Timeout aumentado para health check // Timeout reducido para health check
 
       print('📡 Respuesta status: ${response.statusCode}');
       print('📡 Respuesta body: ${response.body}');
 
       final isActive = response.statusCode == 200;
-      
-      // 🚀 GUARDAR EN CACHÉ
-      _backendStatusCache = isActive;
-      _backendStatusTimestamp = DateTime.now();
 
       if (isActive) {
-        print('✅ Backend FINAL ACTIVO (guardado en caché)');
+        print('✅ Backend FINAL ACTIVO');
       } else {
-        print('⚠️ Backend respondió con código: ${response.statusCode} (guardado en caché)');
+        print('⚠️ Backend respondió con código: ${response.statusCode}');
       }
       
       return isActive;
     } catch (e) {
       print('❌ Backend NO disponible: $e');
       print('🔍 Tipo de error: ${e.runtimeType}');
-      
-      // 🚀 GUARDAR ESTADO OFFLINE EN CACHÉ
-      _backendStatusCache = false;
-      _backendStatusTimestamp = DateTime.now();
       
       return false;
     }
@@ -227,14 +209,8 @@ class DuffelApiService {
       print('🔗 Backend activo: $backendActive');
       
       if (!backendActive) {
-        print('❌ Backend offline - usando aeropuertos locales de emergencia');
-        final localResults = _getLocalAirports(query);
-        print('📋 Aeropuertos locales obtenidos: ${localResults.length}');
-        // Guardar en caché también los resultados locales
-        _airportCache[normalizedQuery] = localResults;
-        _cacheTimestamps[normalizedQuery] = DateTime.now();
-        print('✅ RETORNANDO ${localResults.length} aeropuertos locales');
-        return localResults;
+        print('❌ Backend offline - NO HAY DATOS DISPONIBLES');
+        return [];
       }
 
       print('📡 Realizando petición HTTP...');
@@ -243,7 +219,7 @@ class DuffelApiService {
       final response = await http.get(
         Uri.parse('$_baseUrl/admin/api/flights/airports?query=${Uri.encodeComponent(query)}'),
         headers: _headers,
-      ).timeout(Duration(seconds: 5)); // Timeout optimizado de 5s para búsquedas más rápidas
+      ).timeout(Duration(seconds: 15)); // Timeout aumentado a 15s para API Duffel
 
       print('📡 Status Code: ${response.statusCode}');
       print('📡 Response length: ${response.body.length} chars');
@@ -269,10 +245,18 @@ class DuffelApiService {
         }
         
         final airports = airportsList.map((airport) {
+          // Usar display_name del backend si existe, sino construir uno
+          String displayName = airport['display_name']?.toString() ?? '';
+          if (displayName.isEmpty) {
+            final city = airport['city']?.toString() ?? '';
+            final country = airport['country']?.toString() ?? '';
+            displayName = '$city${country.isNotEmpty ? ', $country' : ''}';
+          }
+          
           return {
             'code': airport['iata_code']?.toString() ?? airport['code']?.toString() ?? '',
             'name': airport['name']?.toString() ?? '',
-            'display_name': '${airport['city']?.toString() ?? ''}, ${airport['country']?.toString() ?? ''}',
+            'display_name': displayName,
             'city': airport['city']?.toString() ?? '',
             'country': airport['country']?.toString() ?? '',
           };
@@ -290,12 +274,9 @@ class DuffelApiService {
           }
           return airports;
         } else {
-          // Si el backend responde pero sin aeropuertos, usar locales como fallback
-          print('⚠️ Backend respondió con lista vacía - usando aeropuertos locales');
-          final localResults = _getLocalAirports(query);
-          _airportCache[normalizedQuery] = localResults;
-          _cacheTimestamps[normalizedQuery] = DateTime.now();
-          return localResults;
+          // Si el backend responde pero sin aeropuertos, devolver lista vacía
+          print('⚠️ Backend respondió con lista vacía - NO HAY RESULTADOS REALES');
+          return [];
         }
       }
       
@@ -305,8 +286,8 @@ class DuffelApiService {
       
     } catch (e) {
       print('❌ Error buscando aeropuertos: $e');
-      print('🔄 Usando aeropuertos locales como respaldo');
-      return _getLocalAirports(query);
+      print('🔄 NO HAY DATOS DE RESPALDO - SOLO API REAL');
+      return [];
     }
   }
 
@@ -416,146 +397,6 @@ class DuffelApiService {
     }
   }
 
-  /// 🏠 Aeropuertos locales RESTAURADOS (base de datos original del backend)
-  static List<Map<String, dynamic>> _getLocalAirports(String query) {
-    print('🏠 Usando base de datos RESTAURADA de aeropuertos para: "$query"');
-    
-    final queryLower = query.toLowerCase();
-    
-    // Base de datos RESTAURADA del backend original (del app.py)
-    final airportsData = {
-      'miami': [
-        {'iata_code': 'MIA', 'name': 'Miami International Airport', 'city': 'Miami'},
-      ],
-      'havana': [
-        {'iata_code': 'HAV', 'name': 'José Martí International Airport', 'city': 'Havana'},
-      ],
-      'new york': [
-        {'iata_code': 'JFK', 'name': 'John F. Kennedy International Airport', 'city': 'New York'},
-        {'iata_code': 'LGA', 'name': 'LaGuardia Airport', 'city': 'New York'},
-      ],
-      'los angeles': [
-        {'iata_code': 'LAX', 'name': 'Los Angeles International Airport', 'city': 'Los Angeles'},
-        {'iata_code': 'BUR', 'name': 'Bob Hope Airport', 'city': 'Burbank'},
-      ],
-      'buenos aires': [
-        {'iata_code': 'EZE', 'name': 'Ministro Pistarini International Airport', 'city': 'Buenos Aires'},
-        {'iata_code': 'AEP', 'name': 'Jorge Newbery Airpark', 'city': 'Buenos Aires'},
-      ],
-      'santiago': [
-        {'iata_code': 'SCL', 'name': 'Arturo Merino Benítez International Airport', 'city': 'Santiago'},
-      ],
-      'madrid': [
-        {'iata_code': 'MAD', 'name': 'Adolfo Suárez Madrid–Barajas Airport', 'city': 'Madrid'},
-      ],
-      'barcelona': [
-        {'iata_code': 'BCN', 'name': 'Barcelona–El Prat Airport', 'city': 'Barcelona'},
-      ],
-      'montevideo': [
-        {'iata_code': 'MVD', 'name': 'Carrasco International Airport', 'city': 'Montevideo'},
-      ],
-      'varadero': [
-        {'iata_code': 'VRA', 'name': 'Juan Gualberto Gómez Airport', 'city': 'Varadero'},
-      ],
-      'cancun': [
-        {'iata_code': 'CUN', 'name': 'Cancún International Airport', 'city': 'Cancún'},
-      ],
-      'mexico': [
-        {'iata_code': 'MEX', 'name': 'Mexico City International Airport', 'city': 'Mexico City'},
-      ],
-      'paris': [
-        {'iata_code': 'CDG', 'name': 'Charles de Gaulle Airport', 'city': 'Paris'},
-      ],
-      'london': [
-        {'iata_code': 'LHR', 'name': 'Heathrow Airport', 'city': 'London'},
-      ],
-      'rome': [
-        {'iata_code': 'FCO', 'name': 'Leonardo da Vinci Airport', 'city': 'Rome'},
-      ],
-      'frankfurt': [
-        {'iata_code': 'FRA', 'name': 'Frankfurt Airport', 'city': 'Frankfurt'},
-      ],
-      'panama': [
-        {'iata_code': 'PTY', 'name': 'Tocumen International Airport', 'city': 'Panama City'},
-      ],
-      'bogota': [
-        {'iata_code': 'BOG', 'name': 'El Dorado International Airport', 'city': 'Bogotá'},
-      ],
-      'lima': [
-        {'iata_code': 'LIM', 'name': 'Jorge Chávez International Airport', 'city': 'Lima'},
-      ],
-      'sao paulo': [
-        {'iata_code': 'GRU', 'name': 'São Paulo-Guarulhos International Airport', 'city': 'São Paulo'},
-      ],
-    };
-    
-    // Búsqueda inteligente RESTAURADA (del backend original)
-    final matchingAirports = <Map<String, dynamic>>[];
-    
-    for (final entry in airportsData.entries) {
-      final key = entry.key;
-      final airports = entry.value;
-      
-      // Buscar por ciudad, nombre de aeropuerto, o código IATA
-      if (queryLower.contains(key) || key.contains(queryLower)) {
-        for (final airport in airports) {
-          if (queryLower.contains(airport['iata_code']!.toLowerCase()) ||
-              airport['name']!.toLowerCase().contains(queryLower) ||
-              airport['city']!.toLowerCase().contains(queryLower)) {
-            matchingAirports.add({
-              'code': airport['iata_code'],
-              'name': airport['name'],
-              'display_name': '${airport['city']}, ${_getCountryFromCity(airport['city']!)}',
-              'city': airport['city'],
-              'country': _getCountryFromCity(airport['city']!),
-            });
-          }
-        }
-      }
-    }
-    
-    // Eliminar duplicados
-    final seen = <String>{};
-    final uniqueAirports = matchingAirports.where((airport) {
-      if (seen.contains(airport['code'])) return false;
-      seen.add(airport['code']);
-      return true;
-    }).toList();
-    
-    // Si no hay resultados, mostrar aeropuertos por defecto
-    if (uniqueAirports.isEmpty) {
-      uniqueAirports.addAll([
-        {'code': 'MVD', 'name': 'Carrasco International Airport', 'display_name': 'Montevideo, Uruguay', 'city': 'Montevideo', 'country': 'Uruguay'},
-        {'code': 'MIA', 'name': 'Miami International Airport', 'display_name': 'Miami, USA', 'city': 'Miami', 'country': 'USA'},
-        {'code': 'HAV', 'name': 'José Martí International Airport', 'display_name': 'Havana, Cuba', 'city': 'Havana', 'country': 'Cuba'},
-      ]);
-    }
-    
-    print('🏠 Aeropuertos RESTAURADOS encontrados: ${uniqueAirports.length}');
-    if (uniqueAirports.isNotEmpty) {
-      print('🔍 PREVIEW aeropuertos:');
-      for (int i = 0; i < uniqueAirports.length; i++) {
-        print('   ${i+1}. ${uniqueAirports[i]['code']} - ${uniqueAirports[i]['name']}');
-      }
-    }
-    
-    return uniqueAirports;
-  }
-  
-  /// Helper para obtener país desde ciudad
-  static String _getCountryFromCity(String city) {
-    final countryMap = {
-      'Miami': 'USA', 'New York': 'USA', 'Los Angeles': 'USA', 'Burbank': 'USA',
-      'Havana': 'Cuba', 'Varadero': 'Cuba',
-      'Montevideo': 'Uruguay',
-      'Buenos Aires': 'Argentina', 'Santiago': 'Chile',
-      'Madrid': 'Spain', 'Barcelona': 'Spain',
-      'Paris': 'France', 'London': 'UK', 'Rome': 'Italy', 'Frankfurt': 'Germany',
-      'Cancún': 'Mexico', 'Mexico City': 'Mexico',
-      'Panama City': 'Panama', 'Bogotá': 'Colombia', 'Lima': 'Peru', 'São Paulo': 'Brazil',
-    };
-    return countryMap[city] ?? 'Unknown';
-  }
 
     /// 💳 Crear PaymentIntent con Duffel API
   static Future<Map<String, dynamic>?> createPaymentIntent({

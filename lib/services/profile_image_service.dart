@@ -141,7 +141,7 @@ class ProfileImageService {
       // Limpiar URL del perfil del usuario
       await _client
           .from('users')
-          .update({'profile_photo_url': null, 'profile_image_url': null})
+          .update({'profile_photo_url': null})
           .eq('id', userId);
       
       // Eliminar registro de profile_photos
@@ -164,12 +164,12 @@ class ProfileImageService {
     try {
       final response = await _client
           .from('users')
-          .select('profile_photo_url, profile_image_url')
+          .select('profile_photo_url')
           .eq('id', userId)
           .maybeSingle();
       
       if (response != null) {
-        return response['profile_photo_url'] ?? response['profile_image_url'];
+        return response['profile_photo_url'];
       }
       
       return null;
@@ -186,7 +186,6 @@ class ProfileImageService {
           .from('users')
           .update({
             'profile_photo_url': photoUrl,
-            'profile_image_url': photoUrl, // Mantener ambos campos por compatibilidad
             'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', userId);

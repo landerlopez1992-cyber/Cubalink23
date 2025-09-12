@@ -33,6 +33,39 @@ flutter:
     - assets/images/
     - assets/images/logo_app.png
     - assets/images/wallet_icon.png
+    # New category icons (final versions)
+    - assets/Untitled design 2/Alimentos.png
+    - assets/Untitled design 2/Deportes.png
+    - assets/Untitled design 2/Electronicos.png
+    - assets/Untitled design 2/Farmacia.png
+    - assets/Untitled design 2/Ferreteria.png
+    - assets/Untitled design 2/Hogar.png
+    - assets/Untitled design 2/Materiales.png
+    - assets/Untitled design 2/Restaurantes.png
+    - assets/Untitled design 2/Ropa.png
+    - assets/Untitled design 2/Servicios.png
+    - assets/Untitled design 2/SUPERMERCADO.png
+    # Explicit image declarations to ensure inclusion on Android (filenames with spaces/case)
+    - assets/images/Actividad.png
+    - assets/images/agregar balance.png
+    - assets/images/Amazon.png
+    - assets/images/Mensajeria.png
+    - assets/images/Recarga.png
+    - assets/images/Refiere y gana.png
+    - assets/images/Tienda.png
+    - assets/images/Transfiere Saldo.png
+    - assets/images/Viajes.png
+    - assets/images/alimentos.png
+    - assets/images/materiales.png
+    - assets/images/ferreteria.png
+    - assets/images/farmacia.png
+    - assets/images/electronicos.png
+    - assets/images/ropa.png
+    - assets/images/restaurantes.png
+    - assets/images/deportes.png
+    - assets/images/hogar.png
+    - assets/images/servicios.png
+    - assets/images/SUPERMERCADO.png
     - assets/documents/
     - assets/text/
     - assets/other/
