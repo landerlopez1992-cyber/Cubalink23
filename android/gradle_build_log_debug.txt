@@ -1,2 +1,143 @@
-Downloading https://services.gradle.org/distributions/gradle-8.5-bin.zip
-.............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+Initialized native services in: /Users/cubcolexpress/.gradle/native
+Initialized jansi services in: /Users/cubcolexpress/.gradle/native
+Received JVM installation metadata from '/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home': {JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home, JAVA_VERSION=21.0.5, JAVA_VENDOR=Eclipse Adoptium, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.5+11-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.5+11-LTS, VM_VENDOR=Eclipse Adoptium, OS_ARCH=aarch64}
+Checking if the launcher JVM can be re-used for build. To be re-used, the launcher JVM needs to match the parameters required for the build process: --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED -Xmx4g -Dfile.encoding=UTF-8 -Duser.country=419 -Duser.language=es -Duser.variant
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Starting process 'Gradle build daemon'. Working directory: /Users/cubcolexpress/.gradle/daemon/8.5 Command: /Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home/bin/java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED -Xmx4g -Dfile.encoding=UTF-8 -Duser.country=419 -Duser.language=es -Duser.variant -cp /Users/cubcolexpress/.gradle/wrapper/dists/gradle-8.5-bin/5t9huq95ubn472n8rpzujfbqh/gradle-8.5/lib/gradle-launcher-8.5.jar -javaagent:/Users/cubcolexpress/.gradle/wrapper/dists/gradle-8.5-bin/5t9huq95ubn472n8rpzujfbqh/gradle-8.5/lib/agents/gradle-instrumentation-agent-8.5.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.5
+Successfully started process 'Gradle build daemon'
+An attempt to start the daemon took 0.553 secs.
+The client will now receive all logging from the daemon (pid: 88318). The daemon log file: /Users/cubcolexpress/.gradle/daemon/8.5/daemon-88318.out.log
+Daemon will be stopped at the end of the build 
+Using 8 worker leases.
+Received JVM installation metadata from '/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home': {JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home, JAVA_VERSION=21.0.5, JAVA_VENDOR=Eclipse Adoptium, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.5+11-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.5+11-LTS, VM_VENDOR=Eclipse Adoptium, OS_ARCH=aarch64}
+Watching the file system is configured to be enabled if available
+Now considering [/Users/cubcolexpress/Desktop/turecarga/android] as hierarchies to watch
+File system watching is active
+Starting Build
+Now considering [/Users/cubcolexpress/flutter/packages/flutter_tools/gradle, /Users/cubcolexpress/Desktop/turecarga/android] as hierarchies to watch
+Skipping Kotlin DSL script compilation (Settings/TopLevel/stage1) as it is up-to-date.
+
+> Configure project :gradle
+Evaluating project ':gradle' using build file '/Users/cubcolexpress/flutter/packages/flutter_tools/gradle/build.gradle.kts'.
+Caching disabled for Kotlin DSL plugin specs accessors for classpath '88f21b562c7d422f7231428dbdb6eb94' because:
+  Build cache is disabled
+Skipping Kotlin DSL plugin specs accessors for classpath '88f21b562c7d422f7231428dbdb6eb94' as it is up-to-date.
+Caching disabled for Kotlin DSL script compilation (Project/TopLevel/stage1) because:
+  Build cache is disabled
+Skipping Kotlin DSL script compilation (Project/TopLevel/stage1) as it is up-to-date.
+Found locally available resource with matching checksum: [https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/4.2.1/org.gradle.kotlin.kotlin-dsl.gradle.plugin-4.2.1.pom, /Users/cubcolexpress/.gradle/caches/modules-2/files-2.1/org.gradle.kotlin.kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/4.2.1/6fd9dd26f4989d2514554be69d494024973ec90a/org.gradle.kotlin.kotlin-dsl.gradle.plugin-4.2.1.pom]
+Resource missing. [HTTP HEAD: https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/4.2.1/org.gradle.kotlin.kotlin-dsl.gradle.plugin-4.2.1.jar]
+Found locally available resource with matching checksum: [https://plugins.gradle.org/m2/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/1.9.20/org.jetbrains.kotlin.jvm.gradle.plugin-1.9.20.pom, /Users/cubcolexpress/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin.jvm/org.jetbrains.kotlin.jvm.gradle.plugin/1.9.20/2c94e9071bbd72a82b3873b360d0de9f4503d172/org.jetbrains.kotlin.jvm.gradle.plugin-1.9.20.pom]
+Resource missing. [HTTP HEAD: https://plugins.gradle.org/m2/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/1.9.20/org.jetbrains.kotlin.jvm.gradle.plugin-1.9.20.jar]
+Cached resource https://plugins.gradle.org/m2/org/gradle/kotlin/gradle-kotlin-dsl-plugins/4.2.1/gradle-kotlin-dsl-plugins-4.2.1.pom is up-to-date (lastModified: Fri Nov 03 07:13:58 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/gradle/kotlin/gradle-kotlin-dsl-plugins/4.2.1/gradle-kotlin-dsl-plugins-4.2.1.module is up-to-date (lastModified: Fri Nov 03 07:13:58 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin/1.9.20/kotlin-gradle-plugin-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 17:00:51 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/1.9.20/kotlin-gradle-plugins-bom-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:57 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/1.9.20/kotlin-gradle-plugins-bom-1.9.20.module is up-to-date (lastModified: Mon Oct 30 14:35:56 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin/1.9.20/kotlin-gradle-plugin-1.9.20.module is up-to-date (lastModified: Mon Oct 30 17:00:49 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-sam-with-receiver/1.9.20/kotlin-sam-with-receiver-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 16:58:49 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-sam-with-receiver/1.9.20/kotlin-sam-with-receiver-1.9.20.module is up-to-date (lastModified: Mon Oct 30 16:58:50 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-assignment/1.9.20/kotlin-assignment-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 16:58:18 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-assignment/1.9.20/kotlin-assignment-1.9.20.module is up-to-date (lastModified: Mon Oct 30 16:58:22 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-stdlib/1.9.20/kotlin-stdlib-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:18 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-stdlib/1.9.20/kotlin-stdlib-1.9.20.module is up-to-date (lastModified: Mon Oct 30 14:35:18 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/1.9.20/kotlin-gradle-plugin-idea-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:36:12 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-klib-commonizer-api/1.9.20/kotlin-klib-commonizer-api-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:36:16 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/1.9.20/kotlin-gradle-plugin-idea-1.9.20.module is up-to-date (lastModified: Mon Oct 30 14:36:12 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.9.20/kotlin-compiler-embeddable-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:49 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/1.9.20/kotlin-gradle-plugin-idea-proto-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:55 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-android-extensions/1.9.20/kotlin-android-extensions-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:36 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-compiler-runner/1.9.20/kotlin-compiler-runner-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:49 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/1.9.20/kotlin-scripting-compiler-embeddable-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:36:31 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-model/1.9.20/kotlin-gradle-plugin-model-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:36:02 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/1.9.20/kotlin-scripting-compiler-impl-embeddable-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:36:36 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-api/1.9.20/kotlin-gradle-plugin-api-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:59 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-util-klib/1.9.20/kotlin-util-klib-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:26 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-build-tools-api/1.9.20/kotlin-build-tools-api-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:46 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-api/1.9.20/kotlin-gradle-plugin-api-1.9.20.module is up-to-date (lastModified: Mon Oct 30 14:35:58 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-model/1.9.20/kotlin-gradle-plugin-model-1.9.20.module is up-to-date (lastModified: Mon Oct 30 14:36:02 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/annotations/13.0/annotations-13.0.pom is up-to-date (lastModified: Tue Dec 17 07:10:43 EST 2013).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-project-model/1.9.20/kotlin-project-model-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:36:26 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-native-utils/1.9.20/kotlin-native-utils-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:36:18 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-tooling-core/1.9.20/kotlin-tooling-core-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:27 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/1.9.20/kotlin-gradle-plugin-annotations-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:54 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-util-io/1.9.20/kotlin-util-io-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:29 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.pom is up-to-date (lastModified: Wed Apr 01 22:13:05 EDT 2020).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-daemon-embeddable/1.9.20/kotlin-daemon-embeddable-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:51 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.5.0/kotlinx-coroutines-core-jvm-1.5.0.pom is up-to-date (lastModified: Fri May 14 10:28:27 EDT 2021).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.5.0/kotlinx-coroutines-core-jvm-1.5.0.module is up-to-date (lastModified: Fri May 14 10:28:29 EDT 2021).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-daemon-client/1.9.20/kotlin-daemon-client-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:36:08 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-jvm/1.9.20/kotlin-scripting-jvm-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:35:10 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-common/1.9.20/kotlin-scripting-common-1.9.20.pom is up-to-date (lastModified: Mon Oct 30 14:36:33 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/annotations/13.0/annotations-13.0.jar is up-to-date (lastModified: Tue Dec 17 07:10:42 EST 2013).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-stdlib/1.9.20/kotlin-stdlib-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:18 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-model/1.9.20/kotlin-gradle-plugin-model-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:36:02 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-api/1.9.20/kotlin-gradle-plugin-api-1.9.20-gradle81.jar is up-to-date (lastModified: Mon Oct 30 14:35:58 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-api/1.9.20/kotlin-gradle-plugin-api-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:58 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-assignment/1.9.20/kotlin-assignment-1.9.20-gradle81.jar is up-to-date (lastModified: Mon Oct 30 16:58:23 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/1.9.20/kotlin-gradle-plugin-idea-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:36:12 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/1.9.20/kotlin-gradle-plugin-idea-proto-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:55 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin/1.9.20/kotlin-gradle-plugin-1.9.20-gradle81.jar is up-to-date (lastModified: Mon Oct 30 17:00:45 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-util-klib/1.9.20/kotlin-util-klib-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:25 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-build-tools-api/1.9.20/kotlin-build-tools-api-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:46 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-native-utils/1.9.20/kotlin-native-utils-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:36:18 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-klib-commonizer-api/1.9.20/kotlin-klib-commonizer-api-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:36:16 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-android-extensions/1.9.20/kotlin-android-extensions-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:35 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-compiler-runner/1.9.20/kotlin-compiler-runner-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:49 EDT 2023).
+Downloading https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.9.20/kotlin-compiler-embeddable-1.9.20.jar to /Users/cubcolexpress/.gradle/.tmp/gradle_download14462732142582421600bin
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/1.9.20/kotlin-scripting-compiler-embeddable-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:36:31 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-tooling-core/1.9.20/kotlin-tooling-core-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:27 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-daemon-embeddable/1.9.20/kotlin-daemon-embeddable-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:51 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-sam-with-receiver/1.9.20/kotlin-sam-with-receiver-1.9.20-gradle81.jar is up-to-date (lastModified: Mon Oct 30 16:58:48 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/gradle/kotlin/gradle-kotlin-dsl-plugins/4.2.1/gradle-kotlin-dsl-plugins-4.2.1.jar is up-to-date (lastModified: Fri Nov 03 07:13:56 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.jar is up-to-date (lastModified: Wed Apr 01 22:13:05 EDT 2020).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-daemon-client/1.9.20/kotlin-daemon-client-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:36:08 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.5.0/kotlinx-coroutines-core-jvm-1.5.0.jar is up-to-date (lastModified: Fri May 14 10:28:26 EDT 2021).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/1.9.20/kotlin-gradle-plugin-annotations-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:54 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/1.9.20/kotlin-scripting-compiler-impl-embeddable-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:36:36 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-common/1.9.20/kotlin-scripting-common-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:36:33 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-util-io/1.9.20/kotlin-util-io-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:29 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-project-model/1.9.20/kotlin-project-model-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:36:25 EDT 2023).
+Cached resource https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-jvm/1.9.20/kotlin-scripting-jvm-1.9.20.jar is up-to-date (lastModified: Mon Oct 30 14:35:10 EDT 2023).
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/md5-checksums.bin
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/sha256-checksums.bin
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/sha1-checksums.bin
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/sha512-checksums.bin
+Invalidating in-memory cache of /Users/cubcolexpress/.gradle/caches/journal-1/file-access.bin
+Invalidating in-memory cache of /Users/cubcolexpress/.gradle/caches/8.5/fileHashes/fileHashes.bin
+Invalidating in-memory cache of /Users/cubcolexpress/.gradle/caches/8.5/fileHashes/resourceHashesCache.bin
+
+Invalidating in-memory cache of /Users/cubcolexpress/.gradle/caches/journal-1/file-access.bin
+
+> Configure project :gradle
+Using Kotlin Gradle Plugin gradle81 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+file or directory '/Users/cubcolexpress/flutter/packages/flutter_tools/gradle/src/main/java', not found
+Invalidating in-memory cache of /Users/cubcolexpress/.gradle/caches/journal-1/file-access.bin
+Caching disabled for Kotlin DSL accessors for project ':gradle' because:
+  Build cache is disabled
+Kotlin DSL accessors for project ':gradle' is not up-to-date because:
+  No history is available.
+Invalidating in-memory cache of /Users/cubcolexpress/flutter/packages/flutter_tools/gradle/.gradle/buildOutputCleanup/outputFiles.bin
+Invalidating in-memory cache of /Users/cubcolexpress/.gradle/caches/journal-1/file-access.bin
+Caching disabled for Kotlin DSL script compilation (Project/TopLevel/stage2) because:
+  Build cache is disabled
+Kotlin DSL script compilation (Project/TopLevel/stage2) is not up-to-date because:
+  No history is available.
+
+Invalidating in-memory cache of /Users/cubcolexpress/.gradle/caches/journal-1/file-access.bin
+Cached resource https://dl.google.com/dl/android/maven2/com/android/application/com.android.application.gradle.plugin/8.6.0/com.android.application.gradle.plugin-8.6.0.pom is up-to-date (lastModified: Thu Aug 29 12:58:45 EDT 2024).
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/md5-checksums.bin
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/sha256-checksums.bin
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/sha1-checksums.bin
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/sha512-checksums.bin
+Resource missing. [HTTP HEAD: https://dl.google.com/dl/android/maven2/com/android/application/com.android.application.gradle.plugin/8.6.0/com.android.application.gradle.plugin-8.6.0.jar]
+Resource missing. [HTTP HEAD: https://dl.google.com/dl/android/maven2/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.1.0/org.jetbrains.kotlin.android.gradle.plugin-2.1.0.pom]
+Cached resource https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.1.0/org.jetbrains.kotlin.android.gradle.plugin-2.1.0.pom is up-to-date (lastModified: Wed Nov 27 03:19:34 EST 2024).
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/md5-checksums.bin
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/sha256-checksums.bin
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/sha1-checksums.bin
+Invalidating in-memory cache of /Users/cubcolexpress/Desktop/turecarga/android/.gradle/8.5/checksums/sha512-checksums.bin
+Resource missing. [HTTP HEAD: https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.1.0/org.jetbrains.kotlin.android.gradle.plugin-2.1.0.jar]
+Watched directory hierarchies: []

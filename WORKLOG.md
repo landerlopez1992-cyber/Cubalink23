@@ -104,9 +104,60 @@
 - ✅ Script rollback_backend.py: Permite rollback de emergencia si algo falla
 - ✅ Deploy seguro: Verificación previa + plan de rollback
 
+# 🚀 FLUJO DE PRUEBAS EN LA NUBE (APK)
+
+## 📋 INSTRUCCIONES PARA AGENTES FUTUROS
+
+### 🎯 OBJETIVO
+Dejar listo un flujo de "probar APK en la nube" y promover a producción, guardando SIEMPRE y SOLO en:
+**https://github.com/landerlopez1992-cyber/Cubalink23.git**
+
+### ⚠️ REGLAS CRÍTICAS
+- **NUNCA** tocar producción (main) hasta que el usuario lo ordene
+- **SOLO** usar el repositorio Cubalink23 (NO cubalink23-backend)
+- **SIEMPRE** usar la rama `build-test` para pruebas
+- **NUNCA** hacer push a otros repositorios (hook pre-push bloquea)
+
+### 🔧 CONFIGURACIÓN IMPLEMENTADA
+- ✅ Remoto único configurado: `origin` → Cubalink23.git
+- ✅ Hook pre-push instalado: Bloquea pushes a otros repositorios
+- ✅ Rama `build-test` creada para pruebas en la nube
+- ✅ Workflow GitHub Actions configurado para builds automáticos
+- ✅ Scripts locales creados para automatizar el flujo
+
+### 📱 FLUJO DE TRABAJO
+
+#### Para pedir APK en la nube:
+```bash
+./cloud_build.sh
+```
+**Descargar APK:** GitHub → Actions → último run → artifact app-release.apk
+**Instalar en teléfono:** `adb install -r app-release.apk`
+
+#### Para promover a producción:
+```bash
+./promote_to_main.sh
+```
+**⚠️ SOLO ejecutar cuando el usuario lo ordene explícitamente**
+
+### 🔗 ENLACES ÚTILES
+- **Repositorio:** https://github.com/landerlopez1992-cyber/Cubalink23
+- **Actions:** https://github.com/landerlopez1992-cyber/Cubalink23/actions
+- **Rama build-test:** https://github.com/landerlopez1992-cyber/Cubalink23/tree/build-test
+
+### 📊 ESTADO ACTUAL
+- **Rama activa:** build-test
+- **Último commit:** Sistema de Pagos Square con Callbacks
+- **Workflow:** Android APK configurado y funcionando
+- **Hook de seguridad:** Activo y bloqueando otros repositorios
+
+---
+
 # Notas
 - El backend en Render.com está funcionando correctamente
 - Los productos reales ya se cargan desde Supabase
 - Los banners ahora también se cargan desde Supabase con auto-scroll
 - El carrito usa la tabla user_carts con JSONB para items
 - Implementado patrón UPDATE/INSERT para evitar conflictos de UNIQUE constraint
+- **NUEVO:** Sistema de pagos Square con callbacks implementado
+- **NUEVO:** Flujo de pruebas en la nube configurado y documentado
