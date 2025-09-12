@@ -52,7 +52,7 @@ app.register_blueprint(webhook_bp)
 PORT = int(os.environ.get('PORT', 10000))
 DUFFEL_API_KEY = os.environ.get('DUFFEL_API_KEY')
 
-print("🚀 CUBALINK23 BACKEND - MANTIENE TODO LO EXISTENTE + BANNERS + PUSH NOTIFICATIONS + SQUARE PAYMENTS")
+print("🚀 CUBALINK23 BACKEND - MANTIENE TODO LO EXISTENTE + BANNERS + PUSH NOTIFICATIONS + SQUARE PAYMENTS ACTIVOS")
 print("🔧 Puerto: {}".format(PORT))
 print("🔑 API Key: {}".format('✅ Configurada' if DUFFEL_API_KEY else '❌ No configurada'))
 print("🔔 Push Notifications: ✅ Blueprint registrado")
@@ -75,10 +75,10 @@ notification_counter = 0
 def home():
     """🏠 Página principal"""
     return jsonify({
-        "message": "CubaLink23 Backend - CON NOTIFICACIONES FUNCIONANDO - VERSION CORRECTA",
+        "message": "CubaLink23 Backend - CON PAGOS SQUARE ACTIVADOS - VERSION FINAL",
         "status": "online",
         "timestamp": datetime.now().isoformat(),
-        "version": "NOTIFICATIONS_WORKING_V2",
+        "version": "SQUARE_PAYMENTS_ACTIVATED_FINAL",
         "endpoints": [
             "/api/health", 
             "/admin/api/flights/search", 
