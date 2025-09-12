@@ -82,7 +82,10 @@ def home():
             "/admin/api/flights/search", 
             "/admin/api/flights/airports",
             "/api/supabase-notifications",
-            "/api/notifications/next"
+            "/api/notifications/next",
+            "/api/payments/process",
+            "/api/payments/square-status",
+            "/api/payments/test"
         ]
     })
 
@@ -113,6 +116,83 @@ def test_payments_direct():
         "status": "success",
         "timestamp": datetime.now().isoformat()
     })
+
+@app.route('/api/payments/process', methods=['POST'])
+def process_payment_direct():
+    """Procesar pago real con Square API - Endpoint directo"""
+    try:
+        data = request.get_json()
+        
+        # Validar datos requeridos
+        if not data or 'amount' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Datos de pago requeridos: amount'
+            }), 400
+        
+        # Importar SquareService
+        try:
+            from square_service import SquareService
+            square_service = SquareService()
+        except ImportError as e:
+            return jsonify({
+                'success': False,
+                'error': f'Error importando SquareService: {str(e)}'
+            }), 500
+        
+        # Verificar si Square está configurado
+        if not square_service.is_available():
+            return jsonify({
+                'success': False,
+                'error': 'Square API no está configurado correctamente'
+            }), 500
+        
+        # Procesar pago real con Square API
+        payment_data = {
+            'amount': float(data['amount']),
+            'email': data.get('email', 'user@cubalink23.com')
+        }
+        
+        result = square_service.process_real_payment(payment_data)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'checkoutUrl': result['checkout_url'],
+                'transactionId': result['transaction_id'],
+                'message': 'Payment Link creado exitosamente'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 400
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Error procesando pago: {str(e)}'
+        }), 500
+
+@app.route('/api/payments/square-status')
+def square_status_direct():
+    """Verificar estado de Square API - Endpoint directo"""
+    try:
+        from square_service import SquareService
+        square_service = SquareService()
+        
+        return jsonify({
+            'available': square_service.is_available(),
+            'configured': square_service.is_configured,
+            'environment': os.environ.get('SQUARE_ENVIRONMENT', 'not_set'),
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'available': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
 @app.route('/api/test-push')
 def test_push():
