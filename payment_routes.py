@@ -14,11 +14,72 @@ payment_bp = Blueprint('payment', __name__, url_prefix='/api/payments')
 
 @payment_bp.route('/process', methods=['POST'])
 def process_payment():
-    """Procesar pago real con Square API usando Payment Links"""
+    """Procesar pago con Square API - Soporta tanto Payment Links como Nonce"""
     try:
         data = request.get_json()
         
-        # Validar datos requeridos
+        # Verificar si es un pago con nonce (SDK oficial) o Payment Link (método anterior)
+        if 'nonce' in data:
+            # NUEVO: Procesar pago con nonce del SDK oficial de Square
+            return _process_payment_with_nonce(data)
+        else:
+            # MÉTODO ANTERIOR: Procesar pago con Payment Links
+            return _process_payment_with_links(data)
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'details': str(e)
+        }), 500
+
+def _process_payment_with_nonce(data):
+    """Procesar pago usando nonce del SDK oficial de Square"""
+    try:
+        # Validar datos requeridos para nonce
+        required_fields = ['nonce', 'amount', 'location_id']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'success': False,
+                    'error': f'Campo requerido faltante: {field}'
+                }), 400
+        
+        # Procesar pago real con Square API usando nonce
+        payment_data = {
+            'nonce': data['nonce'],
+            'amount': float(data['amount']),
+            'description': data.get('description', 'Recarga Cubalink23'),
+            'location_id': data['location_id']
+        }
+        
+        result = square_service.process_payment_with_nonce(payment_data)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'transaction_id': result['transaction_id'],
+                'status': result['status'],
+                'message': result['message']
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Error procesando pago con nonce',
+                'details': result.get('error', 'Error desconocido')
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': 'Error procesando pago con nonce',
+            'details': str(e)
+        }), 500
+
+def _process_payment_with_links(data):
+    """Procesar pago usando Payment Links (método anterior)"""
+    try:
+        # Validar datos requeridos para Payment Links
         required_fields = ['amount', 'email']
         for field in required_fields:
             if field not in data:
@@ -54,7 +115,7 @@ def process_payment():
     except Exception as e:
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': 'Error procesando pago con Payment Links',
             'details': str(e)
         }), 500
 

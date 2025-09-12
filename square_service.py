@@ -41,6 +41,73 @@ class SquareService:
         """Verificar si Square está disponible"""
         return self.is_configured
     
+    def process_payment_with_nonce(self, payment_data):
+        """Procesar pago real con Square API usando nonce del SDK oficial"""
+        try:
+            if not self.is_available():
+                return {
+                    'success': False,
+                    'error': 'Square no está configurado'
+                }
+            
+            nonce = payment_data['nonce']
+            amount = payment_data['amount']
+            description = payment_data['description']
+            location_id = payment_data['location_id']
+            
+            print(f"💳 Procesando pago con nonce del SDK oficial de Square...")
+            print(f"🔑 Nonce: {nonce}")
+            print(f"💰 Monto: ${amount}")
+            print(f"📝 Descripción: {description}")
+            print(f"📍 Location ID: {location_id}")
+            
+            # Crear pago usando la API de Payments con nonce
+            payment_request = {
+                "source_id": nonce,
+                "amount_money": {
+                    "amount": int(amount * 100),  # Convertir a centavos
+                    "currency": "USD"
+                },
+                "idempotency_key": str(uuid.uuid4()),
+                "location_id": location_id,
+                "note": description
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/v2/payments",
+                headers=self.headers,
+                json=payment_request,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                payment = result.get('payment', {})
+                
+                return {
+                    'success': True,
+                    'transaction_id': payment.get('id'),
+                    'status': payment.get('status', 'COMPLETED'),
+                    'amount': amount,
+                    'message': 'Pago procesado exitosamente'
+                }
+            else:
+                error_data = response.json()
+                errors = error_data.get('errors', [])
+                error_message = errors[0].get('detail', 'Error desconocido') if errors else 'Error de pago'
+                
+                return {
+                    'success': False,
+                    'error': error_message,
+                    'status_code': response.status_code
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error procesando pago con nonce: {str(e)}'
+            }
+    
     def process_real_payment(self, payment_data):
         """Procesar pago real con Square API usando Payment Links"""
         try:
