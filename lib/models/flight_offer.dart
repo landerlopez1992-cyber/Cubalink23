@@ -31,35 +31,41 @@ class FlightOffer {
       
       // Extraer información básica del backend directo
       final String id = json['id'] ?? '';
-      final String totalAmount = (json['total_amount'] ?? '0').toString();
-      final String totalCurrency = json['total_currency'] ?? 'USD';
+      final String totalAmount = (json['total_amount'] ?? json['price'] ?? '0').toString();
+      final String totalCurrency = json['total_currency'] ?? json['currency'] ?? 'USD';
       
-      // Extraer información de la aerolínea del backend
+      // Extraer información de la aerolínea del backend - CORREGIR CAMPOS
       String airline = 'Aerolínea Desconocida';
-      if (json['owner'] != null && json['owner']['name'] != null) {
+      if (json['airline'] != null && json['airline'].toString().isNotEmpty) {
+        airline = json['airline'].toString();
+      } else if (json['owner'] != null && json['owner']['name'] != null) {
         airline = json['owner']['name'];
       }
       
-      // Extraer logo de aerolínea
+      // Extraer logo de aerolínea - CORREGIR CAMPOS
       String airlineLogo = '';
-      if (json['owner'] != null && json['owner']['logo_symbol_url'] != null) {
+      if (json['airline_logo'] != null && json['airline_logo'].toString().isNotEmpty) {
+        airlineLogo = json['airline_logo'].toString();
+      } else if (json['owner'] != null && json['owner']['logo_symbol_url'] != null) {
         airlineLogo = json['owner']['logo_symbol_url'];
       }
+      
+      // Extraer datos de tiempo y duración - CORREGIR CAMPOS
+      String duration = json['duration'] ?? 'N/A';
+      String departureTime = json['departureTime'] ?? json['departing_at'] ?? 'N/A';
+      String arrivalTime = json['arrivalTime'] ?? json['arriving_at'] ?? 'N/A';
+      int stops = int.tryParse(json['stops'].toString()) ?? 0;
       
       // Extraer segmentos del backend
       final slices = json['slices'] as List<dynamic>? ?? [];
       final segments = <FlightSegment>[];
-      String duration = 'N/A';
-      String departureTime = 'N/A';
-      String arrivalTime = 'N/A';
-      int stops = 0;
 
       if (slices.isNotEmpty) {
         final firstSlice = slices[0] as Map<String, dynamic>;
-        duration = firstSlice['duration'] ?? 'N/A';
+        duration = firstSlice['duration'] ?? duration;
         
         final sliceSegments = firstSlice['segments'] as List<dynamic>? ?? [];
-        stops = sliceSegments.isNotEmpty ? (sliceSegments.length - 1) : 0;
+        stops = sliceSegments.isNotEmpty ? (sliceSegments.length - 1) : stops;
         
         for (int i = 0; i < sliceSegments.length; i++) {
           try {

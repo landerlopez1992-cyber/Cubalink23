@@ -607,8 +607,10 @@ def search_flights():
                                     'arrivalTime': first_segment.get('arriving_at', ''),
                                     'duration': slice_data.get('duration', ''),
                                     'stops': len(slice_data['segments']) - 1,
-                                    'price': float(offer.get('total_amount', '0')),
-                                    'currency': offer.get('total_currency', 'USD'),
+                                    'total_amount': float(offer.get('total_amount', '0')),  # CORREGIR: usar total_amount
+                                    'total_currency': offer.get('total_currency', 'USD'),  # CORREGIR: usar total_currency
+                                    'price': float(offer.get('total_amount', '0')),  # Mantener para compatibilidad
+                                    'currency': offer.get('total_currency', 'USD'),  # Mantener para compatibilidad
                                     'origin_airport': first_segment.get('origin', {}).get('iata_code', origin),
                                     'destination_airport': first_segment.get('destination', {}).get('iata_code', destination)
                                 }
@@ -649,28 +651,28 @@ def search_airports():
             return jsonify([])
         
         # API KEY REAL de Duffel desde variables de entorno
-        api_token = os.environ.get('DUFFEL_API_KEY')
+        api_token = os.environ.get('DUFFEL_API_TOKEN') or os.environ.get('DUFFEL_API_KEY')
         if not api_token:
-            print("❌ DUFFEL_API_KEY no configurada")
+            print("DUFFEL_API_TOKEN o DUFFEL_API_KEY no configurada")
             return jsonify([])
         
         # Búsqueda directa con Duffel API
         headers = {
             'Accept': 'application/json',
-            'Authorization': f'Bearer {api_token}',
+            'Authorization': 'Bearer {}'.format(api_token),
             'Duffel-Version': 'v2'
         }
         
         # Usar Place Suggestion API según documentación oficial
-        url = f'https://api.duffel.com/air/airports?search={query}&limit=20'
-        print(f"🔍 URL Duffel Place Suggestion API: {url}")
+        url = 'https://api.duffel.com/air/airports?search={}&limit=20'.format(query)
+        print("URL Duffel Place Suggestion API: {}".format(url))
         
         response = requests.get(url, headers=headers)
         
         if response.status_code == 200:
             data = response.json()
             airports = data.get('data', [])
-            print(f"🔍 Total aeropuertos obtenidos: {len(airports)}")
+            print("Total aeropuertos obtenidos: {}".format(len(airports)))
             
             # FILTRADO MANUAL: Solo aeropuertos que coincidan con búsqueda
             filtered_airports = []
