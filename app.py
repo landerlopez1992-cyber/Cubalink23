@@ -40,6 +40,14 @@ app.register_blueprint(auth)
 from push_notifications_routes import push_bp
 app.register_blueprint(push_bp)
 
+# Importar rutas de pagos
+from payment_routes import payment_bp
+app.register_blueprint(payment_bp)
+
+# Importar rutas de webhooks
+from webhook_routes import webhook_bp
+app.register_blueprint(webhook_bp)
+
 # Configuración
 PORT = int(os.environ.get('PORT', 10000))
 DUFFEL_API_KEY = os.environ.get('DUFFEL_API_KEY')

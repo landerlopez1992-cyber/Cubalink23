@@ -31,6 +31,7 @@ class SquareService:
                 'Square-Version': '2024-12-01'
             }
             self.is_configured = True
+            print("✅ Square configurado correctamente")
         else:
             self.headers = None
             self.is_configured = False
@@ -38,7 +39,7 @@ class SquareService:
     
     def is_available(self):
         """Verificar si Square está disponible"""
-        return self.is_configured and self.client is not None
+        return self.is_configured
     
     def create_payment_link(self, order_data):
         """Crear enlace de pago para un pedido"""
@@ -46,7 +47,14 @@ class SquareService:
             if not self.is_available():
                 return self._create_mock_payment_link(order_data)
             
-            # Crear Quick Pay link usando la API REST
+            # Crear orden estructurada primero
+            order_result = self._create_order(order_data)
+            if not order_result.get('success'):
+                return self._create_mock_payment_link(order_data)
+            
+            order_id = order_result.get('order_id')
+            
+            # Crear Quick Pay link usando la API REST con orden
             body = {
                 "quick_pay": {
                     "name": f"Pedido {order_data.get('order_number', 'N/A')}",
@@ -55,7 +63,8 @@ class SquareService:
                         "currency": order_data.get('currency', 'USD')
                     },
                     "location_id": self.location_id
-                }
+                },
+                "order_id": order_id  # Vincular con la orden creada
             }
             
             response = requests.post(
@@ -69,7 +78,7 @@ class SquareService:
                 return {
                     'success': True,
                     'payment_link_id': payment_link.get('id'),
-                    'checkout_url': payment_link.get('checkout_page_url'),
+                    'checkout_url': payment_link.get('url'),
                     'order_id': order_data.get('id'),
                     'amount': order_data.get('total_amount'),
                     'currency': order_data.get('currency')
@@ -355,6 +364,91 @@ class SquareService:
         except Exception as e:
             print(f"Error getting transaction history: {e}")
             return self._get_mock_transaction_history()
+    
+    def _create_order(self, order_data):
+        """Crear orden estructurada en Square"""
+        try:
+            if not self.is_available():
+                return {'success': False, 'error': 'Square no disponible'}
+            
+            # Construir line items
+            line_items = []
+            items = order_data.get('items', [])
+            
+            if not items:
+                # Si no hay items específicos, crear uno genérico
+                line_items.append({
+                    "name": order_data.get('description', 'Recarga de saldo'),
+                    "quantity": "1",
+                    "item_type": "ITEM",
+                    "base_price_money": {
+                        "amount": int(float(order_data.get('total_amount', 0)) * 100),
+                        "currency": order_data.get('currency', 'USD')
+                    }
+                })
+            else:
+                # Crear line items desde los datos
+                for item in items:
+                    line_items.append({
+                        "name": item.get('name', 'Item'),
+                        "quantity": str(item.get('quantity', 1)),
+                        "item_type": "ITEM",
+                        "base_price_money": {
+                            "amount": int(float(item.get('price', 0)) * 100),
+                            "currency": order_data.get('currency', 'USD')
+                        }
+                    })
+            
+            # Crear orden
+            order_body = {
+                "idempotency_key": str(uuid.uuid4()),
+                "order": {
+                    "location_id": self.location_id,
+                    "reference_id": order_data.get('id'),
+                    "line_items": line_items,
+                    "state": "DRAFT"
+                }
+            }
+            
+            response = requests.post(
+                f'{self.base_url}/v2/orders',
+                headers=self.headers,
+                json=order_body
+            )
+            
+            if response.status_code == 200:
+                order = response.json().get('order', {})
+                return {
+                    'success': True,
+                    'order_id': order.get('id')
+                }
+            else:
+                print(f"Error creating order: {response.status_code} - {response.text}")
+                return {'success': False, 'error': response.text}
+                
+        except Exception as e:
+            print(f"Error creating order: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def verify_payment_completion(self, payment_id, max_attempts=10, delay=2):
+        """Verificar que un pago se complete con reintentos"""
+        import time
+        
+        for attempt in range(max_attempts):
+            try:
+                result = self.get_payment_status(payment_id)
+                if result.get('success'):
+                    status = result.get('status')
+                    if status in ['COMPLETED', 'FAILED', 'CANCELED']:
+                        return result
+                
+                print(f"Intento {attempt + 1}: Pago {payment_id} aún pendiente...")
+                time.sleep(delay)
+                
+            except Exception as e:
+                print(f"Error verificando pago en intento {attempt + 1}: {e}")
+                
+        return {'success': False, 'error': 'Timeout verificando pago'}
     
     # ===== MÉTODOS MOCK PARA DESARROLLO =====
     
