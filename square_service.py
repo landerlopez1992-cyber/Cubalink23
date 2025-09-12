@@ -41,6 +41,63 @@ class SquareService:
         """Verificar si Square está disponible"""
         return self.is_configured
     
+    def process_real_payment(self, payment_data):
+        """Procesar pago real con Square API"""
+        try:
+            if not self.is_available():
+                return {
+                    'success': False,
+                    'error': 'Square no está configurado'
+                }
+            
+            # Crear pago real con Square API
+            payment_request = {
+                "source_id": "cnon:card-nonce-ok",  # Nonce de tarjeta de prueba
+                "amount_money": {
+                    "amount": int(payment_data['amount'] * 100),  # Convertir a centavos
+                    "currency": "USD"
+                },
+                "idempotency_key": str(uuid.uuid4()),
+                "note": payment_data.get('description', 'Pago desde Cubalink23'),
+                "buyer_email_address": payment_data.get('email', 'test@example.com')
+            }
+            
+            # Hacer petición a Square API
+            response = requests.post(
+                f"{self.base_url}/v2/payments",
+                headers=self.headers,
+                json=payment_request,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                payment = result.get('payment', {})
+                
+                return {
+                    'success': True,
+                    'transaction_id': payment.get('id'),
+                    'status': payment.get('status'),
+                    'amount': payment_data['amount'],
+                    'message': 'Pago procesado exitosamente'
+                }
+            else:
+                error_data = response.json()
+                errors = error_data.get('errors', [])
+                error_message = errors[0].get('detail', 'Error desconocido') if errors else 'Error de pago'
+                
+                return {
+                    'success': False,
+                    'error': error_message,
+                    'status_code': response.status_code
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error procesando pago: {str(e)}'
+            }
+    
     def create_payment_link(self, order_data):
         """Crear enlace de pago para un pedido"""
         try:

@@ -14,12 +14,12 @@ payment_bp = Blueprint('payment', __name__, url_prefix='/api/payments')
 
 @payment_bp.route('/process', methods=['POST'])
 def process_payment():
-    """Procesar pago desde la app Flutter"""
+    """Procesar pago real con Square API"""
     try:
         data = request.get_json()
         
         # Validar datos requeridos
-        required_fields = ['amount', 'description', 'user_id']
+        required_fields = ['amount', 'description', 'card_last4', 'card_type', 'card_holder_name']
         for field in required_fields:
             if field not in data:
                 return jsonify({
@@ -27,31 +27,24 @@ def process_payment():
                     'error': f'Campo requerido faltante: {field}'
                 }), 400
         
-        # Crear enlace de pago con Square
-        order_data = {
-            'id': str(uuid.uuid4()),
-            'order_number': f'ORD-{datetime.now().strftime("%Y%m%d-%H%M%S")}',
-            'total_amount': float(data['amount']),
-            'currency': data.get('currency', 'USD'),
+        # Procesar pago real con Square API
+        payment_data = {
+            'amount': float(data['amount']),
             'description': data['description'],
-            'user_id': data['user_id']
+            'card_last4': data['card_last4'],
+            'card_type': data['card_type'],
+            'card_holder_name': data['card_holder_name'],
+            'email': data.get('email', 'test@example.com')
         }
         
-        # Procesar con Square
-        result = square_service.create_payment_link(order_data)
+        result = square_service.process_real_payment(payment_data)
         
         if result['success']:
-            # Guardar en base de datos local (opcional)
-            # save_payment_to_db(result, order_data)
-            
             return jsonify({
                 'success': True,
-                'payment_link_id': result['payment_link_id'],
-                'checkout_url': result['checkout_url'],
-                'order_id': order_data['id'],
-                'amount': result['amount'],
-                'currency': result['currency'],
-                'message': 'Enlace de pago creado exitosamente'
+                'transaction_id': result['transaction_id'],
+                'status': result['status'],
+                'message': result['message']
             })
         else:
             return jsonify({
