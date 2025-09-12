@@ -14,12 +14,12 @@ payment_bp = Blueprint('payment', __name__, url_prefix='/api/payments')
 
 @payment_bp.route('/process', methods=['POST'])
 def process_payment():
-    """Procesar pago real con Square API"""
+    """Procesar pago real con Square API usando Payment Links"""
     try:
         data = request.get_json()
         
         # Validar datos requeridos
-        required_fields = ['amount', 'description', 'card_last4', 'card_type', 'card_holder_name']
+        required_fields = ['amount', 'email']
         for field in required_fields:
             if field not in data:
                 return jsonify({
@@ -27,14 +27,11 @@ def process_payment():
                     'error': f'Campo requerido faltante: {field}'
                 }), 400
         
-        # Procesar pago real con Square API
+        # Procesar pago real con Square API usando Payment Links
         payment_data = {
             'amount': float(data['amount']),
-            'description': data['description'],
-            'card_last4': data['card_last4'],
-            'card_type': data['card_type'],
-            'card_holder_name': data['card_holder_name'],
-            'email': data.get('email', 'user@cubalink23.com')
+            'description': f'Recarga Cubalink23 - ${data["amount"]}',
+            'email': data['email']
         }
         
         result = square_service.process_real_payment(payment_data)
@@ -43,6 +40,7 @@ def process_payment():
             return jsonify({
                 'success': True,
                 'transaction_id': result['transaction_id'],
+                'checkout_url': result['checkout_url'],
                 'status': result['status'],
                 'message': result['message']
             })
