@@ -9,7 +9,8 @@ class SquarePaymentServiceOfficial {
   // Configuración de Square (Sandbox)
   static const String _applicationId = 'sandbox-sq0idb-IsIJtKqx2OHdVJjYmg6puA';
   static const String _locationId = 'LZVTP0YQ9YQBB';
-  static const String _backendUrl = 'https://cubalink23-backend.onrender.com/api/payments/process';
+  static const String _backendUrl =
+      'https://cubalink23-backend.onrender.com/api/payments/process';
 
   /// Inicializar Square In-App Payments SDK
   static Future<void> initialize() async {
@@ -110,11 +111,11 @@ class SquarePaymentServiceOfficial {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        
+
         if (data['success'] == true) {
           print('✅ Pago procesado exitosamente');
           print('🔗 Transaction ID: ${data['transaction_id']}');
-          
+
           return SquarePaymentResult(
             success: true,
             transactionId: data['transaction_id'],
