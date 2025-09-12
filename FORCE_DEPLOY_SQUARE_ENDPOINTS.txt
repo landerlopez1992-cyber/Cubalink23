@@ -1,0 +1,17 @@
+FORZAR DESPLIEGUE DE ENDPOINTS SQUARE - 2025-09-12 15:24
+
+Este archivo existe para forzar un nuevo despliegue en Render.
+Los endpoints de pagos Square están confirmados como funcionando localmente.
+
+ENDPOINTS CONFIRMADOS LOCALMENTE:
+✅ /api/payments/process
+✅ /api/payments/square-status  
+✅ /api/payments/test
+✅ /webhooks/square
+
+CAMBIOS REALIZADOS:
+- Descomentados los blueprints de payment_routes y webhook_routes en app.py
+- Confirmado que todas las importaciones funcionan correctamente
+- Verificado que el servidor local muestra todos los endpoints
+
+RENDER DEBE DESPLEGAR ESTA VERSIÓN INMEDIATAMENTE.

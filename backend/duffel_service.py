@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import requests
 import json
 import os
@@ -10,27 +11,27 @@ load_dotenv()
 class DuffelService:
     def __init__(self):
         # 🔑 API Key desde variable de entorno
-        self.api_token = os.environ.get('DUFFEL_API_KEY', '')
+        self.api_token = os.environ.get('DUFFEL_API_TOKEN', '') or os.environ.get('DUFFEL_API_KEY', '')
         if not self.api_token:
-            raise ValueError("❌ DUFFEL_API_KEY no configurada en variables de entorno")
+            raise ValueError("DUFFEL_API_TOKEN o DUFFEL_API_KEY no configurada en variables de entorno")
         self.api_url = 'https://api.duffel.com'
         self.headers = {
-            'Authorization': f'Bearer {self.api_token}',
+            'Authorization': 'Bearer {}'.format(self.api_token),
             'Content-Type': 'application/json',
             'Duffel-Version': 'v1',
             'Accept': 'application/json'
         }
-        print(f"🔑 DuffelService inicializado")
+        print("DuffelService inicializado")
 
     def search_airports(self, query):
         """
         🏢 Buscar aeropuertos usando la API real de Duffel
         """
         try:
-            print(f"🔍 Buscando aeropuertos: '{query}'")
+            print("Buscando aeropuertos: '{}'".format(query))
             
             # Endpoint para buscar aeropuertos
-            url = f'{self.api_url}/air/airports'
+            url = '{}/air/airports'.format(self.api_url)
             params = {
                 'name': query,
                 'limit': 10

@@ -526,11 +526,11 @@ def search_flights():
         flights = []
         
         # API KEY REAL de Duffel desde variables de entorno
-        api_token = os.environ.get('DUFFEL_API_KEY')
+        api_token = os.environ.get('DUFFEL_API_TOKEN') or os.environ.get('DUFFEL_API_KEY')
         if not api_token:
             return jsonify({
                 'success': False,
-                'error': 'DUFFEL_API_KEY no configurada en variables de entorno',
+                'error': 'DUFFEL_API_TOKEN o DUFFEL_API_KEY no configurada en variables de entorno',
                 'data': []
             }), 500
         
