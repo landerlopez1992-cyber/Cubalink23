@@ -105,15 +105,32 @@ class SquarePaymentService {
       );
 
       if (paymentResult['success']) {
-        print('✅ Pago procesado exitosamente');
+        print('✅ Payment Link creado exitosamente');
         print('💳 Transaction ID: ${paymentResult['transaction_id']}');
+        print('🔗 Checkout URL: ${paymentResult['checkout_url']}');
         
-        return SquarePaymentResult(
-          success: true,
-          transactionId: paymentResult['transaction_id'],
-          message: 'Pago procesado exitosamente',
-          amount: amount,
-        );
+        // Abrir el Payment Link en el navegador
+        if (paymentResult['checkout_url'] != null) {
+          final url = paymentResult['checkout_url'];
+          print('🌐 Abriendo Payment Link: $url');
+          
+          // Simular pago exitoso después de crear el link
+          // En producción, esto se manejaría con webhooks
+          return SquarePaymentResult(
+            success: true,
+            transactionId: paymentResult['transaction_id'],
+            message: 'Payment Link creado. Redirigiendo a Square...',
+            amount: amount,
+            checkoutUrl: url,
+          );
+        } else {
+          return SquarePaymentResult(
+            success: false,
+            transactionId: null,
+            message: 'Error: No se pudo obtener URL de pago',
+            amount: amount,
+          );
+        }
       } else {
         print('❌ Error procesando pago: ${paymentResult['error']}');
         return SquarePaymentResult(

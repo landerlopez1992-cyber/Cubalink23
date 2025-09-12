@@ -42,7 +42,7 @@ class SquareService:
         return self.is_configured
     
     def process_real_payment(self, payment_data):
-        """Procesar pago real con Square API"""
+        """Procesar pago real con Square API usando Payment Links"""
         try:
             if not self.is_available():
                 return {
@@ -50,36 +50,51 @@ class SquareService:
                     'error': 'Square no está configurado'
                 }
             
-            # Crear pago real con Square API
-            payment_request = {
-                "source_id": "cnon:card-nonce-ok",  # Nonce de tarjeta de prueba
-                "amount_money": {
-                    "amount": int(payment_data['amount'] * 100),  # Convertir a centavos
-                    "currency": "USD"
-                },
+            # Crear Payment Link en lugar de pago directo
+            payment_link_request = {
                 "idempotency_key": str(uuid.uuid4()),
-                "note": payment_data.get('description', 'Pago desde Cubalink23'),
-                "buyer_email_address": payment_data.get('email', 'test@example.com')
+                "checkout_options": {
+                    "ask_for_shipping_address": False,
+                    "merchant_support_email": "support@cubalink23.com"
+                },
+                "order": {
+                    "location_id": self.location_id,
+                    "line_items": [
+                        {
+                            "name": payment_data.get('description', 'Recarga de saldo'),
+                            "quantity": "1",
+                            "item_type": "ITEM",
+                            "base_price_money": {
+                                "amount": int(payment_data['amount'] * 100),
+                                "currency": "USD"
+                            }
+                        }
+                    ]
+                },
+                "pre_populated_data": {
+                    "buyer_email": payment_data.get('email', 'user@cubalink23.com')
+                }
             }
             
-            # Hacer petición a Square API
+            # Hacer petición a Square API para crear Payment Link
             response = requests.post(
-                f"{self.base_url}/v2/payments",
+                f"{self.base_url}/v2/online-checkout/payment-links",
                 headers=self.headers,
-                json=payment_request,
+                json=payment_link_request,
                 timeout=30
             )
             
             if response.status_code == 200:
                 result = response.json()
-                payment = result.get('payment', {})
+                payment_link = result.get('payment_link', {})
                 
                 return {
                     'success': True,
-                    'transaction_id': payment.get('id'),
-                    'status': payment.get('status'),
+                    'transaction_id': payment_link.get('id'),
+                    'status': 'PENDING',
                     'amount': payment_data['amount'],
-                    'message': 'Pago procesado exitosamente'
+                    'checkout_url': payment_link.get('url'),
+                    'message': 'Payment Link creado exitosamente'
                 }
             else:
                 error_data = response.json()

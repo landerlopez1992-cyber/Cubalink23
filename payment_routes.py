@@ -34,7 +34,7 @@ def process_payment():
             'card_last4': data['card_last4'],
             'card_type': data['card_type'],
             'card_holder_name': data['card_holder_name'],
-            'email': data.get('email', 'test@example.com')
+            'email': data.get('email', 'user@cubalink23.com')
         }
         
         result = square_service.process_real_payment(payment_data)
