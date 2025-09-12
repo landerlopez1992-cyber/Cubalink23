@@ -40,13 +40,12 @@ app.register_blueprint(auth)
 from push_notifications_routes import push_bp
 app.register_blueprint(push_bp)
 
-# Importar rutas de pagos
-from payment_routes import payment_bp
-app.register_blueprint(payment_bp)
+# Comentado temporalmente para evitar conflictos
+# from payment_routes import payment_bp
+# app.register_blueprint(payment_bp)
 
-# Importar rutas de webhooks
-from webhook_routes import webhook_bp
-app.register_blueprint(webhook_bp)
+# from webhook_routes import webhook_bp
+# app.register_blueprint(webhook_bp)
 
 # Configuración
 PORT = int(os.environ.get('PORT', 10000))
@@ -119,7 +118,7 @@ def test_payments_direct():
 
 @app.route('/api/payments/process', methods=['POST'])
 def process_payment_direct():
-    """Procesar pago real con Square API - Endpoint directo"""
+    """Procesar pago real con Square API - Endpoint directo simplificado"""
     try:
         data = request.get_json()
         
@@ -130,42 +129,69 @@ def process_payment_direct():
                 'error': 'Datos de pago requeridos: amount'
             }), 400
         
-        # Importar SquareService
-        try:
-            from square_service import SquareService
-            square_service = SquareService()
-        except ImportError as e:
-            return jsonify({
-                'success': False,
-                'error': f'Error importando SquareService: {str(e)}'
-            }), 500
+        # Verificar credenciales de Square
+        square_access_token = os.environ.get('SQUARE_ACCESS_TOKEN')
+        square_application_id = os.environ.get('SQUARE_APPLICATION_ID')
+        square_location_id = os.environ.get('SQUARE_LOCATION_ID')
+        square_environment = os.environ.get('SQUARE_ENVIRONMENT', 'sandbox')
         
-        # Verificar si Square está configurado
-        if not square_service.is_available():
+        if not all([square_access_token, square_application_id, square_location_id]):
             return jsonify({
                 'success': False,
                 'error': 'Square API no está configurado correctamente'
             }), 500
         
-        # Procesar pago real con Square API
-        payment_data = {
-            'amount': float(data['amount']),
-            'email': data.get('email', 'user@cubalink23.com')
+        # Crear Payment Link directamente con Square API
+        import requests
+        
+        headers = {
+            'Square-Version': '2023-10-18',
+            'Authorization': f'Bearer {square_access_token}',
+            'Content-Type': 'application/json'
         }
         
-        result = square_service.process_real_payment(payment_data)
+        # Crear el Payment Link
+        payment_link_data = {
+            'idempotency_key': f'payment_{int(time.time())}_{data["amount"]}',
+            'order': {
+                'location_id': square_location_id,
+                'line_items': [{
+                    'name': 'Recarga de Saldo',
+                    'quantity': '1',
+                    'item_type': 'ITEM',
+                    'base_price_money': {
+                        'amount': int(float(data['amount']) * 100),  # Convertir a centavos
+                        'currency': 'USD'
+                    }
+                }]
+            },
+            'pre_populated_data': {
+                'buyer_email': data.get('email', 'user@cubalink23.com')
+            }
+        }
         
-        if result['success']:
+        # URL de Square API
+        if square_environment == 'production':
+            square_url = 'https://connect.squareup.com/v2/online-checkout/payment-links'
+        else:
+            square_url = 'https://connect.squareupsandbox.com/v2/online-checkout/payment-links'
+        
+        response = requests.post(square_url, headers=headers, json=payment_link_data)
+        
+        if response.status_code == 200:
+            result = response.json()
+            payment_link = result.get('payment_link', {})
+            
             return jsonify({
                 'success': True,
-                'checkoutUrl': result['checkout_url'],
-                'transactionId': result['transaction_id'],
+                'checkoutUrl': payment_link.get('url') or payment_link.get('long_url'),
+                'transactionId': payment_link.get('id'),
                 'message': 'Payment Link creado exitosamente'
             })
         else:
             return jsonify({
                 'success': False,
-                'error': result['error']
+                'error': f'Error de Square API: {response.status_code} - {response.text}'
             }), 400
             
     except Exception as e:
@@ -176,15 +202,23 @@ def process_payment_direct():
 
 @app.route('/api/payments/square-status')
 def square_status_direct():
-    """Verificar estado de Square API - Endpoint directo"""
+    """Verificar estado de Square API - Endpoint directo simplificado"""
     try:
-        from square_service import SquareService
-        square_service = SquareService()
+        # Verificar credenciales de Square
+        square_access_token = os.environ.get('SQUARE_ACCESS_TOKEN')
+        square_application_id = os.environ.get('SQUARE_APPLICATION_ID')
+        square_location_id = os.environ.get('SQUARE_LOCATION_ID')
+        square_environment = os.environ.get('SQUARE_ENVIRONMENT', 'sandbox')
+        
+        is_configured = all([square_access_token, square_application_id, square_location_id])
         
         return jsonify({
-            'available': square_service.is_available(),
-            'configured': square_service.is_configured,
-            'environment': os.environ.get('SQUARE_ENVIRONMENT', 'not_set'),
+            'available': is_configured,
+            'configured': is_configured,
+            'environment': square_environment,
+            'has_access_token': bool(square_access_token),
+            'has_application_id': bool(square_application_id),
+            'has_location_id': bool(square_location_id),
             'timestamp': datetime.now().isoformat()
         })
     except Exception as e:
