@@ -1,4 +1,3 @@
-import 'package:cubalink23/supabase/supabase_config.dart';
 import 'package:cubalink23/services/supabase_database_service.dart';
 import 'package:cubalink23/models/user.dart';
 import 'package:cubalink23/models/contact.dart';
@@ -11,22 +10,22 @@ import 'package:cubalink23/models/order.dart' as OrderModel;
 class DatabaseService {
   static DatabaseService? _instance;
   static DatabaseService get instance => _instance ??= DatabaseService._();
-  
+
   DatabaseService._();
-  
+
   final SupabaseDatabaseService _supabaseDB = SupabaseDatabaseService.instance;
-  
+
   // User operations
   Future<User?> getUserData(String userId) async {
     try {
       print('📊 Obteniendo datos de usuario: $userId');
-      
+
       final userData = await _supabaseDB.getUserById(userId);
       if (userData != null) {
         print('✅ Usuario encontrado: ${userData.name}');
         return userData;
       }
-      
+
       print('❌ Usuario no encontrado');
       return null;
     } catch (e) {
@@ -34,16 +33,16 @@ class DatabaseService {
       return null;
     }
   }
-  
+
   Future<void> createUser(User user) async {
     try {
       print('👤 ===== CREANDO NUEVO USUARIO EN SUPABASE =====');
       print('   📧 Email: ${user.email}');
       print('   📱 Teléfono: ${user.phone}');
       print('   💰 Saldo inicial: \$0.00 (REGLA: Los usuarios inician con balance cero)');
-      
+
       await _supabaseDB.createUser(user);
-      
+
       print('✅ Usuario creado con saldo inicial: \$0.00');
       print('👤 ===== USUARIO CREADO EXITOSAMENTE =====');
     } catch (e) {
@@ -51,7 +50,7 @@ class DatabaseService {
       rethrow;
     }
   }
-  
+
   Future<void> updateUser(User user) async {
     try {
       await _supabaseDB.updateUser(user.id, {
@@ -70,14 +69,14 @@ class DatabaseService {
       rethrow;
     }
   }
-  
+
   Future<User?> getUserByPhone(String phoneNumber) async {
     try {
       String formattedPhone = phoneNumber;
       if (!phoneNumber.startsWith('+')) {
         formattedPhone = '+53$phoneNumber';
       }
-      
+
       // Por ahora buscar usuarios manualmente hasta implementar getUserByPhone
       final allUsers = await _supabaseDB.searchUsers(formattedPhone);
       return allUsers.isNotEmpty ? allUsers.first : null;
@@ -86,7 +85,7 @@ class DatabaseService {
       return null;
     }
   }
-  
+
   // Recharge history operations
   Future<void> addRechargeHistory(RechargeHistory history) async {
     try {
@@ -98,7 +97,7 @@ class DatabaseService {
       rethrow;
     }
   }
-  
+
   Future<List<RechargeHistory>> getRechargeHistory(String userId) async {
     try {
       // Por ahora retornar lista vacía - implementar método después
@@ -109,7 +108,7 @@ class DatabaseService {
       return [];
     }
   }
-  
+
   // Contact operations
   Future<List<Contact>> getUserContacts(String userId) async {
     try {
@@ -121,7 +120,7 @@ class DatabaseService {
       return [];
     }
   }
-  
+
   Future<void> addContact(String userId, Contact contact) async {
     try {
       await _supabaseDB.addContact(userId, contact.name, contact.phone, contact.operatorId, contact.countryCode);
@@ -131,7 +130,7 @@ class DatabaseService {
       rethrow;
     }
   }
-  
+
   // Payment cards operations
   Future<List<PaymentCard>> getUserCards(String userId) async {
     try {
@@ -143,7 +142,7 @@ class DatabaseService {
       return [];
     }
   }
-  
+
   Future<void> addPaymentCard(String userId, PaymentCard card) async {
     try {
       // Por ahora usar placeholder - implementar método después
@@ -154,8 +153,8 @@ class DatabaseService {
       rethrow;
     }
   }
-  
-  // Order operations  
+
+  // Order operations
   Future<List<OrderModel.Order>> getUserOrders(String userId) async {
     try {
       // Por ahora retornar lista vacía - implementar método después
@@ -166,7 +165,7 @@ class DatabaseService {
       return [];
     }
   }
-  
+
   Future<void> createOrder(OrderModel.Order order) async {
     try {
       // Por ahora usar placeholder - implementar método después
@@ -177,7 +176,7 @@ class DatabaseService {
       rethrow;
     }
   }
-  
+
   // Balance operations
   Future<void> updateUserBalance(String userId, double newBalance) async {
     try {
@@ -188,7 +187,7 @@ class DatabaseService {
       rethrow;
     }
   }
-  
+
   // Admin operations
   Future<List<User>> getAllUsers() async {
     try {
@@ -200,7 +199,7 @@ class DatabaseService {
       return [];
     }
   }
-  
+
   Future<void> suspendUser(String userId) async {
     try {
       await _supabaseDB.updateUserStatus(userId, 'Suspendido');
@@ -210,7 +209,7 @@ class DatabaseService {
       rethrow;
     }
   }
-  
+
   Future<void> activateUser(String userId) async {
     try {
       await _supabaseDB.updateUserStatus(userId, 'Activo');

@@ -7,3 +7,6 @@ git commit -m "WIP: build en nube (APK temporal)" || echo "Nada nuevo para commi
 git push -u origin "$BR"
 echo
 echo "✅ Enviado a $BR. Ve a GitHub → Actions → run más reciente → Artifacts → app-release.apk"
+
+
+

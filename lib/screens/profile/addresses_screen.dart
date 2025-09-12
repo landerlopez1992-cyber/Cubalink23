@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cubalink23/services/firebase_repository.dart';
-import 'package:cubalink23/services/auth_service.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/services/supabase_service.dart';
 
@@ -20,7 +18,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _idDocumentController = TextEditingController();
-  
+
   List<Map<String, dynamic>> addresses = [];
   bool isLoading = false;
   bool isAddingAddress = false;
@@ -38,16 +36,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
     try {
       print('=== LOADING ADDRESSES ===');
       setState(() => isLoading = true);
-      
+
       final currentUser = SupabaseAuthService.instance.getCurrentUser();
       if (currentUser == null) {
         print('❌ No current user found');
         setState(() => isLoading = false);
         return;
       }
-      
+
       print('👤 Current user: ${currentUser.id}');
-      
+
       // Cargar direcciones reales del usuario desde Supabase
       final userAddresses = await SupabaseService.instance.select(
         'user_addresses',
@@ -57,12 +55,13 @@ class _AddressesScreenState extends State<AddressesScreen> {
         ascending: false,
       );
       print('📍 Addresses loaded from Supabase: ${userAddresses.length}');
-      
+
       // Log cada dirección cargada
       for (final address in userAddresses) {
-        print('   📋 Address: ${address['full_name'] ?? address['fullName']} - ${address['municipality']}, ${address['province']}');
+        print(
+            '   📋 Address: ${address['full_name'] ?? address['fullName']} - ${address['municipality']}, ${address['province']}');
       }
-      
+
       if (mounted) {
         setState(() {
           addresses = userAddresses;
@@ -70,7 +69,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
         });
         print('✅ STATE UPDATED - Addresses in widget: ${addresses.length}');
       }
-      
+
       print('=== ADDRESS LOADING COMPLETE ===');
     } catch (e) {
       print('❌ ERROR LOADING ADDRESSES: $e');
@@ -94,12 +93,12 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
     try {
       setState(() => isLoading = true);
-      
+
       final currentUser = SupabaseAuthService.instance.getCurrentUser();
       if (currentUser == null) {
         throw Exception('Usuario no autenticado');
       }
-      
+
       final newAddress = {
         'street': _streetController.text.trim(),
         'municipality': _municipalityController.text.trim(),
@@ -123,15 +122,15 @@ class _AddressesScreenState extends State<AddressesScreen> {
         'id_document': newAddress['idDocument'],
       });
       print('Address saved to Supabase successfully');
-      
+
       // Recargar direcciones desde Firebase
       await _loadAddresses();
-      
+
       _clearForm();
       setState(() => isAddingAddress = false);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('✅ Dirección guardada exitosamente'),
           backgroundColor: Colors.green,
         ),
@@ -152,21 +151,21 @@ class _AddressesScreenState extends State<AddressesScreen> {
   Future<void> _deleteAddress(String addressId) async {
     try {
       setState(() => isLoading = true);
-      
+
       final currentUser = SupabaseAuthService.instance.getCurrentUser();
       if (currentUser == null) {
         throw Exception('Usuario no autenticado');
       }
-      
+
       // Eliminar de Supabase
       await SupabaseService.instance.delete('user_addresses', addressId);
       print('Address deleted from Supabase successfully');
-      
+
       // Recargar direcciones desde Firebase
       await _loadAddresses();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('✅ Dirección eliminada'),
           backgroundColor: Colors.green,
         ),
@@ -200,7 +199,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
-        title: Text(
+        title: const Text(
           'Mis Direcciones',
           style: TextStyle(
             color: Colors.white,
@@ -208,13 +207,13 @@ class _AddressesScreenState extends State<AddressesScreen> {
           ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           if (!isAddingAddress)
             IconButton(
-              icon: Icon(Icons.add, color: Colors.white),
+              icon: const Icon(Icons.add, color: Colors.white),
               onPressed: () => setState(() => isAddingAddress = true),
             ),
         ],
@@ -227,27 +226,27 @@ class _AddressesScreenState extends State<AddressesScreen> {
             )
           : SingleChildScrollView(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     // Botón Agregar dirección siempre visible al inicio
                     if (!isAddingAddress && addresses.isNotEmpty)
                       Container(
                         width: double.infinity,
-                        margin: EdgeInsets.only(bottom: 20),
+                        margin: const EdgeInsets.only(bottom: 20),
                         child: OutlinedButton.icon(
                           onPressed: () => setState(() => isAddingAddress = true),
-                          icon: Icon(Icons.add),
-                          label: Text('Agregar Nueva Dirección'),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Agregar Nueva Dirección'),
                           style: OutlinedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                         ),
                       ),
-                    
+
                     // Formulario para agregar nueva dirección
                     if (isAddingAddress) ...[
                       Card(
@@ -256,7 +255,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           child: Form(
                             key: _formKey,
                             child: Column(
@@ -270,8 +269,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                     color: Theme.of(context).colorScheme.primary,
                                   ),
                                 ),
-                                SizedBox(height: 16),
-                                
+                                const SizedBox(height: 16),
+
                                 // Campos del formulario
                                 _buildTextField(
                                   controller: _nameController,
@@ -284,8 +283,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                     return null;
                                   },
                                 ),
-                                SizedBox(height: 12),
-                                
+                                const SizedBox(height: 12),
+
                                 _buildTextField(
                                   controller: _streetController,
                                   label: 'Calle',
@@ -297,8 +296,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                     return null;
                                   },
                                 ),
-                                SizedBox(height: 12),
-                                
+                                const SizedBox(height: 12),
+
                                 Row(
                                   children: [
                                     Expanded(
@@ -314,7 +313,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                         },
                                       ),
                                     ),
-                                    SizedBox(width: 12),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: _buildTextField(
                                         controller: _provinceController,
@@ -330,8 +329,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: 12),
-                                
+                                const SizedBox(height: 12),
+
                                 _buildTextField(
                                   controller: _countryController,
                                   label: 'País',
@@ -343,8 +342,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                     return null;
                                   },
                                 ),
-                                SizedBox(height: 12),
-                                
+                                const SizedBox(height: 12),
+
                                 Row(
                                   children: [
                                     Expanded(
@@ -361,7 +360,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                         },
                                       ),
                                     ),
-                                    SizedBox(width: 12),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: _buildTextField(
                                         controller: _idDocumentController,
@@ -377,8 +376,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: 20),
-                                
+                                const SizedBox(height: 20),
+
                                 // Botones
                                 Row(
                                   children: [
@@ -389,28 +388,28 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                           setState(() => isAddingAddress = false);
                                         },
                                         style: OutlinedButton.styleFrom(
-                                          padding: EdgeInsets.symmetric(vertical: 12),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                         ),
-                                        child: Text('Cancelar'),
+                                        child: const Text('Cancelar'),
                                       ),
                                     ),
-                                    SizedBox(width: 12),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: ElevatedButton(
                                         onPressed: isLoading ? null : _saveAddress,
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Theme.of(context).colorScheme.primary,
                                           foregroundColor: Colors.white,
-                                          padding: EdgeInsets.symmetric(vertical: 12),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                         ),
                                         child: isLoading
-                                            ? SizedBox(
+                                            ? const SizedBox(
                                                 width: 20,
                                                 height: 20,
                                                 child: CircularProgressIndicator(
@@ -418,7 +417,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                                   strokeWidth: 2,
                                                 ),
                                               )
-                                            : Text('Guardar'),
+                                            : const Text('Guardar'),
                                       ),
                                     ),
                                   ],
@@ -428,9 +427,9 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                     ],
-                    
+
                     // Lista de direcciones guardadas
                     if (addresses.isNotEmpty) ...[
                       Text(
@@ -441,36 +440,35 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                      SizedBox(height: 16),
-                      
+                      const SizedBox(height: 16),
                       ...addresses.map((address) => _buildAddressCard(address)),
                     ] else if (!isAddingAddress && addresses.isEmpty) ...[
                       Center(
                         child: Column(
                           children: [
-                            SizedBox(height: 50),
+                            const SizedBox(height: 50),
                             Icon(
                               Icons.location_off,
                               size: 64,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity( 0.5),
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             Text(
                               'No tienes direcciones guardadas',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity( 0.7),
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                               ),
                             ),
-                            SizedBox(height: 20),
+                            const SizedBox(height: 20),
                             ElevatedButton.icon(
                               onPressed: () => setState(() => isAddingAddress = true),
-                              icon: Icon(Icons.add),
-                              label: Text('Agregar Primera Dirección'),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Agregar Primera Dirección'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(context).colorScheme.primary,
                                 foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -513,7 +511,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
         ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         isDense: true,
       ),
     );
@@ -521,13 +519,13 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
   Widget _buildAddressCard(Map<String, dynamic> address) {
     return Card(
-      margin: EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -538,7 +536,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                   color: Theme.of(context).colorScheme.primary,
                   size: 20,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     address['full_name'] ?? address['fullName'] ?? 'Sin nombre',
@@ -550,12 +548,12 @@ class _AddressesScreenState extends State<AddressesScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red, size: 20),
+                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
                   onPressed: () => _showDeleteDialog(address),
                 ),
               ],
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             _buildAddressRow(Icons.home, address['street'] ?? ''),
             _buildAddressRow(Icons.location_city, '${address['municipality']}, ${address['province']}'),
             _buildAddressRow(Icons.flag, address['country'] ?? ''),
@@ -569,20 +567,20 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
   Widget _buildAddressRow(IconData icon, String text) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
           Icon(
             icon,
             size: 16,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity( 0.6),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Text(
             text,
             style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity( 0.8),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
             ),
           ),
         ],
@@ -594,12 +592,12 @@ class _AddressesScreenState extends State<AddressesScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Eliminar Dirección'),
-        content: Text('¿Estás seguro de que deseas eliminar esta dirección?'),
+        title: const Text('Eliminar Dirección'),
+        content: const Text('¿Estás seguro de que deseas eliminar esta dirección?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar'),
+            child: const Text('Cancelar'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -610,7 +608,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text('Eliminar'),
+            child: const Text('Eliminar'),
           ),
         ],
       ),

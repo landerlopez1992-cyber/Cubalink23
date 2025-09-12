@@ -6,3 +6,6 @@ git pull --ff-only
 git merge --no-ff build-test -m "Promote: cambios validados desde build-test"
 git push origin main
 echo "✅ Promovido a main."
+
+
+

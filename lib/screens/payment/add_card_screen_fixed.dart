@@ -129,10 +129,18 @@ class _AddCardScreenState extends State<AddCardScreen> {
       );
 
       // Guardar en Supabase usando el método correcto
-      final success = await SupabaseService.instance.savePaymentCard(
-        currentUser.id,
-        paymentCard,
-      );
+      final cardData = {
+        'user_id': currentUser.id,
+        'last_4': paymentCard.last4,
+        'card_type': paymentCard.cardType,
+        'expiry_month': paymentCard.expiryMonth,
+        'expiry_year': paymentCard.expiryYear,
+        'holder_name': paymentCard.holderName,
+        'is_default': paymentCard.isDefault,
+      };
+      
+      final result = await SupabaseService.instance.savePaymentCard(cardData);
+      final success = result != null;
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

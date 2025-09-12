@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:cubalink23/services/auth_service.dart';
 import 'package:cubalink23/services/auth_service_bypass.dart';
 import 'package:cubalink23/services/user_role_service.dart';
 import 'package:cubalink23/services/profile_image_service.dart';
@@ -23,11 +22,11 @@ class _AccountScreenState extends State<AccountScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  
+
   User? currentUser;
   bool isLoading = false;
-  String? profileImagePath;  // Ruta local como fallback
-  String? profileImageUrl;   // URL de Supabase Storage
+  String? profileImagePath; // Ruta local como fallback
+  String? profileImageUrl; // URL de Supabase Storage
   final ImagePicker _picker = ImagePicker();
   final UserRoleService _roleService = UserRoleService();
   final ProfileImageService _profileImageService = ProfileImageService.instance;
@@ -40,14 +39,14 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Future<void> _loadUserData() async {
     if (!mounted) return;
-    
+
     setState(() => isLoading = true);
-    
+
     try {
       // Cargar datos reales desde Supabase
       await AuthServiceBypass.instance.loadCurrentUserFromLocal();
       final user = AuthServiceBypass.instance.getCurrentUser();
-      
+
       if (user != null && mounted) {
         setState(() {
           _nameController.text = user.name;
@@ -55,19 +54,19 @@ class _AccountScreenState extends State<AccountScreen> {
           _phoneController.text = user.phone;
           currentUser = user;
         });
-        
+
         // Cargar foto de perfil desde Supabase primero
         profileImageUrl = await _profileImageService.getProfileImageUrl(user.id);
-        
+
         // Cargar datos de rol del usuario
         await _roleService.initialize();
         await _roleService.getUserByEmail(user.email);
-        
+
         // Cargar foto de perfil local como fallback si no hay en Supabase
         if (profileImageUrl == null) {
           await _loadLocalProfileImage(user.id);
         }
-        
+
         if (mounted) {
           setState(() {}); // Actualizar UI con datos de rol
         }
@@ -111,354 +110,354 @@ class _AccountScreenState extends State<AccountScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: isLoading 
-        ? Center(
-            child: CircularProgressIndicator(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          )
-        : SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: 20), // Padding inferior para evitar barra de navegación
-              child: Column(
-                children: [
-                // Header con gradiente - Optimizado para Motorola Edge 2024
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(20), // Reducido de 32 a 20
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary,
-                        Theme.of(context).colorScheme.secondary,
-                        Theme.of(context).colorScheme.tertiary,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      // Foto de perfil circular (táctil) - Optimizada para Motorola
-                      GestureDetector(
-                        onTap: _changeProfileImage,
-                        child: Container(
-                          width: 100, // Reducido de 120 a 100
-                          height: 100, // Reducido de 120 a 100
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 4,
+      body: isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            )
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 20), // Padding inferior para evitar barra de navegación
+                child: Column(
+                  children: [
+                    // Header con gradiente - Optimizado para Motorola Edge 2024
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20), // Reducido de 32 a 20
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.secondary,
+                            Theme.of(context).colorScheme.tertiary,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          // Foto de perfil circular (táctil) - Optimizada para Motorola
+                          GestureDetector(
+                            onTap: _changeProfileImage,
+                            child: Container(
+                              width: 100, // Reducido de 120 a 100
+                              height: 100, // Reducido de 120 a 100
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
+                                ),
+                              ),
+                              child: Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 46, // Reducido de 56 a 46
+                                    backgroundColor: Colors.grey[300],
+                                    backgroundImage: _getProfileImage(),
+                                  ),
+                                  // Icono de cámara - Optimizado para Motorola
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      width: 30, // Reducido de 36 a 30
+                                      height: 30, // Reducido de 36 a 30
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.primary,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                      ),
+                                      child: const Icon(
+                                        Icons.camera_alt,
+                                        color: Colors.white,
+                                        size: 16, // Reducido de 18 a 16
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          child: Stack(
-                            children: [
-                              CircleAvatar(
-                                radius: 46, // Reducido de 56 a 46
-                                backgroundColor: Colors.grey[300],
-                                backgroundImage: _getProfileImage(),
-                              ),
-                              // Icono de cámara - Optimizado para Motorola
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Container(
-                                  width: 30, // Reducido de 36 a 30
-                                  height: 30, // Reducido de 36 a 30
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
-                                  ),
-                                  child: Icon(
-                                    Icons.camera_alt,
+                          const SizedBox(height: 12), // Reducido de 16 a 12
+                          Text(
+                            _roleService.displayName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20, // Reducido de 24 a 20
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _emailController.text,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14, // Reducido de 16 a 14
+                            ),
+                          ),
+                          if (_roleService.currentUserRole != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  _roleService.roleDisplayText,
+                                  style: const TextStyle(
                                     color: Colors.white,
-                                    size: 16, // Reducido de 18 a 16
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 12), // Reducido de 16 a 12
-                      Text(
-                        _roleService.displayName,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20, // Reducido de 24 a 20
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        _emailController.text,
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14, // Reducido de 16 a 14
-                        ),
-                      ),
-                      if (_roleService.currentUserRole != null)
-                        Padding(
-                          padding: EdgeInsets.only(top: 4),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Text(
-                              _roleService.roleDisplayText,
+                        ],
+                      ),
+                    ),
+
+                    // Formulario de datos - Optimizado para Motorola
+                    Padding(
+                      padding: const EdgeInsets.all(16), // Reducido de 24 a 16
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Información Personal',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 18, // Reducido de 20 a 18
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                            const SizedBox(height: 16), // Reducido de 24 a 16
 
-                // Formulario de datos - Optimizado para Motorola
-                Padding(
-                  padding: EdgeInsets.all(16), // Reducido de 24 a 16
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Información Personal',
-                          style: TextStyle(
-                            fontSize: 18, // Reducido de 20 a 18
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        SizedBox(height: 16), // Reducido de 24 a 16
-
-                        // Campo Nombre completo
-                        _buildTextField(
-                          controller: _nameController,
-                          label: 'Nombre completo',
-                          icon: Icons.person,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'El nombre es requerido';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 12), // Reducido de 16 a 12
-
-                        // Campo Email
-                        _buildTextField(
-                          controller: _emailController,
-                          label: 'Email',
-                          icon: Icons.email,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'El email es requerido';
-                            }
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                              return 'Email inválido';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 12), // Reducido de 16 a 12
-
-                        // Campo Teléfono
-                        _buildTextField(
-                          controller: _phoneController,
-                          label: 'Teléfono',
-                          icon: Icons.phone,
-                          keyboardType: TextInputType.phone,
-                          validator: (value) {
-                            if (value != null && value.isNotEmpty) {
-                              // Validar formato básico de teléfono (puede tener + al inicio, espacios, guiones, paréntesis)
-                              if (!RegExp(r'^[\+]?[0-9\s\-\(\)]+$').hasMatch(value)) {
-                                return 'Formato de teléfono inválido';
-                              }
-                              // Verificar que tenga al menos 8 dígitos (sin contar caracteres especiales)
-                              final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
-                              if (digitsOnly.length < 8) {
-                                return 'Teléfono debe tener al menos 8 dígitos';
-                              }
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 20), // Reducido de 32 a 20
-
-                        // Botón Actualizar Perfil
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: isLoading ? null : _updateProfile,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 2,
+                            // Campo Nombre completo
+                            _buildTextField(
+                              controller: _nameController,
+                              label: 'Nombre completo',
+                              icon: Icons.person,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'El nombre es requerido';
+                                }
+                                return null;
+                              },
                             ),
-                            child: isLoading 
-                              ? Row(
+                            const SizedBox(height: 12), // Reducido de 16 a 12
+
+                            // Campo Email
+                            _buildTextField(
+                              controller: _emailController,
+                              label: 'Email',
+                              icon: Icons.email,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'El email es requerido';
+                                }
+                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                  return 'Email inválido';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 12), // Reducido de 16 a 12
+
+                            // Campo Teléfono
+                            _buildTextField(
+                              controller: _phoneController,
+                              label: 'Teléfono',
+                              icon: Icons.phone,
+                              keyboardType: TextInputType.phone,
+                              validator: (value) {
+                                if (value != null && value.isNotEmpty) {
+                                  // Validar formato básico de teléfono (puede tener + al inicio, espacios, guiones, paréntesis)
+                                  if (!RegExp(r'^[\+]?[0-9\s\-\(\)]+$').hasMatch(value)) {
+                                    return 'Formato de teléfono inválido';
+                                  }
+                                  // Verificar que tenga al menos 8 dígitos (sin contar caracteres especiales)
+                                  final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
+                                  if (digitsOnly.length < 8) {
+                                    return 'Teléfono debe tener al menos 8 dígitos';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20), // Reducido de 32 a 20
+
+                            // Botón Actualizar Perfil
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: isLoading ? null : _updateProfile,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 2,
+                                ),
+                                child: isLoading
+                                    ? const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            'Guardando...',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : const Text(
+                                        'Actualizar Perfil',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 20), // Reducido de 32 a 20
+
+                            // Sección Opciones de Cuenta
+                            Text(
+                              'Opciones de Cuenta',
+                              style: TextStyle(
+                                fontSize: 18, // Reducido de 20 a 18
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 8), // Reducido de 12 a 8 para subir botón cerrar sesión
+
+                            // Lista de opciones
+                            _buildOptionTile(
+                              icon: Icons.location_on,
+                              title: 'Mis Direcciones',
+                              subtitle: 'Gestiona tus direcciones guardadas',
+                              onTap: _goToAddresses,
+                            ),
+                            _buildOptionTile(
+                              icon: Icons.credit_card,
+                              title: 'Mis Tarjetas Guardadas',
+                              subtitle: 'Administra tus métodos de pago',
+                              onTap: _goToSavedCards,
+                            ),
+                            _buildOptionTile(
+                              icon: Icons.history,
+                              title: 'Transacciones Historial',
+                              subtitle: 'Ver historial completo de transacciones',
+                              onTap: _goToTransactionHistory,
+                            ),
+                            _buildOptionTile(
+                              icon: Icons.chat,
+                              title: 'Soporte Chat',
+                              subtitle: 'Contacta con nuestro equipo de soporte',
+                              onTap: _goToSupportChat,
+                            ),
+                            _buildOptionTile(
+                              icon: Icons.local_shipping,
+                              title: 'Rastreo de Mi Orden',
+                              subtitle: 'Rastrea el estado de tus pedidos',
+                              onTap: _goToOrderTracking,
+                            ),
+                            _buildOptionTile(
+                              icon: Icons.lock,
+                              title: 'Cambiar Contraseña',
+                              subtitle: 'Actualiza tu contraseña de acceso',
+                              onTap: _changePassword,
+                            ),
+
+                            // Botones de acceso a paneles según rol
+                            if (_roleService.isVendor)
+                              _buildOptionTile(
+                                icon: Icons.store,
+                                title: 'Panel de Vendedor',
+                                subtitle: 'Gestiona tus productos y ventas',
+                                onTap: _goToVendorPanel,
+                                color: const Color(0xFF2E7D32), // Verde para vendedor
+                              ),
+
+                            if (_roleService.isDelivery)
+                              _buildOptionTile(
+                                icon: Icons.local_shipping,
+                                title: 'Panel de Repartidor',
+                                subtitle: 'Gestiona tus entregas y pedidos',
+                                onTap: _goToDeliveryPanel,
+                                color: const Color(0xFF1976D2), // Azul para repartidor
+                              ),
+
+                            if (_roleService.isAdmin)
+                              _buildOptionTile(
+                                icon: Icons.admin_panel_settings,
+                                title: 'Panel de Administrador',
+                                subtitle: 'Acceso completo al sistema',
+                                onTap: _goToAdminPanel,
+                                color: const Color(0xFF7B1FA2), // Púrpura para admin
+                              ),
+
+                            const SizedBox(height: 8), // Reducido de 16 a 8 para subir botón cerrar sesión
+
+                            // Botón Cerrar Sesión
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: _logout,
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Colors.red),
+                                  foregroundColor: Colors.red,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                    SizedBox(width: 12),
+                                    Icon(Icons.logout, size: 20),
+                                    SizedBox(width: 8),
                                     Text(
-                                      'Guardando...',
+                                      'Cerrar Sesión',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ],
-                                )
-                              : Text(
-                                  'Actualizar Perfil',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
                                 ),
-                          ),
-                        ),
-                        SizedBox(height: 20), // Reducido de 32 a 20
-
-                        // Sección Opciones de Cuenta
-                        Text(
-                          'Opciones de Cuenta',
-                          style: TextStyle(
-                            fontSize: 18, // Reducido de 20 a 18
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        SizedBox(height: 8), // Reducido de 12 a 8 para subir botón cerrar sesión
-
-                        // Lista de opciones
-                        _buildOptionTile(
-                          icon: Icons.location_on,
-                          title: 'Mis Direcciones',
-                          subtitle: 'Gestiona tus direcciones guardadas',
-                          onTap: _goToAddresses,
-                        ),
-                        _buildOptionTile(
-                          icon: Icons.credit_card,
-                          title: 'Mis Tarjetas Guardadas',
-                          subtitle: 'Administra tus métodos de pago',
-                          onTap: _goToSavedCards,
-                        ),
-                        _buildOptionTile(
-                          icon: Icons.history,
-                          title: 'Transacciones Historial',
-                          subtitle: 'Ver historial completo de transacciones',
-                          onTap: _goToTransactionHistory,
-                        ),
-                        _buildOptionTile(
-                          icon: Icons.chat,
-                          title: 'Soporte Chat',
-                          subtitle: 'Contacta con nuestro equipo de soporte',
-                          onTap: _goToSupportChat,
-                        ),
-                        _buildOptionTile(
-                          icon: Icons.local_shipping,
-                          title: 'Rastreo de Mi Orden',
-                          subtitle: 'Rastrea el estado de tus pedidos',
-                          onTap: _goToOrderTracking,
-                        ),
-                        _buildOptionTile(
-                          icon: Icons.lock,
-                          title: 'Cambiar Contraseña',
-                          subtitle: 'Actualiza tu contraseña de acceso',
-                          onTap: _changePassword,
-                        ),
-                        
-                        // Botones de acceso a paneles según rol
-                        if (_roleService.isVendor)
-                          _buildOptionTile(
-                            icon: Icons.store,
-                            title: 'Panel de Vendedor',
-                            subtitle: 'Gestiona tus productos y ventas',
-                            onTap: _goToVendorPanel,
-                            color: Color(0xFF2E7D32), // Verde para vendedor
-                          ),
-                        
-                        if (_roleService.isDelivery)
-                          _buildOptionTile(
-                            icon: Icons.local_shipping,
-                            title: 'Panel de Repartidor',
-                            subtitle: 'Gestiona tus entregas y pedidos',
-                            onTap: _goToDeliveryPanel,
-                            color: Color(0xFF1976D2), // Azul para repartidor
-                          ),
-                        
-                        if (_roleService.isAdmin)
-                          _buildOptionTile(
-                            icon: Icons.admin_panel_settings,
-                            title: 'Panel de Administrador',
-                            subtitle: 'Acceso completo al sistema',
-                            onTap: _goToAdminPanel,
-                            color: Color(0xFF7B1FA2), // Púrpura para admin
-                          ),
-                        
-                        SizedBox(height: 8), // Reducido de 16 a 8 para subir botón cerrar sesión
-
-                        // Botón Cerrar Sesión
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: _logout,
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Colors.red),
-                              foregroundColor: Colors.red,
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.logout, size: 20),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Cerrar Sesión',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
     );
   }
 
@@ -493,7 +492,7 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surface,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }
@@ -502,7 +501,7 @@ class _AccountScreenState extends State<AccountScreen> {
     if (_formKey.currentState!.validate() && currentUser != null) {
       try {
         setState(() => isLoading = true);
-        
+
         // Actualizar usuario real en Firebase
         final updatedUser = User(
           id: currentUser!.id,
@@ -512,20 +511,20 @@ class _AccountScreenState extends State<AccountScreen> {
           balance: currentUser!.balance,
           createdAt: currentUser!.createdAt,
         );
-        
+
         // Guardar en Supabase
         await AuthServiceBypass.instance.updateUserProfile(
           name: updatedUser.name,
           phone: updatedUser.phone,
         );
-        
+
         setState(() {
           currentUser = updatedUser;
         });
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('✅ Perfil actualizado exitosamente'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 2),
@@ -558,7 +557,7 @@ class _AccountScreenState extends State<AccountScreen> {
     Color? color,
   }) {
     return Container(
-      margin: EdgeInsets.only(bottom: 4), // Reducido de 8 a 4 para subir botón cerrar sesión
+      margin: const EdgeInsets.only(bottom: 4), // Reducido de 8 a 4 para subir botón cerrar sesión
       child: ListTile(
         leading: Container(
           width: 40, // Reducido de 48 a 40
@@ -585,20 +584,20 @@ class _AccountScreenState extends State<AccountScreen> {
           subtitle,
           style: TextStyle(
             fontSize: 13, // Reducido de 14 a 13
-            color: Theme.of(context).colorScheme.onSurface.withOpacity( 0.7),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
           size: 14, // Reducido de 16 a 14
-          color: Theme.of(context).colorScheme.onSurface.withOpacity( 0.5),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
         ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 4), // Reducido de 6 a 4
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4), // Reducido de 6 a 4
         tileColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity( 0.2),
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
           ),
         ),
         onTap: onTap,
@@ -609,14 +608,14 @@ class _AccountScreenState extends State<AccountScreen> {
   Future<void> _goToAddresses() async {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddressesScreen()),
+      MaterialPageRoute(builder: (context) => const AddressesScreen()),
     );
   }
 
   Future<void> _goToSavedCards() async {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => SavedCardsScreen()),
+      MaterialPageRoute(builder: (context) => const SavedCardsScreen()),
     );
   }
 
@@ -631,7 +630,7 @@ class _AccountScreenState extends State<AccountScreen> {
   Future<void> _goToOrderTracking() async {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => OrderTrackingScreen()),
+      MaterialPageRoute(builder: (context) => const OrderTrackingScreen()),
     );
   }
 
@@ -650,7 +649,7 @@ class _AccountScreenState extends State<AccountScreen> {
   Future<void> _goToAdminPanel() async {
     // TODO: Implementar pantalla de administrador
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text('Panel de administrador próximamente'),
         backgroundColor: Colors.orange,
       ),
@@ -662,12 +661,12 @@ class _AccountScreenState extends State<AccountScreen> {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Cerrar Sesión'),
-        content: Text('¿Estás seguro de que deseas cerrar sesión?'),
+        title: const Text('Cerrar Sesión'),
+        content: const Text('¿Estás seguro de que deseas cerrar sesión?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancelar'),
+            child: const Text('Cancelar'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -675,7 +674,7 @@ class _AccountScreenState extends State<AccountScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text('Cerrar Sesión'),
+            child: const Text('Cerrar Sesión'),
           ),
         ],
       ),
@@ -686,7 +685,7 @@ class _AccountScreenState extends State<AccountScreen> {
         // Cerrar sesión en Supabase y limpiar datos de rol
         await AuthServiceBypass.instance.signOut();
         await _roleService.clearUserData();
-        
+
         // Navegar a login y limpiar stack
         if (context.mounted) {
           Navigator.pushNamedAndRemoveUntil(
@@ -711,7 +710,7 @@ class _AccountScreenState extends State<AccountScreen> {
       // Cargar ruta de imagen local desde SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final imagePath = prefs.getString('profile_image_$userId');
-      
+
       if (imagePath != null && File(imagePath).existsSync()) {
         if (mounted) {
           setState(() {
@@ -730,29 +729,29 @@ class _AccountScreenState extends State<AccountScreen> {
     final result = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (context) => Container(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Cambiar foto de perfil',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ListTile(
               leading: Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.primary),
-              title: Text('Tomar foto'),
+              title: const Text('Tomar foto'),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: Icon(Icons.photo_library, color: Theme.of(context).colorScheme.primary),
-              title: Text('Elegir de galería'),
+              title: const Text('Elegir de galería'),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -763,10 +762,9 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
-
   Future<void> _pickAndSaveImageLocally(ImageSource source) async {
     if (!mounted) return;
-    
+
     try {
       final XFile? image = await _picker.pickImage(
         source: source,
@@ -778,26 +776,26 @@ class _AccountScreenState extends State<AccountScreen> {
       if (image != null && currentUser != null && mounted) {
         // Mostrar indicador de carga
         setState(() => isLoading = true);
-        
+
         try {
           if (!mounted) return;
-          
+
           // Guardar localmente primero como backup
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('profile_image_${currentUser!.id}', image.path);
-          
+
           // Actualizar UI inmediatamente con imagen local
           setState(() {
             profileImagePath = image.path;
           });
-          
+
           // Subir a Supabase usando ProfileImageService
           try {
             final imageUrl = await _profileImageService.uploadProfileImage(
               imageFile: File(image.path),
               userId: currentUser!.id,
             );
-            
+
             if (imageUrl != null && mounted) {
               setState(() {
                 profileImageUrl = imageUrl;
@@ -805,7 +803,7 @@ class _AccountScreenState extends State<AccountScreen> {
               });
 
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
+                const SnackBar(
                   content: Text('✅ Foto de perfil actualizada exitosamente'),
                   backgroundColor: Colors.green,
                   duration: Duration(seconds: 2),
@@ -815,7 +813,7 @@ class _AccountScreenState extends State<AccountScreen> {
               if (mounted) {
                 setState(() => isLoading = false);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                  const SnackBar(
                     content: Text('⚠️ Foto guardada localmente - Error subiendo a servidor'),
                     backgroundColor: Colors.orange,
                     duration: Duration(seconds: 2),
@@ -829,7 +827,7 @@ class _AccountScreenState extends State<AccountScreen> {
             if (mounted) {
               setState(() => isLoading = false);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
+                const SnackBar(
                   content: Text('⚠️ Foto guardada localmente (sin conexión)'),
                   backgroundColor: Colors.orange,
                   duration: Duration(seconds: 2),
@@ -842,7 +840,7 @@ class _AccountScreenState extends State<AccountScreen> {
           if (mounted) {
             setState(() => isLoading = false);
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              const SnackBar(
                 content: Text('❌ Error procesando imagen'),
                 backgroundColor: Colors.red,
                 duration: Duration(seconds: 2),
@@ -856,7 +854,7 @@ class _AccountScreenState extends State<AccountScreen> {
       if (mounted) {
         setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('❌ Error seleccionando imagen'),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 2),
@@ -872,14 +870,14 @@ class _AccountScreenState extends State<AccountScreen> {
     if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
       return NetworkImage(profileImageUrl!);
     }
-    
+
     // 2. Fallback: Imagen local
     if (profileImagePath != null && File(profileImagePath!).existsSync()) {
       return FileImage(File(profileImagePath!));
     }
-    
+
     // 3. Default: Imagen placeholder
-    return NetworkImage(
+    return const NetworkImage(
       'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150',
     );
   }

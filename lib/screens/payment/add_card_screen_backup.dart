@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/models/payment_card.dart';
-import 'package:cubalink23/services/firebase_repository.dart';
 import 'package:cubalink23/services/supabase_service.dart';
 
 class AddCardScreen extends StatefulWidget {
@@ -130,10 +129,18 @@ class _AddCardScreenState extends State<AddCardScreen> {
       );
 
       // Guardar en Supabase
-      final success = await SupabaseService.instance.savePaymentCard(
-        currentUser.id,
-        paymentCard,
-      );
+      final cardData = {
+        'user_id': currentUser.id,
+        'last_4': paymentCard.last4,
+        'card_type': paymentCard.cardType,
+        'expiry_month': paymentCard.expiryMonth,
+        'expiry_year': paymentCard.expiryYear,
+        'holder_name': paymentCard.holderName,
+        'is_default': paymentCard.isDefault,
+      };
+      
+      final result = await SupabaseService.instance.savePaymentCard(cardData);
+      final success = result != null;
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -195,6 +202,12 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
       // 2. Guardar tarjeta real en Supabase
       final cardWithSquareId = cardData.copyWith(squareCardId: squareCardId);
+      
+      // Verificar que el usuario esté autenticado
+      final currentUser = SupabaseAuthService.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('Usuario no autenticado');
+      }
       
       final savedCard = await SupabaseService.instance.insert('payment_cards', {
         'user_id': currentUser.id,
