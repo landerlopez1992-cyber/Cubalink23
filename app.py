@@ -107,6 +107,14 @@ def test_payments():
         "timestamp": datetime.now().isoformat()
     })
 
+@app.route('/api/simple-test')
+def simple_test():
+    """🧪 Test endpoint muy simple"""
+    return jsonify({
+        "message": "Simple test endpoint working",
+        "status": "success"
+    })
+
 @app.route('/api/payments/test')
 def test_payments_direct():
     """🧪 Test endpoint directo para pagos"""
