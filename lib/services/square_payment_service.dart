@@ -164,50 +164,55 @@ class SquarePaymentService {
     String? returnUrl,
   }) async {
     try {
+      // 🚀 USAR BACKEND DE PRODUCCIÓN EN LUGAR DE LLAMADAS DIRECTAS
+      // Esto evita problemas de CORS
+      final backendUrl = 'https://cubalink23-backend.onrender.com/api/payments/process';
+      
       final body = {
-        "quick_pay": {
-          "name": description,
-          "price_money": {
-            "amount": (amount * 100).round(), // Convertir a centavos
-            "currency": "USD"
-          },
-          "location_id": _locationId,
-          if (returnUrl != null) "redirect_url": returnUrl,
-        }
+        "amount": amount,
+        "description": description,
+        "email": "user@example.com", // Se puede obtener del usuario actual
+        if (returnUrl != null) "return_url": returnUrl,
       };
 
+      print('🌐 Enviando pago al backend: $backendUrl');
+      print('💰 Monto: \$${amount.toStringAsFixed(2)}');
+      print('📝 Descripción: $description');
+
       final response = await http.post(
-        Uri.parse('$_baseUrl/v2/online-checkout/payment-links'),
+        Uri.parse(backendUrl),
         headers: {
-          'Authorization': 'Bearer $_accessToken',
           'Content-Type': 'application/json',
-          'Square-Version': '2024-12-01',
         },
         body: json.encode(body),
       );
 
-      print('📡 Square API Response: ${response.statusCode}');
+      print('📡 Backend Response: ${response.statusCode}');
       print('📡 Response body: ${response.body}');
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final paymentLink = data['payment_link'];
         
-        print('✅ Payment link creado: ${paymentLink['id']}');
-        print('🔗 Checkout URL: ${paymentLink['url']}');
-        print('🔗 Long URL: ${paymentLink['long_url']}');
-        
-        // Usar 'url' que es lo que Square realmente devuelve (como confirmamos en las pruebas)
-        final checkoutUrl = paymentLink['url'] ?? paymentLink['long_url'] ?? 'URL no disponible';
-        
-        return {
-          'success': true,
-          'payment_link_id': paymentLink['id'],
-          'checkout_url': checkoutUrl,
-          'amount': amount,
-        };
+        if (data['success'] == true) {
+          print('✅ Payment link creado por backend');
+          print('🔗 Transaction ID: ${data['transaction_id']}');
+          print('🌐 Checkout URL: ${data['checkout_url']}');
+          
+          return {
+            'success': true,
+            'payment_link_id': data['transaction_id'],
+            'checkout_url': data['checkout_url'],
+            'amount': amount,
+          };
+        } else {
+          print('❌ Error del backend: ${data['error']}');
+          return {
+            'success': false,
+            'error': data['error'] ?? 'Error desconocido del backend',
+          };
+        }
       } else {
-        print('❌ Error de Square API: ${response.statusCode}');
+        print('❌ Error del backend: ${response.statusCode}');
         print('❌ Error body: ${response.body}');
         return {
           'success': false,
