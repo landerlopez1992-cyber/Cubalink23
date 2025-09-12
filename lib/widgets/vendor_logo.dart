@@ -7,11 +7,11 @@ class VendorLogo extends StatelessWidget {
   final EdgeInsets padding;
   
   const VendorLogo({
-    Key? key,
+    super.key,
     this.vendorId,
     this.size = 24.0,
     this.padding = const EdgeInsets.all(4.0),
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {
@@ -131,10 +131,10 @@ class CartVendorLogo extends StatelessWidget {
   final double size;
   
   const CartVendorLogo({
-    Key? key,
+    super.key,
     this.vendorId,
     this.size = 20.0,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {
@@ -239,10 +239,10 @@ class VendorName extends StatelessWidget {
   final TextStyle? style;
   
   const VendorName({
-    Key? key,
+    super.key,
     this.vendorId,
     this.style,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

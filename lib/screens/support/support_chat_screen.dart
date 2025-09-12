@@ -24,7 +24,7 @@ class Message {
 enum MessageStatus { sending, sent, delivered, read }
 
 class SupportChatScreen extends StatefulWidget {
-  const SupportChatScreen({Key? key}) : super(key: key);
+  const SupportChatScreen({super.key});
 
   @override
   _SupportChatScreenState createState() => _SupportChatScreenState();

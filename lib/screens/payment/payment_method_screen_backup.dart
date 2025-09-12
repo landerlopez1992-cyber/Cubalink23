@@ -301,7 +301,7 @@ selectedCardId = card.id;
 ),
 ),
 )
-.toList(),
+,
 ] else if (!isLoading) ...[
 Center(
 child: Padding(

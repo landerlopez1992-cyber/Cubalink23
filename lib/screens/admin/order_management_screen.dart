@@ -4,6 +4,8 @@ import 'package:cubalink23/services/supabase_service.dart';
 import 'package:intl/intl.dart';
 
 class OrderManagementScreen extends StatefulWidget {
+  const OrderManagementScreen({super.key});
+
   @override
   _OrderManagementScreenState createState() => _OrderManagementScreenState();
 }

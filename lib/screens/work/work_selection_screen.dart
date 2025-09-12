@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class WorkSelectionScreen extends StatefulWidget {
+  const WorkSelectionScreen({super.key});
+
   @override
   _WorkSelectionScreenState createState() => _WorkSelectionScreenState();
 }

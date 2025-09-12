@@ -12,14 +12,14 @@ class VendorStoreScreen extends StatefulWidget {
   final double deliveryCost;
 
   const VendorStoreScreen({
-    Key? key,
+    super.key,
     required this.vendorId,
     required this.vendorName,
     this.vendorImage = '',
     this.rating = 4.5,
     this.deliveryTime = '1 día',
     this.deliveryCost = 15.30,
-  }) : super(key: key);
+  });
 
   @override
   _VendorStoreScreenState createState() => _VendorStoreScreenState();
@@ -31,7 +31,7 @@ class _VendorStoreScreenState extends State<VendorStoreScreen>
   final StoreService _storeService = StoreService();
   
   List<StoreProduct> _products = [];
-  List<String> _categories = ['Super Ofertas', 'Combos', 'Carnicería', 'Agro'];
+  final List<String> _categories = ['Super Ofertas', 'Combos', 'Carnicería', 'Agro'];
   String _selectedCategory = 'Super Ofertas';
   bool _isLoading = true;
   bool _deliverySelected = true; // true = A domicilio, false = Recogida
@@ -389,7 +389,7 @@ class _VendorStoreScreenState extends State<VendorStoreScreen>
   Widget _buildProductsList() {
     if (_isLoading) {
       return SliverToBoxAdapter(
-        child: Container(
+        child: SizedBox(
           height: 200,
           child: Center(child: CircularProgressIndicator()),
         ),
@@ -452,7 +452,7 @@ class _VendorStoreScreenState extends State<VendorStoreScreen>
           // Imagen del producto
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Container(
+            child: SizedBox(
               width: 80,
               height: 80,
               child: product.imageUrl.isNotEmpty 

@@ -39,7 +39,7 @@ class SupabaseDatabaseService {
       print('✅ Usuario creado en Supabase: ${user.name}');
     } catch (e) {
       print('❌ Error creando usuario: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -66,7 +66,7 @@ class SupabaseDatabaseService {
       print('✅ Usuario actualizado: $userId');
     } catch (e) {
       print('❌ Error actualizando usuario: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -90,7 +90,7 @@ class SupabaseDatabaseService {
       print('✅ Saldo agregado: +\$${amount.toStringAsFixed(2)}, nuevo saldo: \$${newBalance.toStringAsFixed(2)}');
     } catch (e) {
       print('❌ Error agregando saldo: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -118,7 +118,7 @@ class SupabaseDatabaseService {
       print('✅ Saldo descontado: -\$${amount.toStringAsFixed(2)}, nuevo saldo: \$${newBalance.toStringAsFixed(2)}');
     } catch (e) {
       print('❌ Error descontando saldo: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -161,7 +161,7 @@ class SupabaseDatabaseService {
       print('✅ Estado de usuario actualizado: $status');
     } catch (e) {
       print('❌ Error actualizando estado de usuario: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -172,7 +172,7 @@ class SupabaseDatabaseService {
       print('✅ Cuenta de usuario eliminada: $userId');
     } catch (e) {
       print('❌ Error eliminando cuenta de usuario: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -207,7 +207,7 @@ class SupabaseDatabaseService {
       print('✅ Contacto agregado: $name');
     } catch (e) {
       print('❌ Error agregando contacto: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -218,7 +218,7 @@ class SupabaseDatabaseService {
       print('✅ Contacto actualizado: $contactId');
     } catch (e) {
       print('❌ Error actualizando contacto: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -229,7 +229,7 @@ class SupabaseDatabaseService {
       print('✅ Contacto eliminado: $contactId');
     } catch (e) {
       print('❌ Error eliminando contacto: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -299,7 +299,7 @@ class SupabaseDatabaseService {
       print('✅ Mensaje de administrador enviado');
     } catch (e) {
       print('❌ Error enviando mensaje de administrador: $e');
-      throw e;
+      rethrow;
     }
   }
   

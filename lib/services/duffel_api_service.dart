@@ -134,7 +134,7 @@ class DuffelApiService {
                 final flight = flights[i];
                 final price = flight['total_amount'] ?? 'N/A';
                 final airline = flight['airline'] ?? 'N/A';
-                print('   ${i+1}. $airline: \$${price}');
+                print('   ${i+1}. $airline: \$$price');
               }
             }
           }

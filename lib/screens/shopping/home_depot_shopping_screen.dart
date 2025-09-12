@@ -5,7 +5,7 @@ import 'package:cubalink23/screens/shopping/cart_screen.dart';
 import 'package:cubalink23/services/auth_guard_service.dart';
 
 class HomeDepotShoppingScreen extends StatefulWidget {
-  const HomeDepotShoppingScreen({Key? key}) : super(key: key);
+  const HomeDepotShoppingScreen({super.key});
 
   @override
   _HomeDepotShoppingScreenState createState() => _HomeDepotShoppingScreenState();

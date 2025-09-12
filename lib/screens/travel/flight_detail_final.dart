@@ -5,9 +5,9 @@ class FlightDetailFinal extends StatelessWidget {
   final FlightOffer flight;
 
   const FlightDetailFinal({
-    Key? key,
+    super.key,
     required this.flight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -253,7 +253,7 @@ class FlightDetailFinal extends StatelessWidget {
                 SizedBox(height: 16),
                 
                 // BOTÓN DE RESERVA
-                Container(
+                SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {

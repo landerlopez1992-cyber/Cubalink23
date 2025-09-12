@@ -6,7 +6,6 @@ import 'dart:convert';
 
 class SquarePaymentService {
   // Credenciales de Square Sandbox (VÁLIDAS)
-  static const String _applicationId = 'sandbox-sq0idb-IsIJtKqx2OHdVJjYmg6puA';
   static const String _locationId = 'LZVTP0YQ9YQBB';
   static const String _accessToken = 'EAAAl4WnC2APxLhZXN1HJrn5CPWQGd-wXe_PpQm6vPvdOBHj1xWINxP3s7uOpvYO';
   static const String _environment = 'sandbox';
@@ -35,7 +34,7 @@ class SquarePaymentService {
       }
     } catch (e) {
       print('❌ Error inicializando Square: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -53,49 +52,8 @@ class SquarePaymentService {
       print('💳 Tarjeta: $cardType ****$cardLast4');
       print('👤 Titular: $cardHolderName');
       
-      // ========== SIMULACIÓN DE TARJETAS DE ERROR ==========
-      // Verificar si es una tarjeta de test que debe fallar
-      if (cardLast4 == '0002') {
-        print('❌ Tarjeta de test: Card declined');
-        return SquarePaymentResult(
-          success: false,
-          transactionId: null,
-          message: 'Your card was declined',
-          amount: amount,
-        );
-      }
-      
-      if (cardLast4 == '9995') {
-        print('❌ Tarjeta de test: Insufficient funds');
-        return SquarePaymentResult(
-          success: false,
-          transactionId: null,
-          message: 'Insufficient funds',
-          amount: amount,
-        );
-      }
-      
-      if (cardLast4 == '0069') {
-        print('❌ Tarjeta de test: Card expired');
-        return SquarePaymentResult(
-          success: false,
-          transactionId: null,
-          message: 'Your card has expired',
-          amount: amount,
-        );
-      }
-      
-      if (cardLast4 == '0119') {
-        print('❌ Tarjeta de test: Processing error');
-        return SquarePaymentResult(
-          success: false,
-          transactionId: null,
-          message: 'Processing error',
-          amount: amount,
-        );
-      }
-      
       // ========== PROCESAR PAGO REAL CON SQUARE API ==========
+      // Square maneja TODOS los errores de tarjetas automáticamente
       final paymentResult = await _processRealSquarePayment(
         amount: amount,
         description: description,
@@ -151,7 +109,7 @@ class SquarePaymentService {
     }
   }
 
-  /// Procesar pago real con Square API
+  /// Procesar pago real con Square API - LLAMADA DIRECTA
   static Future<Map<String, dynamic>> _processRealSquarePayment({
     required double amount,
     required String description,
@@ -160,41 +118,33 @@ class SquarePaymentService {
     required String cardHolderName,
   }) async {
     try {
-      print('💳 Procesando pago REAL con Square API...');
+      print('💳 Procesando pago REAL con Square API - LLAMADA DIRECTA...');
       print('💰 Monto: \$${amount.toStringAsFixed(2)}');
       print('💳 Tarjeta: $cardType ****$cardLast4');
       print('👤 Titular: $cardHolderName');
       
-      // Llamar al backend para procesar pago real con Square
-      final response = await http.post(
-        Uri.parse('https://cubalink23-backend.onrender.com/api/payments/process'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'amount': amount,
-          'description': description,
-          'card_last4': cardLast4,
-          'card_type': cardType,
-          'card_holder_name': cardHolderName,
-        }),
+      // 🚀 LLAMADA DIRECTA A SQUARE API - SIN BACKEND
+      final paymentLinkResult = await createPaymentLink(
+        amount: amount,
+        description: description,
       );
       
-      if (response.statusCode == 200) {
-        final result = jsonDecode(response.body);
-        print('✅ Respuesta de Square API: $result');
+      if (paymentLinkResult['success']) {
+        print('✅ Payment Link creado directamente con Square');
+        print('🔗 Payment Link ID: ${paymentLinkResult['payment_link_id']}');
+        print('🌐 Checkout URL: ${paymentLinkResult['checkout_url']}');
         
         return {
-          'success': result['success'] ?? false,
-          'transaction_id': result['transaction_id'],
-          'message': result['message'] ?? 'Pago procesado',
-          'error': result['error'],
+          'success': true,
+          'transaction_id': paymentLinkResult['payment_link_id'],
+          'checkout_url': paymentLinkResult['checkout_url'],
+          'message': 'Payment Link creado exitosamente',
         };
       } else {
-        print('❌ Error en respuesta del servidor: ${response.statusCode}');
+        print('❌ Error creando Payment Link: ${paymentLinkResult['error']}');
         return {
           'success': false,
-          'error': 'Error del servidor: ${response.statusCode}',
+          'error': paymentLinkResult['error'],
         };
       }
     } catch (e) {
@@ -207,10 +157,11 @@ class SquarePaymentService {
   }
 
 
-  /// Crear enlace de pago con Square API
-  static Future<Map<String, dynamic>> _createPaymentLink({
+  /// Crear enlace de pago con Square API - MÉTODO PÚBLICO
+  static Future<Map<String, dynamic>> createPaymentLink({
     required double amount,
     required String description,
+    String? returnUrl,
   }) async {
     try {
       final body = {
@@ -220,7 +171,8 @@ class SquarePaymentService {
             "amount": (amount * 100).round(), // Convertir a centavos
             "currency": "USD"
           },
-          "location_id": _locationId
+          "location_id": _locationId,
+          if (returnUrl != null) "redirect_url": returnUrl,
         }
       };
 
@@ -344,6 +296,58 @@ class SquarePaymentService {
     };
   }
   
+  /// 🚀 MÉTODO SIMPLIFICADO: Crear Payment Link directamente
+  static Future<SquarePaymentResult> createQuickPaymentLink({
+    required double amount,
+    required String description,
+    String? returnUrl,
+  }) async {
+    try {
+      print('🚀 Creando Payment Link directamente con Square...');
+      print('💰 Monto: \$${amount.toStringAsFixed(2)}');
+      print('📝 Descripción: $description');
+      if (returnUrl != null) {
+        print('🔗 URL de retorno: $returnUrl');
+      }
+      
+      final result = await createPaymentLink(
+        amount: amount,
+        description: description,
+        returnUrl: returnUrl,
+      );
+      
+      if (result['success']) {
+        print('✅ Payment Link creado exitosamente');
+        print('🔗 ID: ${result['payment_link_id']}');
+        print('🌐 URL: ${result['checkout_url']}');
+        
+        return SquarePaymentResult(
+          success: true,
+          transactionId: result['payment_link_id'],
+          message: 'Payment Link creado. Redirigiendo a Square...',
+          amount: amount,
+          checkoutUrl: result['checkout_url'],
+        );
+      } else {
+        print('❌ Error creando Payment Link: ${result['error']}');
+        return SquarePaymentResult(
+          success: false,
+          transactionId: null,
+          message: 'Error: ${result['error']}',
+          amount: amount,
+        );
+      }
+    } catch (e) {
+      print('❌ Error creando Payment Link: $e');
+      return SquarePaymentResult(
+        success: false,
+        transactionId: null,
+        message: 'Error: $e',
+        amount: amount,
+      );
+    }
+  }
+
   /// Crear cliente en Square
   static Future<Map<String, dynamic>> createCustomer({
     required String email,

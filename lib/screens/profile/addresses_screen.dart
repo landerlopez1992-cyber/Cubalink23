@@ -5,7 +5,7 @@ import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/services/supabase_service.dart';
 
 class AddressesScreen extends StatefulWidget {
-  const AddressesScreen({Key? key}) : super(key: key);
+  const AddressesScreen({super.key});
 
   @override
   _AddressesScreenState createState() => _AddressesScreenState();
@@ -443,7 +443,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                       ),
                       SizedBox(height: 16),
                       
-                      ...addresses.map((address) => _buildAddressCard(address)).toList(),
+                      ...addresses.map((address) => _buildAddressCard(address)),
                     ] else if (!isAddingAddress && addresses.isEmpty) ...[
                       Center(
                         child: Column(

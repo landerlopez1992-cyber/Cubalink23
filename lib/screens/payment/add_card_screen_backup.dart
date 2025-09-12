@@ -6,7 +6,7 @@ import 'package:cubalink23/services/firebase_repository.dart';
 import 'package:cubalink23/services/supabase_service.dart';
 
 class AddCardScreen extends StatefulWidget {
-  const AddCardScreen({Key? key}) : super(key: key);
+  const AddCardScreen({super.key});
 
   @override
   State<AddCardScreen> createState() => _AddCardScreenState();

@@ -81,7 +81,7 @@ class SupabaseAuthService {
       print('❌ Error cerrando sesión: $e');
       // Force clear local state even if remote logout fails
       await _clearLoginState();
-      throw e;
+      rethrow;
     }
   }
 
@@ -194,7 +194,7 @@ class SupabaseAuthService {
         } catch (authError) {
           print('❌ Error en signInWithPassword: $authError');
           print('❌ Tipo de error: ${authError.runtimeType}');
-          throw authError;
+          rethrow;
         }
 
       } else if (phone != null && phone.isNotEmpty) {
@@ -227,7 +227,7 @@ class SupabaseAuthService {
           // Fallback: Try direct auth with phone as email
           try {
             response = await _client?.auth.signInWithPassword(
-              email: phone + '@phone.local', // Dummy email format for phone
+              email: '$phone@phone.local', // Dummy email format for phone
               password: password,
             );
           } catch (e) {

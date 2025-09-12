@@ -41,6 +41,8 @@ class FlightBooking {
 }
 
 class TravelManagementScreen extends StatefulWidget {
+  const TravelManagementScreen({super.key});
+
   @override
   _TravelManagementScreenState createState() => _TravelManagementScreenState();
 }
@@ -48,7 +50,7 @@ class TravelManagementScreen extends StatefulWidget {
 class _TravelManagementScreenState extends State<TravelManagementScreen> {
   List<FlightBooking> _allBookings = [];
   List<FlightBooking> _filteredBookings = [];
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   String _selectedStatus = 'all';
 
   @override
@@ -185,7 +187,7 @@ class _TravelManagementScreenState extends State<TravelManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Detalles del Vuelo'),
-        content: Container(
+        content: SizedBox(
           width: 400,
           child: SingleChildScrollView(
             child: Column(
@@ -311,7 +313,7 @@ class _TravelManagementScreenState extends State<TravelManagementScreen> {
           color: Theme.of(context).colorScheme.onPrimary,
         ),
       ),
-      body: Container(
+      body: SizedBox(
         width: double.infinity,
         child: SingleChildScrollView(
           padding: EdgeInsets.all(isDesktop ? 32 : 24),

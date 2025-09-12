@@ -3,7 +3,7 @@ import 'package:cubalink23/services/news_service.dart';
 import 'package:cubalink23/services/auto_update_service.dart';
 
 class NewsScreen extends StatefulWidget {
-  const NewsScreen({Key? key}) : super(key: key);
+  const NewsScreen({super.key});
 
   @override
   _NewsScreenState createState() => _NewsScreenState();
@@ -204,7 +204,7 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
             ),
           ),
           SizedBox(height: 12),
-          Container(
+          SizedBox(
             height: 200,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,

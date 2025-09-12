@@ -6,6 +6,8 @@ import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:intl/intl.dart';
 
 class ReferralScreen extends StatefulWidget {
+  const ReferralScreen({super.key});
+
   @override
   _ReferralScreenState createState() => _ReferralScreenState();
 }
@@ -504,7 +506,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             ),
             SizedBox(height: 16),
             
-            ...referredUsers.map((user) => _buildReferredUserTile(user)).toList(),
+            ...referredUsers.map((user) => _buildReferredUserTile(user)),
           ],
         ),
       ),
@@ -623,7 +625,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             ),
             SizedBox(height: 16),
             
-            ...rewardHistory.take(5).map((reward) => _buildRewardTile(reward)).toList(),
+            ...rewardHistory.take(5).map((reward) => _buildRewardTile(reward)),
             
             if (rewardHistory.length > 5)
               Padding(

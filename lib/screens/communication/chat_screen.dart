@@ -5,6 +5,8 @@ import 'package:cubalink23/screens/communication/chat_conversation_screen.dart';
 import 'package:cubalink23/models/user.dart' as UserModel;
 
 class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
   @override
   _ChatScreenState createState() => _ChatScreenState();
 }
@@ -14,7 +16,7 @@ class _ChatScreenState extends State<ChatScreen> {
   List<UserModel.User> searchResults = [];
   bool isLoading = true;
   bool isSearching = false;
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -133,7 +135,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
               onChanged: _searchUsers,
             ),

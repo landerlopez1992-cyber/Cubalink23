@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cubalink23/services/auth_service_bypass.dart';
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -96,7 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             children: [
               // Logo de la app (mismo que splash screen) - 30% más grande
-              Container(
+              SizedBox(
                 width: 156,
                 height: 156,
                 child: Image.asset(
@@ -289,11 +291,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ? CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _register,
-                      child: Text('CREAR CUENTA'),
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                         minimumSize: Size(double.infinity, 50),
                       ),
+                      child: Text('CREAR CUENTA'),
                     ),
               SizedBox(height: 16),
               TextButton(

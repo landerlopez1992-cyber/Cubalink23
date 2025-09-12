@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class RentaCarScreen extends StatefulWidget {
+  const RentaCarScreen({super.key});
+
   @override
   _RentaCarScreenState createState() => _RentaCarScreenState();
 }
@@ -244,7 +246,7 @@ class _RentaCarScreenState extends State<RentaCarScreen> {
           ),
         ),
         SizedBox(height: 12),
-        Container(
+        SizedBox(
           height: 50,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
@@ -402,7 +404,7 @@ class _RentaCarScreenState extends State<RentaCarScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: DropdownButtonFormField<String>(
-            value: value,
+            initialValue: value,
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: Colors.blue[600]),
               border: InputBorder.none,

@@ -282,7 +282,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
               ),
               SizedBox(height: 8),
               DropdownButtonFormField<Country>(
-                value: _selectedCountry,
+                initialValue: _selectedCountry,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -322,7 +322,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
               SizedBox(height: 8),
               if (_selectedCountry != null)
                 DropdownButtonFormField<Operator>(
-                  value: _selectedOperator,
+                  initialValue: _selectedOperator,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),

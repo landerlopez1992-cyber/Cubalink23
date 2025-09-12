@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:cubalink23/screens/welcome/welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
@@ -225,7 +227,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     scale: _logoAnimation.value,
                     child: Opacity(
                       opacity: _logoAnimation.value,
-                      child: Container(
+                      child: SizedBox(
                         width: 280, // Más grande para mejor visibilidad
                         height: 280, // Más grande para mejor visibilidad
                         child: Image.asset(

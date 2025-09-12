@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class SellerApplicationScreen extends StatefulWidget {
+  const SellerApplicationScreen({super.key});
+
   @override
   _SellerApplicationScreenState createState() => _SellerApplicationScreenState();
 }
@@ -16,7 +18,7 @@ class _SellerApplicationScreenState extends State<SellerApplicationScreen> {
   
   // Selectores
   String _selectedProvince = '';
-  List<String> _selectedCategories = [];
+  final List<String> _selectedCategories = [];
   
   // Lista de provincias de Cuba
   final List<String> _provinces = [
@@ -100,7 +102,7 @@ class _SellerApplicationScreenState extends State<SellerApplicationScreen> {
                   child: Column(
                     children: [
                       // Logo
-                      Container(
+                      SizedBox(
                         width: 60,
                         height: 60,
                         child: Image.asset(
@@ -250,7 +252,7 @@ class _SellerApplicationScreenState extends State<SellerApplicationScreen> {
                 SizedBox(height: 30),
                 
                 // Botón de envío
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(

@@ -44,7 +44,7 @@ class _OrderProcessingWidgetState extends State<OrderProcessingWidget> {
       child: Column(
         children: [
           // Botón principal
-          Container(
+          SizedBox(
             width: double.infinity,
             height: 55,
             child: ElevatedButton(
@@ -132,7 +132,7 @@ class _OrderProcessingWidgetState extends State<OrderProcessingWidget> {
                         if (_orderStatus == 'polling') ...[
                           SizedBox(height: 4),
                           Text(
-                            'Verificando estado... (${_pollingAttempts}/${_maxPollingAttempts})',
+                            'Verificando estado... ($_pollingAttempts/$_maxPollingAttempts)',
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.grey[500],

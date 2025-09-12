@@ -8,6 +8,8 @@ import 'package:cubalink23/screens/shopping/store_category_screen.dart';
 import 'package:cubalink23/screens/shopping/product_details_screen.dart';
 
 class StoreScreen extends StatefulWidget {
+  const StoreScreen({super.key});
+
   @override
   _StoreScreenState createState() => _StoreScreenState();
 }
@@ -341,7 +343,7 @@ class _StoreScreenState extends State<StoreScreen> {
             ],
           ),
           SizedBox(height: 12), // Reducido de 16 a 12
-          Container(
+          SizedBox(
             height: 200, // Reducido de 220 a 200
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -404,7 +406,7 @@ class _StoreScreenState extends State<StoreScreen> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(10)), // Reducido de 12 a 10
-                  child: Container(
+                  child: SizedBox(
                     height: 90, // Reducido de 100 a 90
                     width: double.infinity,
                     child: Image.network(

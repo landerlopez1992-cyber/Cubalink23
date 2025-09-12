@@ -9,11 +9,11 @@ class VendorReportScreen extends StatefulWidget {
   final String? productId;
 
   const VendorReportScreen({
-    Key? key,
+    super.key,
     required this.vendorId,
     required this.vendorName,
     this.productId,
-  }) : super(key: key);
+  });
 
   @override
   _VendorReportScreenState createState() => _VendorReportScreenState();

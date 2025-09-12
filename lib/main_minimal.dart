@@ -7,6 +7,8 @@ void main() {
 }
 
 class CubaLink23MinimalApp extends StatelessWidget {
+  const CubaLink23MinimalApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -19,6 +21,8 @@ class CubaLink23MinimalApp extends StatelessWidget {
 }
 
 class MinimalHomeScreen extends StatelessWidget {
+  const MinimalHomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -3,7 +3,7 @@ import 'package:cubalink23/services/user_role_service.dart';
 import 'package:cubalink23/screens/wallet/saved_cards_screen.dart';
 
 class VendorWalletScreen extends StatefulWidget {
-  const VendorWalletScreen({Key? key}) : super(key: key);
+  const VendorWalletScreen({super.key});
 
   @override
   _VendorWalletScreenState createState() => _VendorWalletScreenState();

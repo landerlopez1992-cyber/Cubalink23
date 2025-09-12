@@ -18,7 +18,7 @@ Future<void> main() async {
       print('Stderr: ${analyzeResult.stderr}');
     }
     
-    print('\n' + '='*50 + '\n');
+    print('\n${'='*50}\n');
     
     // Run flutter build (dry run)
     print('🏗️  Running flutter build check...');
@@ -30,7 +30,7 @@ Future<void> main() async {
     }
     
     // Summary
-    print('\n' + '='*50);
+    print('\n${'='*50}');
     print('📋 COMPILATION SUMMARY');
     print('='*50);
     print('Analyze result: ${analyzeResult.exitCode == 0 ? "✅ PASS" : "❌ FAIL"}');

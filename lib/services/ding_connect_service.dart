@@ -42,7 +42,7 @@ class DingConnectService {
   Future<bool> testApiConnection() async {
     try {
       print('🧪 DingConnect: Verificando conectividad de la API...');
-      print('🔑 API Key: ${apiKeyPreview}');
+      print('🔑 API Key: $apiKeyPreview');
       print('🔗 Base URL: $_baseUrl');
       
       final testUrl = '$_baseUrl/products';
@@ -100,7 +100,7 @@ class DingConnectService {
       ).timeout(Duration(seconds: 15));
       
       print('🧪 Método 4 - Status: ${response.statusCode}');
-      print('🧪 Método 4 - Body: ${response.body.length > 200 ? response.body.substring(0, 200) + "..." : response.body}');
+      print('🧪 Método 4 - Body: ${response.body.length > 200 ? "${response.body.substring(0, 200)}..." : response.body}');
       
       if (response.statusCode == 200) {
         print('✅ DingConnect API conectada exitosamente (products endpoint)');
@@ -108,7 +108,7 @@ class DingConnectService {
       }
       
       print('❌ Todos los métodos de autenticación fallaron');
-      print('   - API Key usado: ${apiKeyPreview}');
+      print('   - API Key usado: $apiKeyPreview');
       print('   - Último status code: ${response.statusCode}');
       print('   - Último error: ${response.body}');
       
@@ -219,7 +219,7 @@ class DingConnectService {
       
       // Construir URL con parámetros
       if (queryParts.isNotEmpty) {
-        url += '?' + queryParts.join('&');
+        url += '?${queryParts.join('&')}';
       }
       
       print('🔗 URL de petición: $url');

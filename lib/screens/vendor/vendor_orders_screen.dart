@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cubalink23/services/user_role_service.dart';
 
 class VendorOrdersScreen extends StatefulWidget {
-  const VendorOrdersScreen({Key? key}) : super(key: key);
+  const VendorOrdersScreen({super.key});
 
   @override
   _VendorOrdersScreenState createState() => _VendorOrdersScreenState();

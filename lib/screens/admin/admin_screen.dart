@@ -10,6 +10,8 @@ import 'package:cubalink23/screens/admin/push_management_screen.dart';
 import 'package:cubalink23/screens/admin/order_management_screen.dart';
 
 class AdminScreen extends StatefulWidget {
+  const AdminScreen({super.key});
+
   @override
   _AdminScreenState createState() => _AdminScreenState();
 }
@@ -142,7 +144,7 @@ class _AdminScreenState extends State<AdminScreen> {
           color: Theme.of(context).colorScheme.onPrimary,
         ),
       ),
-      body: Container(
+      body: SizedBox(
         width: double.infinity,
         child: SingleChildScrollView(
           padding: EdgeInsets.all(isDesktop ? 32 : 24),

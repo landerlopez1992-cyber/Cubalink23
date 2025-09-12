@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 // Removed unused imports: dart:typed_data, flutter/foundation
 
 class PushManagementScreen extends StatefulWidget {
+  const PushManagementScreen({super.key});
+
   @override
   _PushManagementScreenState createState() => _PushManagementScreenState();
 }
@@ -708,7 +710,7 @@ class _PushManagementScreenState extends State<PushManagementScreen> {
 
           // Banners Display
           if (_isLoadingBanners)
-            Container(
+            SizedBox(
               height: 200,
               child: Center(child: CircularProgressIndicator()),
             )
@@ -842,7 +844,7 @@ class _PushManagementScreenState extends State<PushManagementScreen> {
           SizedBox(height: 24),
 
           if (_isLoadingUpdate)
-            Container(
+            SizedBox(
               height: 200,
               child: Center(child: CircularProgressIndicator()),
             )
@@ -1618,7 +1620,7 @@ class _PushManagementScreenState extends State<PushManagementScreen> {
           SizedBox(height: 24),
 
           if (_isLoadingMaintenance)
-            Container(
+            SizedBox(
               height: 100,
               child: Center(child: CircularProgressIndicator()),
             )

@@ -5,7 +5,7 @@ import '../../models/flight_offer.dart';
 class FlightBookingForm extends StatefulWidget {
   final FlightOffer flight;
 
-  const FlightBookingForm({Key? key, required this.flight}) : super(key: key);
+  const FlightBookingForm({super.key, required this.flight});
 
   @override
   _FlightBookingFormState createState() => _FlightBookingFormState();
@@ -39,8 +39,8 @@ class _FlightBookingFormState extends State<FlightBookingForm> {
   String _selectedCountryOfIssue = '';
   String _passportExpiryDate = '';
   String _selectedExtraBaggage = '';
-  String _selectedCabinClass = 'main_cabin';
-  String _paymentOption = 'pay_now';
+  final String _selectedCabinClass = 'main_cabin';
+  final String _paymentOption = 'pay_now';
   bool _acceptTerms = false;
   bool _acceptMarketing = false;
   bool _isLoading = false;
@@ -48,7 +48,7 @@ class _FlightBookingFormState extends State<FlightBookingForm> {
   // Precios adicionales
   double _seatPrice = 0.0;
   double _baggagePrice = 0.0;
-  double _cabinClassPrice = 0.0;
+  final double _cabinClassPrice = 0.0;
 
   @override
   void dispose() {
@@ -757,7 +757,7 @@ class _FlightBookingFormState extends State<FlightBookingForm> {
             child: Column(
               children: [
                 // Cabina del avión
-                Container(
+                SizedBox(
                   height: 200,
                   child: _buildAircraftSeatMap(),
                 ),
@@ -1002,7 +1002,7 @@ class _FlightBookingFormState extends State<FlightBookingForm> {
                   _buildSummaryRow('Ruta:', '${widget.flight.origin} → ${widget.flight.destination}'),
                   _buildSummaryRow('Fecha:', '${widget.flight.formattedDepartureTime} - ${widget.flight.formattedArrivalTime}'),
                   _buildSummaryRow('Duración:', widget.flight.formattedDuration),
-                  _buildSummaryRow('Pasajero:', '${_selectedTitle} ${_firstNameController.text} ${_lastNameController.text}'),
+                  _buildSummaryRow('Pasajero:', '$_selectedTitle ${_firstNameController.text} ${_lastNameController.text}'),
                   _buildSummaryRow('Email:', _emailController.text),
                   _buildSummaryRow('Teléfono:', _phoneController.text),
                   
@@ -1280,7 +1280,7 @@ class _FlightBookingFormState extends State<FlightBookingForm> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Número de fila
-                Container(
+                SizedBox(
                   width: 30,
                   child: Text(
                     '$rowNumber',

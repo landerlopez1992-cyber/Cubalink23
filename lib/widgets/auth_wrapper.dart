@@ -7,6 +7,8 @@ import 'package:cubalink23/services/auth_service_bypass.dart';
 // MIGRATED TO SUPABASE: Firebase services removed
 
 class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
   @override
   _AuthWrapperState createState() => _AuthWrapperState();
 }
@@ -15,7 +17,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   bool _isLoading = true;
   bool _isLoggedIn = false;
   bool _isSuspended = false;
-  String _suspensionMessage = '';
+  final String _suspensionMessage = '';
 
   @override
   void initState() {

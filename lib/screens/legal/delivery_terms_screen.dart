@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DeliveryTermsScreen extends StatelessWidget {
-  const DeliveryTermsScreen({Key? key}) : super(key: key);
+  const DeliveryTermsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

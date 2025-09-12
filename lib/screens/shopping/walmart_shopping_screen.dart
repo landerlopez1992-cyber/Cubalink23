@@ -7,7 +7,7 @@ import 'package:cubalink23/services/auth_guard_service.dart';
 import 'package:cubalink23/screens/shopping/product_details_screen.dart';
 
 class WalmartShoppingScreen extends StatefulWidget {
-  const WalmartShoppingScreen({Key? key}) : super(key: key);
+  const WalmartShoppingScreen({super.key});
 
   @override
   _WalmartShoppingScreenState createState() => _WalmartShoppingScreenState();

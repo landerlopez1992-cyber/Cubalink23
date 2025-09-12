@@ -5,7 +5,7 @@ import 'package:cubalink23/screens/payment/add_card_screen.dart';
 import 'package:cubalink23/models/payment_card.dart';
 
 class SavedCardsScreen extends StatefulWidget {
-  const SavedCardsScreen({Key? key}) : super(key: key);
+  const SavedCardsScreen({super.key});
 
   @override
   State<SavedCardsScreen> createState() => _SavedCardsScreenState();
@@ -420,7 +420,7 @@ class _SavedCardsScreenState extends State<SavedCardsScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            ..._savedCards.map((card) => _buildCardItem(card)).toList(),
+                            ..._savedCards.map((card) => _buildCardItem(card)),
                           ],
                         ),
                       ),

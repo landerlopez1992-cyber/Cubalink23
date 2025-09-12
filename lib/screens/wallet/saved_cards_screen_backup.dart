@@ -10,10 +10,10 @@ class SavedCardsScreen extends StatefulWidget {
   final double? withdrawalAmount;
 
   const SavedCardsScreen({
-    Key? key,
+    super.key,
     this.isForWithdrawal = false,
     this.withdrawalAmount,
-  }) : super(key: key);
+  });
 
   @override
   _SavedCardsScreenState createState() => _SavedCardsScreenState();
@@ -494,10 +494,10 @@ class AddCardDialog extends StatefulWidget {
   final UserRoleService roleService;
 
   const AddCardDialog({
-    Key? key,
+    super.key,
     required this.onCardAdded,
     required this.roleService,
-  }) : super(key: key);
+  });
 
   @override
   _AddCardDialogState createState() => _AddCardDialogState();
@@ -701,11 +701,11 @@ class EditCardDialog extends StatefulWidget {
   final UserRoleService roleService;
 
   const EditCardDialog({
-    Key? key,
+    super.key,
     required this.card,
     required this.onCardUpdated,
     required this.roleService,
-  }) : super(key: key);
+  });
 
   @override
   _EditCardDialogState createState() => _EditCardDialogState();

@@ -11,7 +11,7 @@ class FlightDetailsScreen extends StatelessWidget {
   final String airlineType;
 
   const FlightDetailsScreen({
-    Key? key,
+    super.key,
     required this.flight,
     required this.origin,
     required this.destination,
@@ -19,7 +19,7 @@ class FlightDetailsScreen extends StatelessWidget {
     this.returnDate,
     required this.passengers,
     required this.airlineType,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -756,7 +756,7 @@ class FlightDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildBookButton(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(

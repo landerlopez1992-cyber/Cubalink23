@@ -11,7 +11,7 @@ class FlightDetailsSimple extends StatelessWidget {
   final String airlineType;
 
   const FlightDetailsSimple({
-    Key? key,
+    super.key,
     required this.flight,
     required this.origin,
     required this.destination,
@@ -19,7 +19,7 @@ class FlightDetailsSimple extends StatelessWidget {
     this.returnDate,
     required this.passengers,
     required this.airlineType,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -308,7 +308,7 @@ class FlightDetailsSimple extends StatelessWidget {
             SizedBox(height: 20),
             
             // 🛒 BOTÓN DE RESERVA
-            Container(
+            SizedBox(
               width: double.infinity,
               height: 56,
               child: ElevatedButton(

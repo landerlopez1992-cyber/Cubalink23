@@ -7,7 +7,7 @@ import 'package:cubalink23/services/likes_service.dart';
 import 'package:cubalink23/models/store_product.dart';
 
 class CartScreen extends StatefulWidget {
-  const CartScreen({Key? key}) : super(key: key);
+  const CartScreen({super.key});
 
   @override
   _CartScreenState createState() => _CartScreenState();
@@ -569,7 +569,7 @@ class _CartScreenState extends State<CartScreen> {
               ),
             )
           else
-            Container(
+            SizedBox(
               height: 220,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,

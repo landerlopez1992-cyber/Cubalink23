@@ -8,13 +8,13 @@ class PushNotificationDialog extends StatelessWidget {
   final VoidCallback? onDismiss;
 
   const PushNotificationDialog({
-    Key? key,
+    super.key,
     required this.title,
     required this.message,
     required this.isUrgent,
     required this.onAccept,
     this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

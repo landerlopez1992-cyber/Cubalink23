@@ -22,6 +22,8 @@ void main() async {
 }
 
 class CubaLink23AppFixed extends StatelessWidget {
+  const CubaLink23AppFixed({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -35,6 +37,8 @@ class CubaLink23AppFixed extends StatelessWidget {
 
 /// Widget que maneja la inicialización progresiva de la app
 class AppInitializer extends StatefulWidget {
+  const AppInitializer({super.key});
+
   @override
   State<AppInitializer> createState() => _AppInitializerState();
 }
@@ -172,6 +176,8 @@ class _AppInitializerState extends State<AppInitializer> {
 
 /// Widget de fallback si hay problemas con WelcomeScreen
 class SafeHomeScreen extends StatelessWidget {
+  const SafeHomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

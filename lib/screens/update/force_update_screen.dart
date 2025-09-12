@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -7,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 
 class ForceUpdateScreen extends StatefulWidget {
+  const ForceUpdateScreen({super.key});
+
   @override
   _ForceUpdateScreenState createState() => _ForceUpdateScreenState();
 }
@@ -176,7 +177,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
                   // Logo oficial de Cubalink23 (MÁS GRANDE)
-                  Container(
+                  SizedBox(
                     width: 150,
                     height: 150,
                     child: Image.asset(
@@ -350,7 +351,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
                   SizedBox(height: 25),
                   
                   // Botón de actualización mejorado
-                  Container(
+                  SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: _launchStore,

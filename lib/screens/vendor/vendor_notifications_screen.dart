@@ -3,7 +3,7 @@ import 'package:cubalink23/services/user_role_service.dart';
 import 'package:cubalink23/supabase/supabase_config.dart';
 
 class VendorNotificationsScreen extends StatefulWidget {
-  const VendorNotificationsScreen({Key? key}) : super(key: key);
+  const VendorNotificationsScreen({super.key});
 
   @override
   _VendorNotificationsScreenState createState() => _VendorNotificationsScreenState();

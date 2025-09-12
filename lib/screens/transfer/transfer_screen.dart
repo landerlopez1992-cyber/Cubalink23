@@ -5,6 +5,8 @@ import 'package:cubalink23/models/user.dart';
 import 'package:cubalink23/services/auth_guard_service.dart';
 
 class TransferScreen extends StatefulWidget {
+  const TransferScreen({super.key});
+
   @override
   _TransferScreenState createState() => _TransferScreenState();
 }
@@ -75,6 +77,8 @@ class _TransferScreenState extends State<TransferScreen>
 }
 
 class SendMoneyTab extends StatefulWidget {
+  const SendMoneyTab({super.key});
+
   @override
   _SendMoneyTabState createState() => _SendMoneyTabState();
 }
@@ -106,7 +110,7 @@ class _SendMoneyTabState extends State<SendMoneyTab> {
   }
   
   bool _isSearching = false;
-  bool _isLoading = false;
+  final bool _isLoading = false;
   User? _selectedUser;
   User? _currentUser;
   double _currentBalance = 0.0;
@@ -208,7 +212,7 @@ class _SendMoneyTabState extends State<SendMoneyTab> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
+                  SizedBox(
                     width: 80,
                     height: 80,
                     child: CircularProgressIndicator(
@@ -575,6 +579,8 @@ class _SendMoneyTabState extends State<SendMoneyTab> {
 }
 
 class ReceiveMoneyTab extends StatefulWidget {
+  const ReceiveMoneyTab({super.key});
+
   @override
   _ReceiveMoneyTabState createState() => _ReceiveMoneyTabState();
 }
@@ -606,7 +612,7 @@ class _ReceiveMoneyTabState extends State<ReceiveMoneyTab> {
   }
   
   bool _isSearching = false;
-  bool _isLoading = false;
+  final bool _isLoading = false;
   User? _selectedUser;
   User? _currentUser;
   String? _searchError;
@@ -694,7 +700,7 @@ class _ReceiveMoneyTabState extends State<ReceiveMoneyTab> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
+                  SizedBox(
                     width: 80,
                     height: 80,
                     child: CircularProgressIndicator(

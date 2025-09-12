@@ -396,7 +396,7 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                           ),
                           const Spacer(),
                           if (_isManualAmount)
-                            Container(
+                            SizedBox(
                               width: 120,
                               height: 40,
                               child: TextField(

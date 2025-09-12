@@ -7,10 +7,10 @@ class SeatSelectionScreen extends StatefulWidget {
   final Map<String, dynamic> passengerData;
 
   const SeatSelectionScreen({
-    Key? key,
+    super.key,
     required this.flight,
     required this.passengerData,
-  }) : super(key: key);
+  });
 
   @override
   _SeatSelectionScreenState createState() => _SeatSelectionScreenState();
@@ -398,7 +398,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       child: Row(
         children: [
           // Número de fila
-          Container(
+          SizedBox(
             width: 30,
             child: Text(
               rowNumber,

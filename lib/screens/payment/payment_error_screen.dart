@@ -7,12 +7,12 @@ class PaymentErrorScreen extends StatefulWidget {
   final double total;
 
   const PaymentErrorScreen({
-    Key? key,
+    super.key,
     required this.errorMessage,
     required this.amount,
     required this.fee,
     required this.total,
-  }) : super(key: key);
+  });
 
   @override
   State<PaymentErrorScreen> createState() => _PaymentErrorScreenState();

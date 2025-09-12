@@ -8,7 +8,7 @@ import 'package:cubalink23/supabase/supabase_config.dart';
 class AddCardScreen extends StatefulWidget {
   final PaymentCard? editingCard;
   
-  const AddCardScreen({Key? key, this.editingCard}) : super(key: key);
+  const AddCardScreen({super.key, this.editingCard});
 
   @override
   State<AddCardScreen> createState() => _AddCardScreenState();

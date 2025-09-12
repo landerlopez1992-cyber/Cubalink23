@@ -4,6 +4,8 @@ import 'package:cubalink23/services/vendor_store_service.dart';
 import 'package:cubalink23/screens/vendor/vendor_store_screen.dart';
 
 class VendorStoresListScreen extends StatefulWidget {
+  const VendorStoresListScreen({super.key});
+
   @override
   _VendorStoresListScreenState createState() => _VendorStoresListScreenState();
 }
@@ -234,7 +236,7 @@ class _VendorStoresListScreenState extends State<VendorStoresListScreen> {
                 // Imagen de la tienda
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Container(
+                  child: SizedBox(
                     width: 80,
                     height: 80,
                     child: store.imageUrl.isNotEmpty

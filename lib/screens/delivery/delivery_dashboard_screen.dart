@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cubalink23/services/auth_service.dart';
 
 class DeliveryDashboardScreen extends StatefulWidget {
-  const DeliveryDashboardScreen({Key? key}) : super(key: key);
+  const DeliveryDashboardScreen({super.key});
 
   @override
   _DeliveryDashboardScreenState createState() => _DeliveryDashboardScreenState();

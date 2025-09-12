@@ -12,7 +12,7 @@ import 'package:cubalink23/screens/profile/order_tracking_screen.dart';
 import 'package:cubalink23/screens/wallet/saved_cards_screen.dart';
 
 class AccountScreen extends StatefulWidget {
-  const AccountScreen({Key? key}) : super(key: key);
+  const AccountScreen({super.key});
 
   @override
   _AccountScreenState createState() => _AccountScreenState();

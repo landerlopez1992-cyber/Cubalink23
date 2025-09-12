@@ -11,7 +11,7 @@ class FlightDetailsWorking extends StatelessWidget {
   final String airlineType;
 
   const FlightDetailsWorking({
-    Key? key,
+    super.key,
     required this.flight,
     required this.origin,
     required this.destination,
@@ -19,7 +19,7 @@ class FlightDetailsWorking extends StatelessWidget {
     this.returnDate,
     required this.passengers,
     required this.airlineType,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -285,8 +285,8 @@ class FlightDetailsWorking extends StatelessWidget {
                   _buildDetailRow('Aerolínea:', flight.airline),
                   _buildDetailRow('Código IATA:', flight.airlineCode),
                   _buildDetailRow('Número de Vuelo:', flight.flightNumber),
-                  _buildDetailRow('Origen:', '${flight.origin} (${origin})'),
-                  _buildDetailRow('Destino:', '${flight.destination} (${destination})'),
+                  _buildDetailRow('Origen:', '${flight.origin} ($origin)'),
+                  _buildDetailRow('Destino:', '${flight.destination} ($destination)'),
                   _buildDetailRow('Duración Total:', flight.formattedDuration),
                   _buildDetailRow('Escalas:', flight.stopsText),
                   _buildDetailRow('Moneda:', flight.totalCurrency),
@@ -439,7 +439,7 @@ class FlightDetailsWorking extends StatelessWidget {
             // 🛒 BOTÓN DE RESERVA
             Padding(
               padding: EdgeInsets.all(20),
-              child: Container(
+              child: SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(

@@ -3,7 +3,7 @@ import 'package:cubalink23/services/user_role_service.dart';
 import 'package:cubalink23/supabase/supabase_config.dart';
 
 class DeliveryNotificationsScreen extends StatefulWidget {
-  const DeliveryNotificationsScreen({Key? key}) : super(key: key);
+  const DeliveryNotificationsScreen({super.key});
 
   @override
   _DeliveryNotificationsScreenState createState() => _DeliveryNotificationsScreenState();

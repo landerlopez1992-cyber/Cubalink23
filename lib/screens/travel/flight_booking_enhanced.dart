@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../models/flight_offer.dart';
 import '../../services/duffel_api_service.dart';
 import 'seat_selection_screen.dart';
@@ -7,7 +6,7 @@ import 'seat_selection_screen.dart';
 class FlightBookingEnhanced extends StatefulWidget {
   final FlightOffer flight;
 
-  const FlightBookingEnhanced({Key? key, required this.flight}) : super(key: key);
+  const FlightBookingEnhanced({super.key, required this.flight});
 
   @override
   _FlightBookingEnhancedState createState() => _FlightBookingEnhancedState();
@@ -40,7 +39,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
   String _selectedSeat = '';
   String _selectedCountryOfIssue = '';
   String _passportExpiryDate = '';
-  String _selectedExtraBaggage = '';
+  final String _selectedExtraBaggage = '';
   String _selectedCabinClass = 'main_cabin';
   String _paymentOption = 'pay_now';
   bool _acceptTerms = false;
@@ -1380,7 +1379,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
                   _buildSummaryRow('Fecha:', '${widget.flight.formattedDepartureTime} - ${widget.flight.formattedArrivalTime}'),
                   _buildSummaryRow('Duración:', widget.flight.formattedDuration),
                   _buildSummaryRow('Tipo de Cabina:', _getCabinClassTitle(_selectedCabinClass)),
-                  _buildSummaryRow('Pasajero:', '${_selectedTitle} ${_firstNameController.text} ${_lastNameController.text}'),
+                  _buildSummaryRow('Pasajero:', '$_selectedTitle ${_firstNameController.text} ${_lastNameController.text}'),
                   _buildSummaryRow('Email:', _emailController.text),
                   _buildSummaryRow('Teléfono:', _phoneController.text),
                   
@@ -1700,7 +1699,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
         _selectedSeat = result['selected_seat'] ?? '';
         _seatPrice = result['seat_price'] ?? 0.0;
       });
-      print('✅ Asiento seleccionado: $_selectedSeat (\$${_seatPrice})');
+      print('✅ Asiento seleccionado: $_selectedSeat (\$$_seatPrice)');
     }
   }
 
@@ -1723,7 +1722,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
       print('🎯 INICIANDO RESERVA REAL CON DUFFEL API');
       print('✈️ Vuelo: ${widget.flight.airline} - ${widget.flight.flightNumber}');
       print('🎫 Offer ID: ${widget.flight.id}');
-      print('👤 Pasajero: ${_selectedTitle} ${_firstNameController.text} ${_lastNameController.text}');
+      print('👤 Pasajero: $_selectedTitle ${_firstNameController.text} ${_lastNameController.text}');
       print('💳 Opción de pago: $_paymentOption');
 
       // Preparar datos del pasajero en formato Duffel

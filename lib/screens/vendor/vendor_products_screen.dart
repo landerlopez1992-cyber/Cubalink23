@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:cubalink23/services/user_role_service.dart';
 
 class VendorProductsScreen extends StatefulWidget {
-  const VendorProductsScreen({Key? key}) : super(key: key);
+  const VendorProductsScreen({super.key});
 
   @override
   _VendorProductsScreenState createState() => _VendorProductsScreenState();

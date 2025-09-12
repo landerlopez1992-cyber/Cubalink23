@@ -3,7 +3,7 @@ import 'package:cubalink23/services/auth_service.dart';
 import 'package:cubalink23/services/store_service.dart';
 
 class VendorDashboardScreen extends StatefulWidget {
-  const VendorDashboardScreen({Key? key}) : super(key: key);
+  const VendorDashboardScreen({super.key});
 
   @override
   _VendorDashboardScreenState createState() => _VendorDashboardScreenState();

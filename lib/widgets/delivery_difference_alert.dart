@@ -10,12 +10,12 @@ class DeliveryDifferenceAlert extends StatelessWidget {
   final VoidCallback onReviewDetails;
   
   const DeliveryDifferenceAlert({
-    Key? key,
+    super.key,
     required this.detectionResult,
     required this.onContinue,
     required this.onRemoveProducts,
     required this.onReviewDetails,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

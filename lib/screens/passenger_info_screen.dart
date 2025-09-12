@@ -9,11 +9,11 @@ class PassengerInfoScreen extends StatefulWidget {
   final Map<String, dynamic> searchDetails;
 
   const PassengerInfoScreen({
-    Key? key,
+    super.key,
     required this.selectedOffer,
     required this.totalPassengers,
     required this.searchDetails,
-  }) : super(key: key);
+  });
 
   @override
   _PassengerInfoScreenState createState() => _PassengerInfoScreenState();
@@ -21,7 +21,7 @@ class PassengerInfoScreen extends StatefulWidget {
 
 class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
   final _formKey = GlobalKey<FormState>();
-  List<Map<String, TextEditingController>> _passengerControllers = [];
+  final List<Map<String, TextEditingController>> _passengerControllers = [];
   bool _isCreatingOrder = false;
 
   @override

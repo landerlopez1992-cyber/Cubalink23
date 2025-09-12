@@ -1,7 +1,6 @@
 #!/usr/bin/env dart
 // Script para probar el flujo completo de pago
 
-import 'dart:io';
 
 void main() async {
   print('🧪 PROBANDO FLUJO COMPLETO DE PAGO - CUBALINK23');

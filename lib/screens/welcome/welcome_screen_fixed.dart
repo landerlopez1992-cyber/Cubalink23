@@ -14,6 +14,8 @@ import 'package:cubalink23/screens/shopping/product_details_screen.dart';
 
 /// VERSIÓN CORREGIDA DE WELCOME_SCREEN QUE USA CONFIGURACIÓN NO BLOQUEANTE
 class WelcomeScreenFixed extends StatefulWidget {
+  const WelcomeScreenFixed({super.key});
+
   @override
   _WelcomeScreenFixedState createState() => _WelcomeScreenFixedState();
 }
@@ -28,7 +30,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
   final CartService _cartService = CartService();
   final StoreService _storeService = StoreService();
   int _currentBannerIndex = 0;
-  PageController _bannerController = PageController();
+  final PageController _bannerController = PageController();
   final DatabaseService _databaseService = DatabaseService.instance;
   List<Map<String, dynamic>> _categories = [];
   List<Map<String, dynamic>> _bestSellers = [];
@@ -719,7 +721,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  Container(
+                  SizedBox(
                     height: 420,
                     child: GridView.count(
                       physics: NeverScrollableScrollPhysics(),
@@ -1361,7 +1363,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
 
   Widget _buildFoodProductsSection() {
     if (_loadingProducts) {
-      return Container(
+      return SizedBox(
         height: 200,
         child: Center(
           child: CircularProgressIndicator(
@@ -1372,7 +1374,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
     }
     
     if (_realFoodProducts.isEmpty) {
-      return Container(
+      return SizedBox(
         height: 200,
         child: Center(
           child: Column(
@@ -1425,7 +1427,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
           ),
         ),
         SizedBox(height: 12),
-        Container(
+        SizedBox(
           height: 200,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
@@ -1475,7 +1477,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                        child: Container(
+                        child: SizedBox(
                           height: 100,
                           width: double.infinity,
                           child: Image.network(
@@ -1570,7 +1572,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
   }
 
   Widget _buildCategoriesSection() {
-    IconData _getIconFromString(String iconName) {
+    IconData getIconFromString(String iconName) {
       switch (iconName) {
         case 'restaurant':
           return Icons.restaurant;
@@ -1610,7 +1612,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
           ),
         ),
         SizedBox(height: 12),
-        Container(
+        SizedBox(
           height: 120,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
@@ -1618,7 +1620,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
             itemCount: _categories.length,
             itemBuilder: (context, index) {
               final category = _categories[index];
-              final iconData = _getIconFromString(category['icon'] ?? 'category');
+              final iconData = getIconFromString(category['icon'] ?? 'category');
               final colorValue = category['color'] ?? 0xFF9E9E9E;
               final color = Color(colorValue);
 
@@ -1717,7 +1719,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
           ),
         ),
         SizedBox(height: 12),
-        Container(
+        SizedBox(
           height: 220,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
@@ -1757,7 +1759,7 @@ class _WelcomeScreenFixedState extends State<WelcomeScreenFixed> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                                child: Container(
+                                child: SizedBox(
                                   height: 110,
                                   width: double.infinity,
                                   child: Image.network(

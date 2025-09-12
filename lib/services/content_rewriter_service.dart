@@ -135,9 +135,9 @@ class ContentRewriterService {
   String _generateSummary(String content) {
     final sentences = content.split('.');
     if (sentences.length >= 2) {
-      return sentences[0].trim() + '.';
+      return '${sentences[0].trim()}.';
     }
-    return content.length > 100 ? content.substring(0, 100) + '...' : content;
+    return content.length > 100 ? '${content.substring(0, 100)}...' : content;
   }
   
   /// Obtener imagen relevante según categoría

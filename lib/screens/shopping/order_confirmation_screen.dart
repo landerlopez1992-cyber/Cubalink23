@@ -7,11 +7,11 @@ class OrderConfirmationScreen extends StatefulWidget {
   final int? items;
 
   const OrderConfirmationScreen({
-    Key? key,
+    super.key,
     this.orderNumber,
     this.total,
     this.items,
-  }) : super(key: key);
+  });
 
   @override
   _OrderConfirmationScreenState createState() => _OrderConfirmationScreenState();

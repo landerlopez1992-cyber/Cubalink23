@@ -73,6 +73,8 @@ class ChatConversation {
 }
 
 class SupportChatAdminScreen extends StatefulWidget {
+  const SupportChatAdminScreen({super.key});
+
   @override
   _SupportChatAdminScreenState createState() => _SupportChatAdminScreenState();
 }
@@ -80,8 +82,8 @@ class SupportChatAdminScreen extends StatefulWidget {
 class _SupportChatAdminScreenState extends State<SupportChatAdminScreen> {
   List<ChatConversation> _conversations = [];
   ChatConversation? _selectedConversation;
-  TextEditingController _messageController = TextEditingController();
-  ScrollController _messagesScrollController = ScrollController();
+  final TextEditingController _messageController = TextEditingController();
+  final ScrollController _messagesScrollController = ScrollController();
   bool _isLoading = true;
   bool _isSendingMessage = false;
 

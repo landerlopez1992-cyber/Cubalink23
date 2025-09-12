@@ -10,10 +10,10 @@ class SavedCardsScreen extends StatefulWidget {
   final double? withdrawalAmount;
 
   const SavedCardsScreen({
-    Key? key,
+    super.key,
     this.isForWithdrawal = false,
     this.withdrawalAmount,
-  }) : super(key: key);
+  });
 
   @override
   State<SavedCardsScreen> createState() => _SavedCardsScreenState();
@@ -448,7 +448,7 @@ class _SavedCardsScreenState extends State<SavedCardsScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            ..._savedCards.map((card) => _buildCardItem(card)).toList(),
+                            ..._savedCards.map((card) => _buildCardItem(card)),
                           ],
                         ),
                       ),

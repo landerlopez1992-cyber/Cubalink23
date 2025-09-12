@@ -6,6 +6,8 @@ import 'passenger_info_screen.dart';
 import 'flight_results_screen.dart';
 
 class FlightBookingScreen extends StatefulWidget {
+  const FlightBookingScreen({super.key});
+
   @override
   _FlightBookingScreenState createState() => _FlightBookingScreenState();
 }
@@ -23,7 +25,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
   DateTime? _returnDate;
   bool _isRoundTrip = false;
   String _selectedClass = 'Económica';
-  List<String> _flightClasses = ['Económica', 'Premium Económica', 'Business', 'Primera Clase'];
+  final List<String> _flightClasses = ['Económica', 'Premium Económica', 'Business', 'Primera Clase'];
   
   // Variables para selector de pasajeros
   int _adults = 1;        // 18-64 años
@@ -38,7 +40,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
   String? _errorMessage;
   
   // Lista de destinos populares con códigos IATA exactos
-  List<Map<String, dynamic>> _popularDestinations = [
+  final List<Map<String, dynamic>> _popularDestinations = [
     {'name': 'Miami International Airport', 'display_name': 'Miami, FL, USA (MIA)', 'code': 'MIA'},
     {'name': 'José Martí International Airport', 'display_name': 'La Habana, Cuba (HAV)', 'code': 'HAV'},
     {'name': 'John F Kennedy International Airport', 'display_name': 'New York, NY, USA (JFK)', 'code': 'JFK'},
@@ -923,7 +925,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                                       ),
                                       SizedBox(height: 6), // Reducido de 8 a 6
                                       DropdownButtonFormField<String>(
-                                        value: _selectedClass,
+                                        initialValue: _selectedClass,
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           contentPadding: EdgeInsets.zero,
@@ -1089,7 +1091,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                     SizedBox(height: 24), // Reducido de 32 a 24
                     
                     // Botón de búsqueda optimizado para Motorola Edge 2024
-                    Container(
+                    SizedBox(
                       width: double.infinity,
                       height: 50, // Reducido de 56 a 50
                       child: ElevatedButton(
@@ -1520,7 +1522,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
           SizedBox(height: 20),
           
           // Botón de seleccionar vuelo
-          Container(
+          SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () => _proceedToPassengerInfo(offer),
@@ -1790,7 +1792,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                 child: Icon(Icons.remove, size: 16),
               ),
             ),
-            Container(
+            SizedBox(
               width: 40,
               child: Text(
                 '$value',

@@ -9,11 +9,11 @@ class PassengerInfoScreen extends StatefulWidget {
   final Map<String, dynamic> searchDetails;
 
   const PassengerInfoScreen({
-    Key? key,
+    super.key,
     required this.selectedOffer,
     required this.totalPassengers,
     required this.searchDetails,
-  }) : super(key: key);
+  });
 
   @override
   _PassengerInfoScreenState createState() => _PassengerInfoScreenState();
@@ -21,7 +21,7 @@ class PassengerInfoScreen extends StatefulWidget {
 
 class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
   final _formKey = GlobalKey<FormState>();
-  List<Map<String, TextEditingController>> _passengerControllers = [];
+  final List<Map<String, TextEditingController>> _passengerControllers = [];
   bool _isCreatingOrder = false;
 
   @override
@@ -326,7 +326,7 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: controllers['title']?.text ?? 'mr',
+                  initialValue: controllers['title']?.text ?? 'mr',
                   decoration: InputDecoration(
                     labelText: 'Título',
                     border: OutlineInputBorder(
@@ -354,7 +354,7 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
               SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: controllers['gender']?.text ?? 'm',
+                  initialValue: controllers['gender']?.text ?? 'm',
                   decoration: InputDecoration(
                     labelText: 'Género',
                     border: OutlineInputBorder(
@@ -558,10 +558,10 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
       final controllers = _passengerControllers[0];
       final passengerData = {
         'title': controllers['title']?.text ?? 'mr',
-        'given_name': controllers['firstName']?.text?.trim() ?? '',
-        'family_name': controllers['lastName']?.text?.trim() ?? '',
-        'email': controllers['email']?.text?.trim() ?? '',
-        'phone_number': controllers['phone']?.text?.trim() ?? '',
+        'given_name': controllers['firstName']?.text.trim() ?? '',
+        'family_name': controllers['lastName']?.text.trim() ?? '',
+        'email': controllers['email']?.text.trim() ?? '',
+        'phone_number': controllers['phone']?.text.trim() ?? '',
         'born_on': controllers['birthDate']?.text ?? '',
         'gender': controllers['gender']?.text ?? 'm',
       };
@@ -622,7 +622,9 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
   @override
   void dispose() {
     for (final controllers in _passengerControllers) {
-      controllers.values.forEach((controller) => controller.dispose());
+      for (var controller in controllers.values) {
+        controller.dispose();
+      }
     }
     super.dispose();
   }

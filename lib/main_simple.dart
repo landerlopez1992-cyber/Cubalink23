@@ -8,6 +8,8 @@ void main() {
 }
 
 class CubaLink23SimpleApp extends StatelessWidget {
+  const CubaLink23SimpleApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

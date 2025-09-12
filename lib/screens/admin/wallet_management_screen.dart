@@ -26,12 +26,14 @@ class Transaction {
 }
 
 class WalletManagementScreen extends StatefulWidget {
+  const WalletManagementScreen({super.key});
+
   @override
   _WalletManagementScreenState createState() => _WalletManagementScreenState();
 }
 
 class _WalletManagementScreenState extends State<WalletManagementScreen> {
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   List<User> _allUsers = [];
   List<User> _filteredUsers = [];
   List<Transaction> _transactions = [];
@@ -191,7 +193,7 @@ class _WalletManagementScreenState extends State<WalletManagementScreen> {
           color: Theme.of(context).colorScheme.onPrimary,
         ),
       ),
-      body: Container(
+      body: SizedBox(
         width: double.infinity,
         child: SingleChildScrollView(
           padding: EdgeInsets.all(isDesktop ? 32 : 24),
@@ -288,7 +290,7 @@ class _WalletManagementScreenState extends State<WalletManagementScreen> {
                                   ],
                                 ),
                               ),
-                              Container(
+                              SizedBox(
                                 height: isDesktop ? 400 : 300,
                                 child: ListView.separated(
                                   itemCount: _filteredUsers.length,
@@ -444,7 +446,7 @@ class _WalletManagementScreenState extends State<WalletManagementScreen> {
                                     ],
                                   ),
                                 ),
-                                Container(
+                                SizedBox(
                                   height: 300,
                                   child: _transactions.isEmpty
                                       ? Center(

@@ -4,6 +4,7 @@ import 'package:cubalink23/services/square_payment_service.dart';
 import 'package:cubalink23/screens/payment/add_card_screen.dart';
 import 'package:cubalink23/screens/payment/payment_success_screen.dart';
 import 'package:cubalink23/screens/payment/payment_error_screen.dart';
+import 'package:cubalink23/screens/payment/payment_return_screen.dart';
 import 'package:cubalink23/models/payment_card.dart';
 import 'package:cubalink23/services/supabase_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -93,17 +94,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     setState(() => isProcessingPayment = true);
 
     try {
-      final selectedCard = savedCards.firstWhere((card) => card.id == selectedCardId);
-      
       print('💳 Procesando pago con Square...');
       print('💰 Monto: \$${widget.total.toStringAsFixed(2)}');
       
-      final paymentResult = await SquarePaymentService.processPayment(
+      // 🚀 LLAMADA DIRECTA A SQUARE - SIN BACKEND
+      final returnUrl = 'cubalink23://payment-return?payment_id=${DateTime.now().millisecondsSinceEpoch}';
+      final paymentResult = await SquarePaymentService.createQuickPaymentLink(
         amount: widget.total,
         description: 'Recarga de saldo Cubalink23',
-        cardLast4: selectedCard.last4,
-        cardType: selectedCard.cardType,
-        cardHolderName: selectedCard.holderName,
+        returnUrl: returnUrl,
       );
 
       if (paymentResult.success) {
@@ -112,7 +111,22 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         // Si hay checkoutUrl, abrir el Payment Link
         if (paymentResult.checkoutUrl != null) {
           print('🔗 Abriendo Payment Link: ${paymentResult.checkoutUrl}');
-          await _openCheckoutUrl(paymentResult.checkoutUrl!);
+          final urlOpened = await _openCheckoutUrl(paymentResult.checkoutUrl!);
+          
+          if (urlOpened) {
+            // Navegar a la pantalla de retorno para verificar el pago
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PaymentReturnScreen(
+                  paymentLinkId: paymentResult.transactionId ?? '',
+                  amount: widget.amount,
+                  fee: widget.fee,
+                  total: widget.total,
+                ),
+              ),
+            );
+          }
         } else {
           // Si no hay URL, mostrar pantalla de éxito (fallback)
           await _showPaymentSuccessScreen(paymentResult);
@@ -268,7 +282,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       print('💰 Monto a agregar: \$${widget.amount}');
       
       final newBalance = (currentUser.balance) + widget.amount;
-      print('💰 Nuevo saldo calculado: \$${newBalance}');
+      print('💰 Nuevo saldo calculado: \$$newBalance');
       
       print('💰 Actualizando saldo en Supabase...');
       final updateResult = await SupabaseService.instance.update(
@@ -280,7 +294,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       
       // Actualizar saldo en el servicio de autenticación
       await SupabaseAuthService.instance.updateUserBalance(newBalance);
-      print('💰 ✅ Saldo actualizado en SupabaseAuthService: \$${newBalance}');
+      print('💰 ✅ Saldo actualizado en SupabaseAuthService: \$$newBalance');
       
       // Forzar recarga del usuario para sincronizar datos
       await SupabaseAuthService.instance.loadCurrentUserData();
@@ -667,7 +681,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                 secondary: _buildCardIcon(card.cardType),
                               ),
                             );
-                          }).toList(),
+                          }),
 
                         const SizedBox(height: 16),
 

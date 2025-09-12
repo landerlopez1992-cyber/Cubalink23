@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cubalink23/services/user_role_service.dart';
 
 class DeliverySupportChatScreen extends StatefulWidget {
-  const DeliverySupportChatScreen({Key? key}) : super(key: key);
+  const DeliverySupportChatScreen({super.key});
 
   @override
   _DeliverySupportChatScreenState createState() => _DeliverySupportChatScreenState();

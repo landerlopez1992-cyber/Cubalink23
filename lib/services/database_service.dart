@@ -48,7 +48,7 @@ class DatabaseService {
       print('👤 ===== USUARIO CREADO EXITOSAMENTE =====');
     } catch (e) {
       print('❌ Error creando usuario: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -67,7 +67,7 @@ class DatabaseService {
       print('✅ Usuario actualizado: ${user.name}');
     } catch (e) {
       print('❌ Error actualizando usuario: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -95,7 +95,7 @@ class DatabaseService {
       print('✅ Historial de recarga agregado');
     } catch (e) {
       print('❌ Error agregando historial de recarga: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -128,7 +128,7 @@ class DatabaseService {
       print('✅ Contacto agregado: ${contact.name}');
     } catch (e) {
       print('❌ Error agregando contacto: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -151,7 +151,7 @@ class DatabaseService {
       print('✅ Tarjeta agregada');
     } catch (e) {
       print('❌ Error agregando tarjeta: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -174,7 +174,7 @@ class DatabaseService {
       print('✅ Orden creada: ${order.id}');
     } catch (e) {
       print('❌ Error creando orden: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -185,7 +185,7 @@ class DatabaseService {
       print('✅ Balance actualizado: \$$newBalance');
     } catch (e) {
       print('❌ Error actualizando balance: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -207,7 +207,7 @@ class DatabaseService {
       print('🚫 Usuario suspendido: $userId');
     } catch (e) {
       print('❌ Error suspendiendo usuario: $e');
-      throw e;
+      rethrow;
     }
   }
   
@@ -217,7 +217,7 @@ class DatabaseService {
       print('✅ Usuario activado: $userId');
     } catch (e) {
       print('❌ Error activando usuario: $e');
-      throw e;
+      rethrow;
     }
   }
 }

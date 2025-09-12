@@ -10,12 +10,12 @@ class ZellePaymentDialog extends StatefulWidget {
   final Function(String orderId)? onOrderCreated;
 
   const ZellePaymentDialog({
-    Key? key,
+    super.key,
     required this.totalAmount,
     required this.order,
     this.onCancel,
     this.onOrderCreated,
-  }) : super(key: key);
+  });
 
   @override
   _ZellePaymentDialogState createState() => _ZellePaymentDialogState();
@@ -309,12 +309,12 @@ class _ZellePaymentDialogState extends State<ZellePaymentDialog> {
                             if (widget.onCancel != null) widget.onCancel!();
                             Navigator.of(context).pop(false);
                           },
-                          child: Text('Cancelar'),
                           style: OutlinedButton.styleFrom(
                             padding: EdgeInsets.symmetric(vertical: 16),
                             side: BorderSide(color: Colors.red[400]!),
                             foregroundColor: Colors.red[600],
                           ),
+                          child: Text('Cancelar'),
                         ),
                       ),
                     ],

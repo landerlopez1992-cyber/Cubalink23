@@ -4,12 +4,14 @@ import 'package:cubalink23/services/supabase_service.dart';
 import 'package:cubalink23/services/supabase_database_service.dart';
 
 class UserManagementScreen extends StatefulWidget {
+  const UserManagementScreen({super.key});
+
   @override
   _UserManagementScreenState createState() => _UserManagementScreenState();
 }
 
 class _UserManagementScreenState extends State<UserManagementScreen> {
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   List<User> _allUsers = [];
   List<User> _filteredUsers = [];
   bool _isLoading = true;
@@ -190,7 +192,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text('Enviar Mensaje Administrativo'),
-          content: Container(
+          content: SizedBox(
             width: double.maxFinite,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -220,7 +222,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 ),
                 SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: selectedType,
+                  initialValue: selectedType,
                   decoration: InputDecoration(
                     labelText: 'Tipo de Mensaje',
                     border: OutlineInputBorder(),
@@ -319,7 +321,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               ),
               SizedBox(height: 20),
               DropdownButtonFormField<String>(
-                value: selectedRole,
+                initialValue: selectedRole,
                 decoration: InputDecoration(
                   labelText: 'Nuevo Rol',
                   border: OutlineInputBorder(),

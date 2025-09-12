@@ -5,6 +5,8 @@ import 'package:cubalink23/models/flight_offer.dart';
 import 'flight_results_screen.dart';
 
 class FlightBookingScreen extends StatefulWidget {
+  const FlightBookingScreen({super.key});
+
   @override
   _FlightBookingScreenState createState() => _FlightBookingScreenState();
 }
@@ -22,7 +24,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
   DateTime? _returnDate;
   bool _isRoundTrip = false;
   String _selectedClass = 'Económica';
-  List<String> _flightClasses = ['Económica', 'Premium Económica', 'Business', 'Primera Clase'];
+  final List<String> _flightClasses = ['Económica', 'Premium Económica', 'Business', 'Primera Clase'];
   
   // Variables para selector de pasajeros
   int _adults = 1;        // 18-64 años
@@ -735,7 +737,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                     ),
                     
                     // Botón de intercambio - CENTRADO Y RESPONSIVE
-                    Container(
+                    SizedBox(
                       width: double.infinity,
                       child: Center(
                         child: GestureDetector(
@@ -1263,7 +1265,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Avioncito animado
-                  Container(
+                  SizedBox(
                     width: 80,
                     height: 80,
                     child: Stack(
@@ -1727,7 +1729,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                 child: Icon(Icons.remove, size: 14), // Reducido de 16 a 14
               ),
             ),
-            Container(
+            SizedBox(
               width: 32, // Reducido de 40 a 32
               child: Text(
                 '$value',

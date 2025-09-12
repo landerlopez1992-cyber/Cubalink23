@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:cubalink23/services/user_role_service.dart';
 
 class DeliveryProfileScreen extends StatefulWidget {
-  const DeliveryProfileScreen({Key? key}) : super(key: key);
+  const DeliveryProfileScreen({super.key});
 
   @override
   _DeliveryProfileScreenState createState() => _DeliveryProfileScreenState();

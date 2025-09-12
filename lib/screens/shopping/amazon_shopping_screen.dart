@@ -6,7 +6,7 @@ import 'package:cubalink23/screens/shopping/cart_screen.dart';
 import 'package:cubalink23/services/auth_guard_service.dart';
 
 class AmazonShoppingScreen extends StatefulWidget {
-  const AmazonShoppingScreen({Key? key}) : super(key: key);
+  const AmazonShoppingScreen({super.key});
 
   @override
   _AmazonShoppingScreenState createState() => _AmazonShoppingScreenState();
@@ -19,7 +19,7 @@ class _AmazonShoppingScreenState extends State<AmazonShoppingScreen> {
   List<AmazonProduct> _searchResults = [];
   bool _isLoading = false;
   bool _hasSearched = false;
-  String _selectedCategory = 'Todos';
+  final String _selectedCategory = 'Todos';
   String _selectedStore = 'Amazon'; // New store selector
   
   // Available stores
@@ -1502,7 +1502,7 @@ class _AmazonShoppingScreenState extends State<AmazonShoppingScreen> {
             ),
           ),
           SizedBox(height: 8),
-          Container(
+          SizedBox(
             height: 80,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,

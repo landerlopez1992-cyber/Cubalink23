@@ -15,6 +15,8 @@ import 'dart:convert';
 import 'dart:async';
 
 class WelcomeScreen extends StatefulWidget {
+  const WelcomeScreen({super.key});
+
   @override
   _WelcomeScreenState createState() => _WelcomeScreenState();
 }
@@ -32,8 +34,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   final FirebaseRepository _firebaseRepository = FirebaseRepository.instance;
   int _currentBannerIndex = 0;
   int _currentFlightsBannerIndex = 0;
-  PageController _bannerController = PageController();
-  PageController _flightsBannerController = PageController();
+  final PageController _bannerController = PageController();
+  final PageController _flightsBannerController = PageController();
   List<Map<String, dynamic>> _categories = [];
   List<Map<String, dynamic>> _bestSellers = [];
   List<StoreProduct> _realFoodProducts = [];
@@ -145,7 +147,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           setState(() {
             _currentBalance = currentUser.balance;
           });
-          print('💰 ✅ Saldo actualizado en la UI: \$${_currentBalance}');
+          print('💰 ✅ Saldo actualizado en la UI: \$$_currentBalance');
         }
       } else {
         print('💰 ❌ No se pudo cargar el usuario después de recarga');
@@ -156,7 +158,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           setState(() {
             _currentBalance = 0.0; // Saldo real, no de prueba
           });
-          print('💰 ⚠️ Usando saldo real: \$${_currentBalance}');
+          print('💰 ⚠️ Usando saldo real: \$$_currentBalance');
         }
       }
     } catch (e) {
@@ -168,7 +170,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         setState(() {
           _currentBalance = 100.0; // Saldo de prueba más visible
         });
-        print('💰 ⚠️ Usando saldo de prueba por error: \$${_currentBalance}');
+        print('💰 ⚠️ Usando saldo de prueba por error: \$$_currentBalance');
       }
     }
   }
@@ -982,7 +984,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               child: Column(
                 children: [
                   // Grid de botones con altura fija apropiada
-                  Container(
+                  SizedBox(
                     height: 480, // Aumentado de 420 a 480 para más espacio
                     child: GridView.count(
                       physics: NeverScrollableScrollPhysics(), // Desabilitar scroll interno del grid
@@ -1660,7 +1662,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Widget _buildFoodProductsSection() {
     if (_loadingProducts) {
-      return Container(
+      return SizedBox(
         height: 200,
         child: Center(
           child: CircularProgressIndicator(
@@ -1671,7 +1673,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }
     
     if (_realFoodProducts.isEmpty) {
-      return Container(
+      return SizedBox(
         height: 200,
         child: Center(
           child: Column(
@@ -1717,7 +1719,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ),
         SizedBox(height: 12),
-        Container(
+        SizedBox(
           height: 200,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
@@ -1768,7 +1770,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                      child: Container(
+                      child: SizedBox(
                         height: 100,
                         width: double.infinity,
                         child: Image.network(
@@ -1863,7 +1865,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildCategoriesSection() {
-    IconData _getIconFromString(String iconName) {
+    IconData getIconFromString(String iconName) {
       switch (iconName) {
         case 'restaurant':
           return Icons.restaurant_menu_rounded;
@@ -1913,7 +1915,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ),
         SizedBox(height: 12),
-        Container(
+        SizedBox(
           height: 140,
           child: _categories.isEmpty
               ? Center(
@@ -1927,7 +1929,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   itemCount: _categories.length,
                   itemBuilder: (context, index) {
                     final category = _categories[index];
-                    final iconData = _getIconFromString(category['icon'] ?? 'category');
+                    final iconData = getIconFromString(category['icon'] ?? 'category');
                     final colorValue = category['color'] ?? 0xFF9E9E9E;
                     final color = Color(colorValue);
 
@@ -2038,7 +2040,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ),
         SizedBox(height: 12),
-        Container(
+        SizedBox(
           height: 220,
           child: _bestSellers.isEmpty
               ? Center(
@@ -2084,7 +2086,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                              child: Container(
+                              child: SizedBox(
                                 height: 110,
                                 width: double.infinity,
                                 child: Image.network(
@@ -2249,7 +2251,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ),
         SizedBox(height: 16),
-        Container(
+        SizedBox(
           height: 220,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,

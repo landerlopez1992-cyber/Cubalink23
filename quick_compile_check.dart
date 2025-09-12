@@ -47,7 +47,7 @@ Future<void> main() async {
     }
     
     // Summary
-    print('\n' + '='*40);
+    print('\n${'='*40}');
     if (result.exitCode == 0) {
       print('🎉 ANALYSIS PASSED - No critical compilation errors found!');
     } else {

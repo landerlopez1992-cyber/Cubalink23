@@ -4,6 +4,8 @@ import 'package:cubalink23/services/credentials_storage_service.dart';
 import 'package:cubalink23/screens/auth/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -211,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               SizedBox(height: 40),
               // Logo de la app
-              Container(
+              SizedBox(
                 width: 140,
                 height: 140,
                 child: Image.asset(
@@ -391,10 +393,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ? CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _login,
-                      child: Text('INICIAR SESIÓN'),
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                       ),
+                      child: Text('INICIAR SESIÓN'),
                     ),
               SizedBox(height: 16),
               TextButton(

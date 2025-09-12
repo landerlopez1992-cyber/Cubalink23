@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class DeliveryApplicationScreen extends StatefulWidget {
+  const DeliveryApplicationScreen({super.key});
+
   @override
   _DeliveryApplicationScreenState createState() => _DeliveryApplicationScreenState();
 }
@@ -15,7 +17,7 @@ class _DeliveryApplicationScreenState extends State<DeliveryApplicationScreen> {
   
   // Selectores
   String _selectedVehicleType = '';
-  List<String> _selectedProvinces = [];
+  final List<String> _selectedProvinces = [];
   
   // Lista de tipos de vehículos
   final List<String> _vehicleTypes = [
@@ -90,7 +92,7 @@ class _DeliveryApplicationScreenState extends State<DeliveryApplicationScreen> {
                   child: Column(
                     children: [
                       // Logo
-                      Container(
+                      SizedBox(
                         width: 60,
                         height: 60,
                         child: Image.asset(
@@ -233,7 +235,7 @@ class _DeliveryApplicationScreenState extends State<DeliveryApplicationScreen> {
                 SizedBox(height: 30),
                 
                 // Botón de envío
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(

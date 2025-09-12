@@ -9,10 +9,10 @@ class ChatConversationScreen extends StatefulWidget {
   final UserModel.User otherUser;
 
   const ChatConversationScreen({
-    Key? key,
+    super.key,
     required this.conversationId,
     required this.otherUser,
-  }) : super(key: key);
+  });
 
   @override
   _ChatConversationScreenState createState() => _ChatConversationScreenState();
@@ -183,7 +183,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             decoration: BoxDecoration(
               color: isMe
                   ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.surfaceVariant,
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(18),
             ),
             child: Column(
@@ -243,7 +243,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
                 maxLines: null,

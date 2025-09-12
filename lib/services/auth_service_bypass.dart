@@ -224,8 +224,8 @@ class AuthServiceBypass {
         throw Exception('Debes proporcionar un email o teléfono.');
       }
       
-      if (response?.user != null) {
-        print('✅ Sesión iniciada exitosamente: ${response!.user!.id}');
+      if (response.user != null) {
+        print('✅ Sesión iniciada exitosamente: ${response.user!.id}');
         
         // Create user object from auth metadata
         final user = response.user!;

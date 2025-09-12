@@ -1,7 +1,6 @@
 #!/usr/bin/env dart
 // Script para probar el flujo completo de agregar $20 a Lander López
 
-import 'dart:io';
 
 void main() async {
   print('🧪 PROBANDO FLUJO COMPLETO - AGREGAR \$20 A LANDER LÓPEZ');

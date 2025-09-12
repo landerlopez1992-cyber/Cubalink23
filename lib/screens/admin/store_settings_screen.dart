@@ -11,6 +11,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class StoreSettingsScreen extends StatefulWidget {
+  const StoreSettingsScreen({super.key});
+
   @override
   _StoreSettingsScreenState createState() => _StoreSettingsScreenState();
 }
@@ -25,7 +27,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> with TickerPr
   List<StoreProduct> _filteredProducts = [];
   List<StoreProduct> _recentProducts = [];
   List<Map<String, dynamic>> _subcategories = [];
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   String? _selectedCategoryFilter;
   bool _isLoading = false;
   bool _isUploadingImage = false;
@@ -242,7 +244,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> with TickerPr
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(isEditing ? 'Editar Categoría' : 'Nueva Categoría'),
-          content: Container(
+          content: SizedBox(
             width: 400,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -368,13 +370,13 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> with TickerPr
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(isEditing ? 'Editar Subcategoría' : 'Nueva Subcategoría'),
-          content: Container(
+          content: SizedBox(
             width: 400,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: selectedCategory.isNotEmpty ? selectedCategory : null,
+                  initialValue: selectedCategory.isNotEmpty ? selectedCategory : null,
                   decoration: InputDecoration(
                     labelText: 'Categoría Principal',
                     border: OutlineInputBorder(),
@@ -568,7 +570,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> with TickerPr
         builder: (context, setDialogState) => AlertDialog(
           title: Text(isEditing ? 'Editar Producto' : 'Nuevo Producto'),
           content: SingleChildScrollView(
-            child: Container(
+            child: SizedBox(
               width: 700,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -643,7 +645,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> with TickerPr
                   ),
                   SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: selectedCategory.isNotEmpty ? selectedCategory : null,
+                    initialValue: selectedCategory.isNotEmpty ? selectedCategory : null,
                     decoration: InputDecoration(
                       labelText: 'Categoría',
                       border: OutlineInputBorder(),
@@ -662,7 +664,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> with TickerPr
                   SizedBox(height: 16),
                   // Selección de subcategoría
                   DropdownButtonFormField<String>(
-                    value: selectedSubcategory.isNotEmpty ? selectedSubcategory : null,
+                    initialValue: selectedSubcategory.isNotEmpty ? selectedSubcategory : null,
                     decoration: InputDecoration(
                       labelText: 'Subcategoría',
                       border: OutlineInputBorder(),
@@ -794,7 +796,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> with TickerPr
                   ),
                   SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: deliveryMethod,
+                    initialValue: deliveryMethod,
                     decoration: InputDecoration(
                       labelText: 'Método de Entrega',
                       border: OutlineInputBorder(),
@@ -905,7 +907,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> with TickerPr
                             style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                           ),
                           SizedBox(height: 8),
-                          Container(
+                          SizedBox(
                             height: 120,
                             child: SingleChildScrollView(
                               child: Wrap(
@@ -1479,7 +1481,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> with TickerPr
                               value: category.id,
                               child: Text(category.name),
                             ),
-                          ).toList(),
+                          ),
                         ],
                         onChanged: _filterByCategory,
                       ),
@@ -2046,7 +2048,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> with TickerPr
           ],
         ),
         content: SingleChildScrollView(
-          child: Container(
+          child: SizedBox(
             width: 500,
             child: Column(
               mainAxisSize: MainAxisSize.min,

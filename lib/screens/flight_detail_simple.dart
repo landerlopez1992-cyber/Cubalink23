@@ -5,7 +5,7 @@ import 'flight_booking_enhanced.dart';
 class FlightDetailSimple extends StatelessWidget {
   final FlightOffer flight;
 
-  const FlightDetailSimple({Key? key, required this.flight}) : super(key: key);
+  const FlightDetailSimple({super.key, required this.flight});
 
   @override
   Widget build(BuildContext context) {
@@ -446,7 +446,7 @@ class FlightDetailSimple extends StatelessWidget {
               children: [
                 // Botón de compartir
                 Expanded(
-                  child: Container(
+                  child: SizedBox(
                     height: 48,
                     child: OutlinedButton.icon(
                       onPressed: () {
@@ -473,7 +473,7 @@ class FlightDetailSimple extends StatelessWidget {
                 SizedBox(width: 12),
                 
                 // Botón de favoritos
-                Container(
+                SizedBox(
                   width: 48,
                   height: 48,
                   child: OutlinedButton(
@@ -501,7 +501,7 @@ class FlightDetailSimple extends StatelessWidget {
             SizedBox(height: 16),
             
             // BOTÓN DE RESERVA PRINCIPAL
-            Container(
+            SizedBox(
               width: double.infinity,
               height: 56,
               child: ElevatedButton(

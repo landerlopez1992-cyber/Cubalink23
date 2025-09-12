@@ -86,7 +86,7 @@ void main() async {
 
 /// Main CubaLink23 Application
 class CubaLink23App extends StatelessWidget {
-  const CubaLink23App({Key? key}) : super(key: key);
+  const CubaLink23App({super.key});
 
   @override
   Widget build(BuildContext context) {

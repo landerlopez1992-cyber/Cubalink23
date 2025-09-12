@@ -5,18 +5,18 @@ class VendorDetailScreen extends StatefulWidget {
   final String? vendorName;
 
   const VendorDetailScreen({
-    Key? key,
+    super.key,
     required this.vendorId,
     this.vendorName,
-  }) : super(key: key);
+  });
 
   @override
   _VendorDetailScreenState createState() => _VendorDetailScreenState();
 }
 
 class _VendorDetailScreenState extends State<VendorDetailScreen> {
-  double _rating = 4.2; // Rating del vendedor
-  int _totalReviews = 127; // Total de reseñas
+  final double _rating = 4.2; // Rating del vendedor
+  final int _totalReviews = 127; // Total de reseñas
   
   // Lista de productos del vendedor (simulados)
   final List<Map<String, dynamic>> _vendorProducts = [
@@ -346,7 +346,7 @@ class _VendorDetailScreenState extends State<VendorDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${_rating.toStringAsFixed(1)}',
+                    _rating.toStringAsFixed(1),
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -354,7 +354,7 @@ class _VendorDetailScreenState extends State<VendorDetailScreen> {
                     ),
                   ),
                   Text(
-                    '${_totalReviews} reseñas',
+                    '$_totalReviews reseñas',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],

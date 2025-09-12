@@ -12,7 +12,7 @@ class WeightShippingDisplay extends StatelessWidget {
   final VoidCallback? onTap;
   
   const WeightShippingDisplay({
-    Key? key,
+    super.key,
     required this.weightLb,
     this.originalWeight,
     this.destination,
@@ -20,7 +20,7 @@ class WeightShippingDisplay extends StatelessWidget {
     this.vendorId,
     this.showShippingCost = false,
     this.onTap,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {
@@ -158,12 +158,12 @@ class ShippingDetailsCard extends StatelessWidget {
   final VoidCallback? onEditShippingType;
   
   const ShippingDetailsCard({
-    Key? key,
+    super.key,
     required this.calculation,
     required this.destination,
     this.onEditDestination,
     this.onEditShippingType,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {
@@ -314,11 +314,11 @@ class ShippingTypeSelector extends StatelessWidget {
   final double weightKg;
   
   const ShippingTypeSelector({
-    Key? key,
+    super.key,
     required this.selectedType,
     required this.onChanged,
     required this.weightKg,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

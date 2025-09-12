@@ -6,7 +6,7 @@ import 'package:cubalink23/models/recharge_history.dart';
 import 'package:cubalink23/services/auth_guard_service.dart';
 
 class ActivityScreen extends StatefulWidget {
-  const ActivityScreen({Key? key}) : super(key: key);
+  const ActivityScreen({super.key});
 
   @override
   _ActivityScreenState createState() => _ActivityScreenState();

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 /// Pantalla simple de bienvenida SIN BLOQUEOS
 /// Solo muestra UI básica sin cargar datos externos
 class WelcomeScreenSimple extends StatelessWidget {
+  const WelcomeScreenSimple({super.key});
+
   @override
   Widget build(BuildContext context) {
     print('🚀 WELCOME SCREEN SIMPLE - RENDERIZANDO');

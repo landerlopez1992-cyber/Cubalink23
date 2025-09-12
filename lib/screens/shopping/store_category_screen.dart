@@ -8,7 +8,7 @@ class StoreCategoryScreen extends StatefulWidget {
   final ProductCategory? category;
   final String? categoryName;
 
-  StoreCategoryScreen({this.category, this.categoryName});
+  const StoreCategoryScreen({super.key, this.category, this.categoryName});
 
   @override
   _StoreCategoryScreenState createState() => _StoreCategoryScreenState();
@@ -22,7 +22,7 @@ class _StoreCategoryScreenState extends State<StoreCategoryScreen> {
   List<Map<String, dynamic>> _subcategories = [];
   bool _isLoading = true;
   String _selectedProvince = 'La Habana';
-  bool _showingSubcategories = true;
+  final bool _showingSubcategories = true;
   String _currentCategoryName = '';
 
   @override
@@ -285,7 +285,7 @@ class _StoreCategoryScreenState extends State<StoreCategoryScreen> {
               ),
             ),
             SizedBox(height: 16),
-            Container(
+            SizedBox(
               height: 300,
               child: ListView.builder(
                 itemCount: StoreService.allProvinces.length,
@@ -604,7 +604,7 @@ class _StoreCategoryScreenState extends State<StoreCategoryScreen> {
             // Imagen del producto
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Container(
+              child: SizedBox(
                 width: 80,
                 height: 80,
                 child: Image.network(
@@ -745,7 +745,7 @@ class _StoreCategoryScreenState extends State<StoreCategoryScreen> {
                 // Imagen del producto
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Container(
+                  child: SizedBox(
                     width: 80,
                     height: 80,
                     child: Image.network(

@@ -4,7 +4,7 @@ import 'package:cubalink23/screens/shopping/cart_screen.dart';
 import 'package:cubalink23/services/auth_guard_service.dart';
 
 class SheinShoppingScreen extends StatefulWidget {
-  const SheinShoppingScreen({Key? key}) : super(key: key);
+  const SheinShoppingScreen({super.key});
 
   @override
   _SheinShoppingScreenState createState() => _SheinShoppingScreenState();

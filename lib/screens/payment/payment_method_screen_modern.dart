@@ -503,7 +503,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                 secondary: _buildCardIcon(card.cardType),
                               ),
                             );
-                          }).toList(),
+                          }),
 
                         const SizedBox(height: 16),
 

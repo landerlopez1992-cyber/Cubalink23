@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math' as math;
 
 class MaintenanceScreen extends StatefulWidget {
+  const MaintenanceScreen({super.key});
+
   @override
   _MaintenanceScreenState createState() => _MaintenanceScreenState();
 }
@@ -143,7 +144,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with TickerProvid
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Logo de la app
-                  Container(
+                  SizedBox(
                     width: 150,
                     height: 150,
                     child: Image.asset(
@@ -185,7 +186,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with TickerProvid
                   SizedBox(height: 40),
                   
                   // Animación del obrero trabajando
-                  Container(
+                  SizedBox(
                     width: 200,
                     height: 200,
                     child: AnimatedBuilder(

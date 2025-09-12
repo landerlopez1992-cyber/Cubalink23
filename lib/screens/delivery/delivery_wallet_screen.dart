@@ -3,7 +3,7 @@ import 'package:cubalink23/services/user_role_service.dart';
 import 'package:cubalink23/screens/wallet/saved_cards_screen.dart';
 
 class DeliveryWalletScreen extends StatefulWidget {
-  const DeliveryWalletScreen({Key? key}) : super(key: key);
+  const DeliveryWalletScreen({super.key});
 
   @override
   _DeliveryWalletScreenState createState() => _DeliveryWalletScreenState();

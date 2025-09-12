@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cubalink23/services/user_role_service.dart';
 
 class DeliveryAssignedOrdersScreen extends StatefulWidget {
-  const DeliveryAssignedOrdersScreen({Key? key}) : super(key: key);
+  const DeliveryAssignedOrdersScreen({super.key});
 
   @override
   _DeliveryAssignedOrdersScreenState createState() => _DeliveryAssignedOrdersScreenState();

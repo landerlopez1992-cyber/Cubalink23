@@ -3,7 +3,7 @@ import 'package:cubalink23/services/cart_service.dart';
 import 'package:cubalink23/models/cart_item.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({Key? key}) : super(key: key);
+  const CheckoutScreen({super.key});
 
   @override
   _CheckoutScreenState createState() => _CheckoutScreenState();
@@ -201,7 +201,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
           SizedBox(height: 16),
-          ..._cartItems.map((item) => _buildCartItem(item)).toList(),
+          ..._cartItems.map((item) => _buildCartItem(item)),
           SizedBox(height: 16),
           _buildOrderSummary(),
         ],

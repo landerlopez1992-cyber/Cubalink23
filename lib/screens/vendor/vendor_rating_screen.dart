@@ -8,10 +8,10 @@ class VendorRatingScreen extends StatefulWidget {
   final String vendorName;
 
   const VendorRatingScreen({
-    Key? key,
+    super.key,
     required this.vendorId,
     required this.vendorName,
-  }) : super(key: key);
+  });
 
   @override
   _VendorRatingScreenState createState() => _VendorRatingScreenState();

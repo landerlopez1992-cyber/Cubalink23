@@ -91,3 +91,7 @@ git push origin main
 ---
 
 **🎯 Resultado:** Los endpoints de pagos Square ahora están activos y deberían funcionar correctamente en Render después del despliegue.
+
+
+
+

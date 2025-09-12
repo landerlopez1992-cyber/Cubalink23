@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LanguageSettingsScreen extends StatefulWidget {
-  const LanguageSettingsScreen({Key? key}) : super(key: key);
+  const LanguageSettingsScreen({super.key});
 
   @override
   _LanguageSettingsScreenState createState() => _LanguageSettingsScreenState();

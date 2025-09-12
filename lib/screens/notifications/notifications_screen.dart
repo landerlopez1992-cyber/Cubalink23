@@ -5,6 +5,8 @@ import 'package:cubalink23/services/auth_guard_service.dart';
 import 'package:cubalink23/services/notification_history_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
+  const NotificationsScreen({super.key});
+
   @override
   _NotificationsScreenState createState() => _NotificationsScreenState();
 }

@@ -11,7 +11,7 @@ import 'package:cubalink23/screens/payment/payment_method_screen.dart';
 import 'dart:io';
 
 class ShippingScreen extends StatefulWidget {
-  const ShippingScreen({Key? key}) : super(key: key);
+  const ShippingScreen({super.key});
 
   @override
   _ShippingScreenState createState() => _ShippingScreenState();
@@ -76,7 +76,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
         // Load user balance
         final userData = {'balance': SupabaseAuthService.instance.userBalance};
         // Simulado: await SupabaseService.instance.getUserData(currentUser.id);
-        final userBalance = userData?['balance'] ?? 0.0;
+        final userBalance = userData['balance'] ?? 0.0;
         print('✅ User balance: \$${userBalance.toStringAsFixed(2)}');
         
         if (mounted) {
@@ -381,7 +381,9 @@ class _ShippingScreenState extends State<ShippingScreen> {
     
     print('\n🏋️ PESO TOTAL: $totalWeightKg kg (${(totalWeightKg * 2.20462).toStringAsFixed(1)} lbs)');
     print('📊 Items con peso real: $itemsWithRealWeight de $totalItems');
-    debugInfo.forEach((info) => print('   - $info'));
+    for (var info in debugInfo) {
+      print('   - $info');
+    }
     
     double shippingCost = _calculateShippingCost(totalWeightKg);
     bool hasUnknownWeights = itemsWithRealWeight < totalItems;
@@ -702,7 +704,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
                 ],
               ),
             ),
-          )).toList(),
+          )),
           
           SizedBox(height: 12),
           GestureDetector(

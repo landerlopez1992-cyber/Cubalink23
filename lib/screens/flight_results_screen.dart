@@ -12,7 +12,7 @@ class FlightResultsScreen extends StatefulWidget {
   final String airlineType;
 
   const FlightResultsScreen({
-    Key? key,
+    super.key,
     required this.flightOffers,
     required this.fromAirport,
     required this.toAirport,
@@ -20,7 +20,7 @@ class FlightResultsScreen extends StatefulWidget {
     this.returnDate,
     required this.passengers,
     required this.airlineType,
-  }) : super(key: key);
+  });
 
   @override
   _FlightResultsScreenState createState() => _FlightResultsScreenState();

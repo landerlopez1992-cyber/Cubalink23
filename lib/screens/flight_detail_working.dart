@@ -4,7 +4,7 @@ import '../../models/flight_offer.dart';
 class FlightDetailWorking extends StatelessWidget {
   final FlightOffer flight;
 
-  const FlightDetailWorking({Key? key, required this.flight}) : super(key: key);
+  const FlightDetailWorking({super.key, required this.flight});
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +209,7 @@ class FlightDetailWorking extends StatelessWidget {
               ],
               
               // BOTÓN DE RESERVA
-              Container(
+              SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(

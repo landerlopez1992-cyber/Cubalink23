@@ -6,13 +6,15 @@ import 'package:cubalink23/models/user.dart';
 import 'package:cubalink23/services/ding_connect_service.dart';
 
 class RechargeHomeScreen extends StatefulWidget {
+  const RechargeHomeScreen({super.key});
+
   @override
   _RechargeHomeScreenState createState() => _RechargeHomeScreenState();
 }
 
 class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
-  TextEditingController _phoneController1 = TextEditingController();
-  TextEditingController _phoneController2 = TextEditingController();
+  final TextEditingController _phoneController1 = TextEditingController();
+  final TextEditingController _phoneController2 = TextEditingController();
   String? _selectedCountry = 'CU'; // Default to Cuba
   Map<String, dynamic>? _selectedProduct;
 
@@ -598,7 +600,7 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   SizedBox(height: 12),
-                  Container(
+                  SizedBox(
                     height: 140,
                     child: _isLoadingOffers
                         ? Center(
@@ -681,7 +683,7 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
             ),
 
             // Botón para seleccionar de contactos
-            Container(
+            SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton.icon(
@@ -1060,7 +1062,7 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
             SizedBox(height: 40),
 
             // Botón de continuar
-            Container(
+            SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(

@@ -33,6 +33,8 @@ class RechargeRecord {
 }
 
 class RechargeManagementScreen extends StatefulWidget {
+  const RechargeManagementScreen({super.key});
+
   @override
   _RechargeManagementScreenState createState() => _RechargeManagementScreenState();
 }
@@ -40,7 +42,7 @@ class RechargeManagementScreen extends StatefulWidget {
 class _RechargeManagementScreenState extends State<RechargeManagementScreen> {
   List<RechargeRecord> _allRecharges = [];
   List<RechargeRecord> _filteredRecharges = [];
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   String _selectedStatus = 'all';
 
   @override
@@ -236,7 +238,7 @@ class _RechargeManagementScreenState extends State<RechargeManagementScreen> {
           color: Theme.of(context).colorScheme.onPrimary,
         ),
       ),
-      body: Container(
+      body: SizedBox(
         width: double.infinity,
         child: SingleChildScrollView(
           padding: EdgeInsets.all(isDesktop ? 32 : 24),

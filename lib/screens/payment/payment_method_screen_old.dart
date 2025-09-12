@@ -460,7 +460,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                 ),
                               ),
                             );
-                          }).toList(),
+                          }),
 
                         const SizedBox(height: 16),
 

@@ -4,7 +4,7 @@ import 'package:cubalink23/screens/shopping/product_details_screen.dart';
 import 'package:cubalink23/services/auth_guard_service.dart';
 
 class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({Key? key}) : super(key: key);
+  const FavoritesScreen({super.key});
 
   @override
   _FavoritesScreenState createState() => _FavoritesScreenState();

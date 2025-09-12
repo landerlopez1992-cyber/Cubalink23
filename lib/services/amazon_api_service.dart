@@ -252,9 +252,9 @@ class AmazonApiService {
     
     // Buscar en description o title (menos confiable)
     String fullText = '';
-    if (json['product_title'] != null) fullText += json['product_title'].toString() + ' ';
-    if (json['product_description'] != null) fullText += json['product_description'].toString() + ' ';
-    if (json['description'] != null) fullText += json['description'].toString() + ' ';
+    if (json['product_title'] != null) fullText += '${json['product_title']} ';
+    if (json['product_description'] != null) fullText += '${json['product_description']} ';
+    if (json['description'] != null) fullText += '${json['description']} ';
     
     if (fullText.isNotEmpty) {
       String? extractedWeight = _extractWeightFromText(fullText);

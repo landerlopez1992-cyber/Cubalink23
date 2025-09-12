@@ -4,7 +4,7 @@ import '../../models/flight_offer.dart';
 class SimpleDetail extends StatelessWidget {
   final FlightOffer flight;
 
-  const SimpleDetail({Key? key, required this.flight}) : super(key: key);
+  const SimpleDetail({super.key, required this.flight});
 
   @override
   Widget build(BuildContext context) {

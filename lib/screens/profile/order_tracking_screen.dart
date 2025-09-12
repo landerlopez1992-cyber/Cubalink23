@@ -7,7 +7,7 @@ import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/services/supabase_service.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
-  const OrderTrackingScreen({Key? key}) : super(key: key);
+  const OrderTrackingScreen({super.key});
 
   @override
   _OrderTrackingScreenState createState() => _OrderTrackingScreenState();
@@ -353,7 +353,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
               ),
             ),
             SizedBox(height: 12),
-            Container(
+            SizedBox(
               height: 50,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
@@ -507,7 +507,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
             SizedBox(height: 20),
             
             // Timeline con avión animado
-            Container(
+            SizedBox(
               height: 420, // Increased for 7 states
               child: Stack(
                 children: [
@@ -581,7 +581,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
   }
 
   Widget _buildTimelineStep(String title, String subtitle, bool isCompleted, bool isCurrent, bool isLast) {
-    return Container(
+    return SizedBox(
       height: isLast ? 60 : 60,
       child: Row(
         children: [
@@ -985,7 +985,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Animación de estrellas
-                    Container(
+                    SizedBox(
                       height: 100,
                       child: Stack(
                         children: List.generate(8, (index) {

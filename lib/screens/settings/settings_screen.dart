@@ -5,6 +5,8 @@ import 'package:cubalink23/screens/admin/admin_screen.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
 }
@@ -181,7 +183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 });
                 _saveSetting('dark_mode', value);
               },
-              activeColor: Theme.of(context).colorScheme.primary,
+              activeThumbColor: Theme.of(context).colorScheme.primary,
             ),
           ),
           
@@ -221,7 +223,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 );
               },
-              activeColor: Theme.of(context).colorScheme.primary,
+              activeThumbColor: Theme.of(context).colorScheme.primary,
             ),
           ),
           
@@ -261,7 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 );
               },
-              activeColor: Theme.of(context).colorScheme.primary,
+              activeThumbColor: Theme.of(context).colorScheme.primary,
             ),
           ),
         ],

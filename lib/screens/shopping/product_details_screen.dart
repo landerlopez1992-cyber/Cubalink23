@@ -21,7 +21,7 @@ class ProductDetailsScreen extends StatefulWidget {
   final Map<String, dynamic>? product; // Legacy support
 
   const ProductDetailsScreen({
-    Key? key,
+    super.key,
     this.productId,
     this.productTitle,
     this.productPrice,
@@ -35,7 +35,7 @@ class ProductDetailsScreen extends StatefulWidget {
     this.amazonProduct,
     this.walmartProduct,
     this.product,
-  }) : super(key: key);
+  });
 
   @override
   _ProductDetailsScreenState createState() => _ProductDetailsScreenState();
@@ -582,7 +582,7 @@ Descarga la app CubaLink23 para ver más productos increíbles! 🚀
                           }),
                           SizedBox(width: 8),
                           Text(
-                            '${rating.toStringAsFixed(1)} (${reviews} reseñas)',
+                            '${rating.toStringAsFixed(1)} ($reviews reseñas)',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 14,

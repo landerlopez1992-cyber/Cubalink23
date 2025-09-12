@@ -317,6 +317,7 @@ class ContactCard extends StatelessWidget {
                 icon: Icon(Icons.more_vert),
                 itemBuilder: (context) => [
                   PopupMenuItem(
+                    onTap: onTap,
                     child: Row(
                       children: [
                         Icon(Icons.phone_android, size: 18),
@@ -324,9 +325,9 @@ class ContactCard extends StatelessWidget {
                         Text('Recargar'),
                       ],
                     ),
-                    onTap: onTap,
                   ),
                   PopupMenuItem(
+                    onTap: onDelete,
                     child: Row(
                       children: [
                         Icon(Icons.delete, size: 18, color: colorScheme.error),
@@ -334,7 +335,6 @@ class ContactCard extends StatelessWidget {
                         Text('Eliminar', style: TextStyle(color: colorScheme.error)),
                       ],
                     ),
-                    onTap: onDelete,
                   ),
                 ],
               ),
@@ -452,7 +452,7 @@ class _AddContactBottomSheetState extends State<AddContactBottomSheet> {
             
             // País
             DropdownButtonFormField<Country>(
-              value: _selectedCountry,
+              initialValue: _selectedCountry,
               decoration: InputDecoration(
                 labelText: 'País',
                 border: OutlineInputBorder(
@@ -484,7 +484,7 @@ class _AddContactBottomSheetState extends State<AddContactBottomSheet> {
             // Operador
             if (_selectedCountry != null)
               DropdownButtonFormField<Operator>(
-                value: _selectedOperator,
+                initialValue: _selectedOperator,
                 decoration: InputDecoration(
                   labelText: 'Operador',
                   border: OutlineInputBorder(

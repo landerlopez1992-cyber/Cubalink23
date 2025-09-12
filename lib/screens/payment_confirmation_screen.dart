@@ -8,11 +8,11 @@ class PaymentConfirmationScreen extends StatefulWidget {
   final Map<String, dynamic> passengerInfo;
 
   const PaymentConfirmationScreen({
-    Key? key,
+    super.key,
     required this.selectedOffer,
     required this.bookingData,
     required this.passengerInfo,
-  }) : super(key: key);
+  });
 
   @override
   _PaymentConfirmationScreenState createState() => _PaymentConfirmationScreenState();
@@ -348,7 +348,7 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
             // Botones de acción
             Column(
               children: [
-                Container(
+                SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => _checkOrderStatus(orderId),
@@ -379,7 +379,7 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                 
                 SizedBox(height: 12),
                 
-                Container(
+                SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () => Navigator.pushNamedAndRemoveUntil(
