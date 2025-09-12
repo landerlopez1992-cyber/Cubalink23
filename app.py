@@ -96,6 +96,24 @@ def health_check():
         "push_notifications": "✅ Available"
     })
 
+@app.route('/api/test-payments')
+def test_payments():
+    """🧪 Test endpoint para pagos"""
+    return jsonify({
+        "message": "Test payments endpoint funcionando",
+        "status": "success",
+        "timestamp": datetime.now().isoformat()
+    })
+
+@app.route('/api/payments/test')
+def test_payments_direct():
+    """🧪 Test endpoint directo para pagos"""
+    return jsonify({
+        "message": "Direct payments test endpoint funcionando",
+        "status": "success",
+        "timestamp": datetime.now().isoformat()
+    })
+
 @app.route('/api/test-push')
 def test_push():
     """🧪 Test push notifications endpoint"""
