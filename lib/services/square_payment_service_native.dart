@@ -59,7 +59,7 @@ class SquarePaymentServiceNative {
         );
       }
 
-      // Generar nonce usando Square SDK
+      // Generar nonce usando Square SDK (no implementado en cliente)
       final nonce = await _generateNonce();
 
       if (nonce == null) {
@@ -71,8 +71,8 @@ class SquarePaymentServiceNative {
         );
       }
 
-      // Enviar nonce al backend para procesar
-      return await _processPaymentWithNonce(nonce, amount, description);
+      // Si no hay nonce (sin SDK), delegar a Payment Links desde el backend
+      return await _processPaymentWithLinksFallback(amount, description);
     } catch (e) {
       print('❌ Error procesando pago: $e');
       return SquarePaymentResult(
@@ -84,21 +84,10 @@ class SquarePaymentServiceNative {
     }
   }
 
-  /// Generar nonce usando Square SDK
+  /// Generar nonce usando Square SDK (no implementado en cliente)
   static Future<String?> _generateNonce() async {
-    try {
-      print('🔐 Generando nonce con Square SDK...');
-      
-      // Por ahora simulamos un nonce para testing
-      // En producción, aquí se integraría el SDK real de Square
-      final nonce = 'test_nonce_${DateTime.now().millisecondsSinceEpoch}';
-      print('✅ Nonce simulado generado: $nonce');
-      return nonce;
-      
-    } catch (e) {
-      print('❌ Error en _generateNonce: $e');
-      return null;
-    }
+    print('⚠️ Square SDK nativo no está habilitado. Use Payment Links.');
+    return null;
   }
 
   /// Procesar pago con nonce en el backend
@@ -156,6 +145,57 @@ class SquarePaymentServiceNative {
       }
     } catch (e) {
       print('❌ Error en _processPaymentWithNonce: $e');
+      return SquarePaymentResult(
+        success: false,
+        transactionId: null,
+        message: 'Error de conexión: $e',
+        amount: amount,
+      );
+    }
+  }
+
+  /// Fallback: crear Payment Link desde backend cuando no hay SDK nativo
+  static Future<SquarePaymentResult> _processPaymentWithLinksFallback(
+    double amount,
+    String description,
+  ) async {
+    try {
+      final body = {
+        "amount": amount,
+        "description": description,
+        "location_id": _locationId,
+      };
+
+      final response = await http.post(
+        Uri.parse(_backendUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        if (result['success'] == true) {
+          return SquarePaymentResult(
+            success: true,
+            transactionId: result['transaction_id'],
+            message: result['message'] ?? 'Payment Link creado',
+            amount: amount,
+          );
+        }
+        return SquarePaymentResult(
+          success: false,
+          transactionId: null,
+          message: result['error'] ?? 'Error creando Payment Link',
+          amount: amount,
+        );
+      }
+      return SquarePaymentResult(
+        success: false,
+        transactionId: null,
+        message: 'Error del servidor: ${response.statusCode}',
+        amount: amount,
+      );
+    } catch (e) {
       return SquarePaymentResult(
         success: false,
         transactionId: null,
