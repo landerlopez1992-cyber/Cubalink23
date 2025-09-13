@@ -652,17 +652,19 @@ def search_airports():
     print("🔍 DEBUG: FUNCIÓN EJECUTÁNDOSE")
     """🏢 Búsqueda de aeropuertos - Endpoint para app Flutter"""
     try:
-        query = request.args.get('q', '')
+        query = request.args.get('query', '') or request.args.get('q', '')
         print("🔍 DEBUG: QUERY OBTENIDA"); print(f"Query: {query}")
         
         if not query:
             return jsonify([])
         
-        # API KEY REAL de Duffel desde variables de entorno
-        api_token = os.environ.get('DUFFEL_API_TOKEN') or os.environ.get('DUFFEL_API_KEY')
+        # API KEY REAL de Duffel desde variables de entorno (usar la misma que app.py)
+        api_token = os.environ.get('DUFFEL_API_KEY') or os.environ.get('DUFFEL_API_TOKEN')
         if not api_token:
-            print("DUFFEL_API_TOKEN o DUFFEL_API_KEY no configurada")
+            print("DUFFEL_API_KEY no configurada en variables de entorno")
             return jsonify([])
+        
+        print(f"🔑 Usando Duffel API Key: {'✅ Configurada' if api_token else '❌ No configurada'}")
         
         # Búsqueda directa con Duffel API
         headers = {
