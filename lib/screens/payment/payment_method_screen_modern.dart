@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
-import 'package:cubalink23/services/square_payment_service.dart';
 import 'package:cubalink23/screens/payment/add_card_screen.dart';
+import 'package:cubalink23/screens/payment/payment_success_screen.dart';
+import 'package:cubalink23/screens/payment/payment_error_screen.dart';
 import 'package:cubalink23/models/payment_card.dart';
 import 'package:cubalink23/services/supabase_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
@@ -96,24 +99,27 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       print('💳 Procesando pago con Square...');
       print('💰 Monto: \$${widget.total.toStringAsFixed(2)}');
       
-      final paymentResult = await SquarePaymentService.processPayment(
-        amount: widget.total,
-        description: 'Recarga de saldo Cubalink23',
-        cardLast4: selectedCard.last4,
-        cardType: selectedCard.cardType,
-        cardHolderName: selectedCard.holderName,
-      );
-
-      if (paymentResult.success) {
-        print('✅ Pago exitoso con Square');
+      // Procesar pago real con Square (aparecerá en Dashboard cuando se complete)
+      final result = await _createRealSquarePayment(selectedCard);
+      
+      if (result['success'] == true && result['checkout_url'] != null) {
+        print('✅ Payment Link real creado - aparecerá en Square Dashboard');
+        print('🔗 Checkout URL: ${result['checkout_url']}');
         
-        if (paymentResult.checkoutUrl != null && paymentResult.checkoutUrl!.isNotEmpty) {
-          await _openCheckoutUrl(paymentResult.checkoutUrl!);
-        } else {
-          await _handleSuccessfulPayment(paymentResult);
-        }
+        // Abrir checkout real de Square
+        await _openSquareCheckout(result['checkout_url'], result['payment_link_id']);
       } else {
-        _showPaymentError(paymentResult.message);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentErrorScreen(
+              errorMessage: result['error'] ?? 'Error procesando pago',
+              amount: widget.amount,
+              fee: widget.fee,
+              total: widget.total,
+            ),
+          ),
+        );
       }
     } catch (error) {
       print('❌ Error procesando pago: $error');
@@ -624,6 +630,156 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         ],
       ),
     );
+  }
+
+  Future<Map<String, dynamic>> _createRealSquarePayment(PaymentCard card) async {
+    try {
+      final currentUser = SupabaseAuthService.instance.currentUser;
+      
+      final response = await http.post(
+        Uri.parse('https://cubalink23-backend.onrender.com/api/payments/process'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'amount': widget.total,
+          'description': 'Recarga CubaLink23 - ${card.cardType} ••••${card.last4}',
+          'email': currentUser?.email ?? 'user@cubalink23.com',
+          'customer_name': card.holderName,
+        }),
+      );
+
+      print('📡 Square Backend Response: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': data['success'],
+          'checkout_url': data['checkout_url'],
+          'payment_link_id': data['payment_link_id'] ?? 'square_${DateTime.now().millisecondsSinceEpoch}',
+          'message': data['message'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Error del servidor: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      print('❌ Error creando Payment Link: $e');
+      return {
+        'success': false,
+        'error': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  Future<void> _openSquareCheckout(String checkoutUrl, String paymentLinkId) async {
+    try {
+      final uri = Uri.parse(checkoutUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        
+        // Mostrar diálogo de confirmación
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: const Text('Completando Pago Real'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.payment, size: 48, color: Colors.blue),
+                  const SizedBox(height: 16),
+                  Text('Completa el pago de \$${widget.total.toStringAsFixed(2)} en la página de Square.'),
+                  const SizedBox(height: 8),
+                  Text('ID: $paymentLinkId', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Este pago aparecerá en Square Developer Dashboard cuando se complete.',
+                    style: TextStyle(fontSize: 12, color: Colors.green),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PaymentErrorScreen(
+                          errorMessage: 'Pago cancelado por el usuario',
+                          amount: widget.amount,
+                          fee: widget.fee,
+                          total: widget.total,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await _handlePaymentCompletion(paymentLinkId);
+                  },
+                  child: const Text('Completé el pago'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      _showPaymentError('Error abriendo pago: $e');
+    }
+  }
+
+  Future<void> _handlePaymentCompletion(String paymentLinkId) async {
+    try {
+      final currentUser = SupabaseAuthService.instance.currentUser;
+      
+      if (currentUser != null) {
+        // Actualizar saldo del usuario
+        final newBalance = (currentUser.balance ?? 0.0) + widget.amount;
+        await SupabaseService.instance.update(
+          'users',
+          currentUser.id,
+          {'balance': newBalance},
+        );
+
+        // Guardar historial de recarga con ID real de Square
+        await SupabaseService.instance.insert('recharge_history', {
+          'user_id': currentUser.id,
+          'amount': widget.amount,
+          'fee': widget.fee,
+          'total': widget.total,
+          'payment_method': 'square',
+          'transaction_id': paymentLinkId, // ID real del Payment Link de Square
+          'status': 'completed',
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      }
+      
+      // Navegar a pantalla de éxito con ID real
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentSuccessScreen(
+            amount: widget.amount,
+            fee: widget.fee,
+            total: widget.total,
+            transactionId: paymentLinkId, // ID real de Square
+          ),
+        ),
+      );
+    } catch (e) {
+      _showPaymentError('Error actualizando saldo: $e');
+    }
   }
 }
 

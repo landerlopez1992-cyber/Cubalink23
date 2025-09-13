@@ -76,3 +76,6 @@ deploy_render.md
 
 # ---- Firebase credentials
 firebase_config.json
+android-sdk/
+*.apk
+flutter/
