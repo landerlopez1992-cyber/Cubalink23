@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/flight_offer.dart';
 import '../../services/duffel_api_service.dart';
 import 'seat_selection_screen.dart';
+import '../payment/native_payment_screen.dart';
 
 class FlightBookingEnhanced extends StatefulWidget {
   final FlightOffer flight;
@@ -49,7 +50,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
   // Variable para cantidad de equipaje adicional
   int _selectedBaggage = 0;
   
-  // Precios adicionales
+  // Variables para precios
   double _seatPrice = 0.0;
   double _baggagePrice = 0.0;
   double _cabinClassPrice = 0.0;
@@ -1600,6 +1601,19 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
     }
   }
 
+  double _getSeatPriceValue(String seatType) {
+    switch (seatType) {
+      case 'standard':
+        return 0.0;
+      case 'extra_legroom':
+        return 25.0;
+      case 'window':
+        return 15.0;
+      default:
+        return 0.0;
+    }
+  }
+
   String _getTotalPrice() {
     double basePrice = double.tryParse(widget.flight.totalAmount) ?? 0.0;
     double taxes = 58.0; // Impuestos fijos como en Duffel
@@ -1742,18 +1756,42 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
 
       print('👤 Datos del pasajero preparados: $passengerData');
 
-      // FLUJO CORRECTO: Cliente paga a tu app, luego Duffel usa su propio saldo
-      print('💳 Procesando pago en la APP (simulado)...');
+      // FLUJO REAL: Cliente paga con Square, luego Duffel usa su propio saldo
+      print('💳 Procesando pago REAL con Square...');
       
-      // SIMULAR el pago en tu app (más tarde implementarás Zelle/Tarjeta/Billetera)
-      await Future.delayed(Duration(seconds: 2)); // Simular procesamiento de pago
+      // Calcular precio total del vuelo
+      final flightPrice = _getCabinClassPrice(_selectedCabinClass);
+      final seatPrice = _getSeatPriceValue(_selectedSeat);
+      final baggagePrice = _selectedBaggage * 25.0; // $25 por maleta adicional
+      final totalPrice = flightPrice + seatPrice + baggagePrice;
       
-      // SIMULAR que el pago fue exitoso en tu app
-      const appPaymentSuccess = true; // En producción esto vendrá de tu sistema de pagos
+      // Procesar pago real con Square usando NativePaymentScreen
+      final paymentResult = await Navigator.push<Map<String, dynamic>>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NativePaymentScreen(
+            amount: totalPrice,
+            fee: totalPrice * 0.03, // 3% comisión
+            total: totalPrice * 1.03,
+            description: 'Vuelo ${widget.flight.airline} ${widget.flight.flightNumber}',
+            serviceType: 'flight',
+            metadata: {
+              'flight_id': widget.flight.id,
+              'passenger_data': passengerData,
+              'selected_seat': _selectedSeat,
+              'selected_baggage': _selectedBaggage,
+              'cabin_class': _selectedCabinClass,
+            },
+          ),
+        ),
+      );
+      
+      final appPaymentSuccess = paymentResult?['success'] == true;
       
       if (appPaymentSuccess) {
-        print('✅ PAGO EXITOSO EN TU APP');
-        print('💰 Cliente pagó: ${widget.flight.formattedPrice}');
+        print('✅ PAGO EXITOSO CON SQUARE');
+        print('💰 Cliente pagó: \$${totalPrice.toStringAsFixed(2)}');
+        print('🆔 Transaction ID: ${paymentResult!['transaction_id']}');
         
         // Preparar datos de asientos seleccionados
         List<Map<String, dynamic>>? selectedSeats;
@@ -1807,11 +1845,17 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
           _showDuffelErrorDialog(bookingResult);
         }
       } else {
-        print('❌ PAGO FALLÓ EN TU APP');
+        print('❌ PAGO FALLÓ O CANCELADO');
         setState(() {
           _isLoading = false;
         });
-        _showBookingErrorDialog({'message': 'El pago no pudo ser procesado en tu app'});
+        
+        // Si el usuario canceló el pago, no mostrar error
+        if (paymentResult == null) {
+          print('ℹ️ Usuario canceló el pago');
+        } else {
+          _showBookingErrorDialog({'message': paymentResult['error'] ?? 'El pago no pudo ser procesado'});
+        }
       }
     } catch (e) {
       setState(() {
