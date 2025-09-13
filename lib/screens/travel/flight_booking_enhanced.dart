@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/flight_offer.dart';
 import '../../services/duffel_api_service.dart';
 import 'seat_selection_screen.dart';
-import '../payment/native_payment_screen.dart';
+import '../payment/payment_method_screen.dart';
 
 class FlightBookingEnhanced extends StatefulWidget {
   final FlightOffer flight;
@@ -1762,17 +1762,16 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
       final baggagePrice = _selectedBaggage * 25.0; // $25 por maleta adicional
       final totalPrice = flightPrice + seatPrice + baggagePrice;
       
-      // Procesar pago real con Square usando NativePaymentScreen
+      // Procesar pago real con Square usando PaymentMethodScreen
       final paymentResult = await Navigator.push<Map<String, dynamic>>(
         context,
         MaterialPageRoute(
-          builder: (context) => NativePaymentScreen(
+          builder: (context) => PaymentMethodScreen(
             amount: totalPrice,
             fee: totalPrice * 0.03, // 3% comisión
             total: totalPrice * 1.03,
-            description: 'Vuelo ${widget.flight.airline} ${widget.flight.flightNumber}',
-            serviceType: 'flight',
             metadata: {
+              'service_type': 'flight',
               'flight_id': widget.flight.id,
               'passenger_data': passengerData,
               'selected_seat': _selectedSeat,

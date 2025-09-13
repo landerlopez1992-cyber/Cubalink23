@@ -1,4 +1,4 @@
-// SQUARE PAYMENT SERVICE - IMPLEMENTACIÓN CON PAYMENT LINKS
+// SQUARE PAYMENT SERVICE - IMPLEMENTACIÓN OFICIAL
 // Compatible con iOS, Android y Web
 
 import 'package:http/http.dart' as http;
@@ -6,52 +6,30 @@ import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'square_payment_service_native.dart';
 
 class SquarePaymentServiceOfficial {
   // Configuración de Square (Sandbox)
   static const String _applicationId = 'sandbox-sq0idb-IsIJtKqx2OHdVJjYmg6puA';
   static const String _locationId = 'LZVTP0YQ9YQBB';
-  static const String _backendUrl =
-      'https://cubalink23-backend.onrender.com/api/payments/process';
+  static const String _backendUrl = 'https://cubalink23-backend.onrender.com/api/payments/process';
 
   /// Inicializar Square Payment Service
   static Future<void> initialize() async {
     try {
-      // Inicializar SDK nativo para iOS/Android
-      await SquarePaymentServiceNative.initialize();
-      print('✅ Square Payment Service inicializado (Híbrido)');
+      print('✅ Square Payment Service inicializado');
       print('🔗 Application ID: $_applicationId');
       print('📍 Location ID: $_locationId');
     } catch (e) {
       print('❌ Error inicializando Square Service: $e');
-      // No rethrow para permitir que la app continúe
     }
   }
 
-  /// Procesar pago - Híbrido: SDK nativo para iOS/Android, Payment Links para Web
+  /// Procesar pago - Usa Payment Links para experiencia segura
   static Future<SquarePaymentResult> processPayment({
     required double amount,
     required String description,
   }) async {
     try {
-      // Usar SDK nativo para iOS/Android
-      if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-        print('📱 Usando SDK nativo para iOS/Android');
-        final result = await SquarePaymentServiceNative.processPayment(
-          amount: amount,
-          description: description,
-        );
-        return SquarePaymentResult(
-          success: result.success,
-          transactionId: result.transactionId,
-          message: result.message,
-          amount: result.amount,
-        );
-      }
-
-      // Usar Payment Links para Web
-      print('🌐 Usando Payment Links para Web');
       print('💳 Iniciando flujo de pago con Square Payment Links...');
       print('💰 Monto: \$${amount.toStringAsFixed(2)}');
       print('📝 Descripción: $description');
@@ -85,7 +63,7 @@ class SquarePaymentServiceOfficial {
         "amount": amount,
         "description": description,
         "location_id": _locationId,
-        "email": "user@cubalink23.com", // Email requerido por el backend
+        "email": "user@cubalink23.com",
       };
 
       final response = await http.post(
@@ -106,25 +84,13 @@ class SquarePaymentServiceOfficial {
           print('✅ Payment Link creado exitosamente');
           print('🔗 Checkout URL: ${data['checkout_url']}');
 
-          // Abrir el Payment Link
-          final urlOpened = await _openCheckoutUrl(data['checkout_url']);
-
-          if (urlOpened) {
-            return SquarePaymentResult(
-              success: true,
-              transactionId: data['payment_id'],
-              message: 'Payment Link abierto exitosamente',
-              amount: amount,
-              checkoutUrl: data['checkout_url'],
-            );
-          } else {
-            return SquarePaymentResult(
-              success: false,
-              transactionId: null,
-              message: 'No se pudo abrir el Payment Link',
-              amount: amount,
-            );
-          }
+          return SquarePaymentResult(
+            success: true,
+            transactionId: data['payment_id'] ?? 'square_${DateTime.now().millisecondsSinceEpoch}',
+            message: 'Payment Link creado exitosamente',
+            amount: amount,
+            checkoutUrl: data['checkout_url'],
+          );
         } else {
           print('❌ Error del backend: ${data['error']}');
           return SquarePaymentResult(
@@ -154,27 +120,9 @@ class SquarePaymentServiceOfficial {
     }
   }
 
-  /// Abrir URL de checkout
-  static Future<bool> _openCheckoutUrl(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        return true;
-      } else {
-        print('❌ No se puede abrir la URL: $url');
-        return false;
-      }
-    } catch (e) {
-      print('❌ Error abriendo URL: $e');
-      return false;
-    }
-  }
-
   /// Verificar si Square está disponible
   static Future<bool> isSquareAvailable() async {
     try {
-      // Verificar conectividad básica
       final response = await http.get(
         Uri.parse('https://cubalink23-backend.onrender.com/api/health'),
         headers: {'Content-Type': 'application/json'},
