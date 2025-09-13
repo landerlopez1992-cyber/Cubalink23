@@ -161,7 +161,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         {'balance': newBalance},
       );
 
-      // Guardar historial usando DatabaseService (método mejorado)
+      // Guardar historial usando DatabaseService (producción)
       final now = DateTime.now();
       final rechargeHistory = RechargeHistory(
         id: 'recharge_${now.millisecondsSinceEpoch}',

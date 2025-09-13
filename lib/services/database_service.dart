@@ -94,7 +94,7 @@ class DatabaseService {
       print('💰 Monto: \$${history.amount}');
       print('🆔 Transaction ID: ${history.transactionId}');
       
-      // Guardar en Supabase usando el servicio real
+      // Guardar en Supabase usando el servicio de producción
       await _supabaseDB.addRechargeHistory(
         userId: history.userId,
         phoneNumber: history.phoneNumber,
@@ -116,7 +116,7 @@ class DatabaseService {
     try {
       print('📊 Obteniendo historial real de recargas para: $userId');
       
-      // Obtener historial real desde Supabase
+      // Obtener historial desde Supabase (producción)
       final historyData = await _supabaseDB.getRechargeHistory(userId);
       
       final historyList = historyData.map((data) {

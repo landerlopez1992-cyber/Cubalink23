@@ -347,7 +347,7 @@ class SupabaseDatabaseService {
 
   // ==================== RECHARGE HISTORY OPERATIONS ====================
   
-  /// Add recharge history entry
+  /// Add recharge history entry - PRODUCTION READY
   Future<void> addRechargeHistory({
     required String userId,
     required String phoneNumber,
@@ -374,7 +374,7 @@ class SupabaseDatabaseService {
     }
   }
   
-  /// Get recharge history for user
+  /// Get recharge history for user - PRODUCTION READY
   Future<List<Map<String, dynamic>>> getRechargeHistory(String userId) async {
     try {
       final response = await _client
