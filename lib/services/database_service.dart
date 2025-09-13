@@ -89,9 +89,23 @@ class DatabaseService {
   // Recharge history operations
   Future<void> addRechargeHistory(RechargeHistory history) async {
     try {
-      // Por ahora usar placeholder - implementar método después
-      print('📝 Recharge history placeholder: ${history.phoneNumber}');
-      print('✅ Historial de recarga agregado');
+      print('📝 Guardando historial de recarga real...');
+      print('📱 Teléfono: ${history.phoneNumber}');
+      print('💰 Monto: \$${history.amount}');
+      print('🆔 Transaction ID: ${history.transactionId}');
+      
+      // Guardar en Supabase usando el servicio real
+      await _supabaseDB.addRechargeHistory(
+        userId: history.userId,
+        phoneNumber: history.phoneNumber,
+        amount: history.amount,
+        operatorId: history.operatorId,
+        transactionId: history.transactionId,
+        status: history.status,
+        createdAt: history.createdAt,
+      );
+      
+      print('✅ Historial de recarga guardado exitosamente');
     } catch (e) {
       print('❌ Error agregando historial de recarga: $e');
       rethrow;
@@ -100,9 +114,26 @@ class DatabaseService {
 
   Future<List<RechargeHistory>> getRechargeHistory(String userId) async {
     try {
-      // Por ahora retornar lista vacía - implementar método después
-      print('📊 Historial placeholder para: $userId');
-      return <RechargeHistory>[];
+      print('📊 Obteniendo historial real de recargas para: $userId');
+      
+      // Obtener historial real desde Supabase
+      final historyData = await _supabaseDB.getRechargeHistory(userId);
+      
+      final historyList = historyData.map((data) {
+        return RechargeHistory(
+          id: data['id'] ?? '',
+          userId: data['user_id'] ?? userId,
+          phoneNumber: data['phone_number'] ?? '',
+          amount: (data['amount'] ?? 0.0).toDouble(),
+          operatorId: data['operator_id'] ?? '',
+          transactionId: data['transaction_id'] ?? '',
+          status: data['status'] ?? 'completed',
+          createdAt: DateTime.parse(data['created_at'] ?? DateTime.now().toIso8601String()),
+        );
+      }).toList();
+      
+      print('✅ Historial obtenido: ${historyList.length} transacciones');
+      return historyList;
     } catch (e) {
       print('❌ Error obteniendo historial: $e');
       return [];

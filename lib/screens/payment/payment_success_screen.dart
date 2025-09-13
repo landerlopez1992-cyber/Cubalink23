@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
+import 'package:cubalink23/services/database_service.dart';
+import 'package:cubalink23/models/recharge_history.dart';
 
 class PaymentSuccessScreen extends StatefulWidget {
   final double amount;
@@ -24,6 +26,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  List<RechargeHistory> recentHistory = [];
+  bool isLoadingHistory = true;
 
   @override
   void initState() {
@@ -51,6 +55,23 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     );
 
     _animationController.forward();
+    _loadRecentHistory();
+  }
+
+  Future<void> _loadRecentHistory() async {
+    try {
+      final currentUser = SupabaseAuthService.instance.currentUser;
+      if (currentUser != null) {
+        final history = await DatabaseService.instance.getRechargeHistory(currentUser.id);
+        setState(() {
+          recentHistory = history.take(5).toList(); // Últimas 5 transacciones
+          isLoadingHistory = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Error cargando historial: $e');
+      setState(() => isLoadingHistory = false);
+    }
   }
 
   @override
@@ -139,7 +160,38 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                     ),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
+                // Historial reciente
+                if (!isLoadingHistory && recentHistory.isNotEmpty) ...[
+                  SlideTransition(
+                    position: _slideAnimation,
+                    child: Card(
+                      elevation: 8,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '📊 Historial Reciente',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2C2C2C),
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+                            ...recentHistory.map((transaction) => _buildHistoryItem(transaction)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+                const SizedBox(height: 20),
                 // Continue Button
                 ElevatedButton(
                   onPressed: () async {
@@ -201,6 +253,112 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildHistoryItem(RechargeHistory transaction) {
+    final isCurrentTransaction = transaction.transactionId == widget.transactionId;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isCurrentTransaction ? const Color(0xFF4CAF50).withOpacity(0.1) : Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: isCurrentTransaction ? Border.all(color: const Color(0xFF4CAF50), width: 2) : null,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isCurrentTransaction ? const Color(0xFF4CAF50) : Colors.grey[400],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              isCurrentTransaction ? Icons.check_circle : Icons.history,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isCurrentTransaction ? 'Transacción Actual' : 'Recarga de Saldo',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isCurrentTransaction ? const Color(0xFF4CAF50) : Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '\$${transaction.amount.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C2C2C),
+                  ),
+                ),
+                Text(
+                  'ID: ${transaction.transactionId.substring(0, 8)}...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                _formatDate(transaction.createdAt),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: transaction.status == 'completed' ? Colors.green : Colors.orange,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  transaction.status == 'completed' ? 'Completado' : 'Pendiente',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inMinutes < 1) {
+      return 'Ahora';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h';
+    } else {
+      return '${difference.inDays}d';
+    }
   }
 }
 

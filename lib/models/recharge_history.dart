@@ -14,69 +14,120 @@ enum PaymentMethod {
 
 class RechargeHistory {
   final String id;
+  final String userId;
   final String phoneNumber;
   final String operator;
+  final String operatorId;
   final double amount;
   final DateTime timestamp;
+  final DateTime createdAt;
   final String status;
+  final String transactionId;
+  final String? paymentMethod;
+  final double? fee;
+  final double? total;
 
   RechargeHistory({
     required this.id,
+    required this.userId,
     required this.phoneNumber,
     required this.operator,
+    required this.operatorId,
     required this.amount,
     required this.timestamp,
+    required this.createdAt,
     required this.status,
+    required this.transactionId,
+    this.paymentMethod,
+    this.fee,
+    this.total,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'user_id': userId,
       'phoneNumber': phoneNumber,
+      'phone_number': phoneNumber,
       'operator': operator,
+      'operator_id': operatorId,
       'amount': amount,
       'timestamp': timestamp.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
       'status': status,
+      'transaction_id': transactionId,
+      'payment_method': paymentMethod,
+      'fee': fee,
+      'total': total,
     };
   }
 
   factory RechargeHistory.fromJson(Map<String, dynamic> json) {
     return RechargeHistory(
-      id: json['id'],
-      phoneNumber: json['phoneNumber'],
-      operator: json['operator'],
+      id: json['id'] ?? '',
+      userId: json['user_id'] ?? json['userId'] ?? '',
+      phoneNumber: json['phoneNumber'] ?? json['phone_number'] ?? '',
+      operator: json['operator'] ?? '',
+      operatorId: json['operator_id'] ?? json['operatorId'] ?? '',
       amount: (json['amount'] ?? 0).toDouble(),
       timestamp: json['timestamp'] is String ? DateTime.parse(json['timestamp']) : DateTime.now(),
+      createdAt: json['created_at'] is String ? DateTime.parse(json['created_at']) : DateTime.now(),
       status: json['status'] ?? 'completed',
+      transactionId: json['transaction_id'] ?? json['transactionId'] ?? '',
+      paymentMethod: json['payment_method'] ?? json['paymentMethod'],
+      fee: json['fee']?.toDouble(),
+      total: json['total']?.toDouble(),
     );
   }
 
   /// Método estático para obtener historial de muestra
   static List<RechargeHistory> getSampleHistory() {
+    final now = DateTime.now();
     return [
       RechargeHistory(
         id: 'rh_001',
+        userId: 'user_001',
         phoneNumber: '+52 55 1234 5678',
         operator: 'Telcel',
+        operatorId: 'telcel_mx',
         amount: 100,
-        timestamp: DateTime.now().subtract(Duration(hours: 2)),
-        status: 'Completada',
+        timestamp: now.subtract(Duration(hours: 2)),
+        createdAt: now.subtract(Duration(hours: 2)),
+        status: 'completed',
+        transactionId: 'square_001',
+        paymentMethod: 'square',
+        fee: 4.99,
+        total: 104.99,
       ),
       RechargeHistory(
         id: 'rh_002',
+        userId: 'user_001',
         phoneNumber: '+53 5 234 5678',
         operator: 'CubaCel',
+        operatorId: 'cubacel_cu',
         amount: 500,
-        timestamp: DateTime.now().subtract(Duration(minutes: 30)),
-        status: 'Pendiente',
+        timestamp: now.subtract(Duration(minutes: 30)),
+        createdAt: now.subtract(Duration(minutes: 30)),
+        status: 'pending',
+        transactionId: 'square_002',
+        paymentMethod: 'square',
+        fee: 21.99,
+        total: 521.99,
       ),
       RechargeHistory(
         id: 'rh_003',
+        userId: 'user_001',
         phoneNumber: '+1 305 123 4567',
         operator: 'AT&T',
+        operatorId: 'att_us',
         amount: 25,
-        timestamp: DateTime.now().subtract(Duration(days: 1)),
-        status: 'Completada',
+        timestamp: now.subtract(Duration(days: 1)),
+        createdAt: now.subtract(Duration(days: 1)),
+        status: 'completed',
+        transactionId: 'square_003',
+        paymentMethod: 'square',
+        fee: 1.99,
+        total: 26.99,
       ),
     ];
   }

@@ -344,4 +344,50 @@ class SupabaseDatabaseService {
       return 0;
     }
   }
+
+  // ==================== RECHARGE HISTORY OPERATIONS ====================
+  
+  /// Add recharge history entry
+  Future<void> addRechargeHistory({
+    required String userId,
+    required String phoneNumber,
+    required double amount,
+    required String operatorId,
+    required String transactionId,
+    required String status,
+    required DateTime createdAt,
+  }) async {
+    try {
+      await _client.from('recharge_history').insert({
+        'user_id': userId,
+        'phone_number': phoneNumber,
+        'amount': amount,
+        'operator_id': operatorId,
+        'transaction_id': transactionId,
+        'status': status,
+        'created_at': createdAt.toIso8601String(),
+      });
+      print('✅ Historial de recarga agregado: $transactionId');
+    } catch (e) {
+      print('❌ Error agregando historial de recarga: $e');
+      rethrow;
+    }
+  }
+  
+  /// Get recharge history for user
+  Future<List<Map<String, dynamic>>> getRechargeHistory(String userId) async {
+    try {
+      final response = await _client
+          .from('recharge_history')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+      
+      print('✅ Historial de recargas obtenido: ${response.length} entradas');
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('❌ Error obteniendo historial de recargas: $e');
+      return [];
+    }
+  }
 }

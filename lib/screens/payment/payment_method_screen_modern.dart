@@ -3,7 +3,9 @@ import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/services/square_payment_service.dart';
 import 'package:cubalink23/screens/payment/add_card_screen.dart';
 import 'package:cubalink23/models/payment_card.dart';
+import 'package:cubalink23/models/recharge_history.dart';
 import 'package:cubalink23/services/supabase_service.dart';
+import 'package:cubalink23/services/database_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
@@ -159,6 +161,27 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         {'balance': newBalance},
       );
 
+      // Guardar historial usando DatabaseService (método mejorado)
+      final now = DateTime.now();
+      final rechargeHistory = RechargeHistory(
+        id: 'recharge_${now.millisecondsSinceEpoch}',
+        userId: currentUser.id,
+        phoneNumber: currentUser.phone ?? '',
+        operator: 'Square Payment',
+        operatorId: 'square_payment',
+        amount: widget.amount,
+        timestamp: now,
+        createdAt: now,
+        status: 'completed',
+        transactionId: result.transactionId ?? 'square_${now.millisecondsSinceEpoch}',
+        paymentMethod: 'square',
+        fee: widget.fee,
+        total: widget.total,
+      );
+      
+      await DatabaseService.instance.addRechargeHistory(rechargeHistory);
+      
+      // También guardar en Supabase directamente como respaldo
       await SupabaseService.instance.insert('recharge_history', {
         'user_id': currentUser.id,
         'amount': widget.amount,
