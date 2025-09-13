@@ -570,11 +570,11 @@ class DuffelApiService {
       };
 
       print('📤 Enviando solicitud de reserva al backend...');
-      print('🔗 URL: $_baseUrl/admin/api/flights/booking');
+      print('🔗 URL: $_baseUrl/api/flights/booking');
       print('📋 Payload: ${json.encode(payload)}');
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/admin/api/flights/booking'),
+        Uri.parse('$_baseUrl/api/flights/booking'),
         headers: _headers,
         body: json.encode(payload),
       ).timeout(Duration(seconds: 30));

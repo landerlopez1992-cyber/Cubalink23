@@ -187,3 +187,131 @@ class DuffelService:
         except Exception as e:
             print(f"❌ Error buscando vuelos: {str(e)}")
             return []
+
+    def create_booking(self, offer_id, passengers, payment_method='balance', selected_seats=None, selected_baggage=None, payment_intent_id=None):
+        """
+        🎫 Crear reserva real con Duffel API
+        """
+        try:
+            print(f"🎫 Creando reserva con Duffel API...")
+            print(f"🆔 Offer ID: {offer_id}")
+            print(f"👥 Pasajeros: {len(passengers)}")
+            print(f"💳 Método de pago: {payment_method}")
+            
+            # Preparar payload para Duffel Orders API
+            booking_data = {
+                "data": {
+                    "type": "order",
+                    "selected_offers": [offer_id],
+                    "passengers": []
+                }
+            }
+            
+            # Agregar datos de pasajeros en formato Duffel
+            for passenger in passengers:
+                passenger_data = {
+                    "type": "passenger",
+                    "title": passenger.get('title', 'mr'),
+                    "given_name": passenger.get('given_name', ''),
+                    "family_name": passenger.get('family_name', ''),
+                    "email": passenger.get('email', ''),
+                    "phone_number": passenger.get('phone_number', ''),
+                    "born_on": passenger.get('born_on', ''),
+                    "gender": passenger.get('gender', 'm'),
+                    "identity_documents": [{
+                        "type": "passport",
+                        "unique_identifier": passenger.get('passport_number', ''),
+                        "expires_on": passenger.get('passport_expires_on', ''),
+                        "issuing_country_code": passenger.get('passport_country_of_issue', 'US')
+                    }]
+                }
+                booking_data["data"]["passengers"].append(passenger_data)
+            
+            # Agregar asientos seleccionados si los hay
+            if selected_seats:
+                booking_data["data"]["services"] = []
+                for seat in selected_seats:
+                    booking_data["data"]["services"].append({
+                        "type": "seat",
+                        "id": seat.get('seat_id'),
+                        "quantity": 1
+                    })
+            
+            # Agregar equipaje adicional si lo hay
+            if selected_baggage:
+                if "services" not in booking_data["data"]:
+                    booking_data["data"]["services"] = []
+                for baggage in selected_baggage:
+                    booking_data["data"]["services"].append({
+                        "type": "baggage",
+                        "quantity": baggage.get('quantity', 1)
+                    })
+            
+            # Configurar método de pago
+            if payment_method == 'balance':
+                booking_data["data"]["payment"] = {
+                    "type": "balance"
+                }
+            elif payment_method == 'hold':
+                booking_data["data"]["payment"] = {
+                    "type": "hold"
+                }
+            elif payment_method == 'payment_intent' and payment_intent_id:
+                booking_data["data"]["payment"] = {
+                    "type": "payment_intent",
+                    "payment_intent_id": payment_intent_id
+                }
+            
+            print(f"📤 Enviando orden a Duffel...")
+            
+            # Crear orden en Duffel
+            response = requests.post(
+                f'{self.api_url}/air/orders',
+                headers=self.headers,
+                json=booking_data
+            )
+            
+            print(f"📡 Duffel Response: {response.status_code}")
+            
+            if response.status_code == 201:
+                order_data = response.json()
+                order = order_data.get('data', {})
+                
+                print(f"✅ Orden creada exitosamente en Duffel")
+                print(f"🆔 Order ID: {order.get('id')}")
+                print(f"📋 Reference: {order.get('booking_reference')}")
+                
+                return {
+                    'success': True,
+                    'booking_id': order.get('id'),
+                    'booking_reference': order.get('booking_reference'),
+                    'status': order.get('status'),
+                    'total_amount': order.get('total_amount'),
+                    'currency': order.get('total_currency'),
+                    'passenger_tickets': order.get('documents', []),
+                    'created_at': order.get('created_at'),
+                    'message': 'Reserva creada exitosamente en Duffel'
+                }
+            else:
+                error_data = response.json()
+                errors = error_data.get('errors', [])
+                error_message = errors[0].get('message', 'Error desconocido') if errors else 'Error creando orden'
+                
+                print(f"❌ Error creando orden en Duffel: {error_message}")
+                
+                return {
+                    'success': False,
+                    'error': error_message,
+                    'details': response.text
+                }
+                
+        except Exception as e:
+            print(f"❌ Error en create_booking: {str(e)}")
+            return {
+                'success': False,
+                'error': 'Error interno del servidor',
+                'details': str(e)
+            }
+
+# Instancia global del servicio
+duffel_service = DuffelService()

@@ -297,7 +297,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
           _buildCabinOption(
             'main_cabin',
             'ECONOMY Main Cabin',
-            'US\$173.00',
+            _getCabinClassPriceString('main_cabin'),
             [
               _buildPolicyIcon(Icons.check_circle, 'Cambiable', Colors.green),
               _buildPolicyIcon(Icons.cancel, 'No reembolsable', Colors.red),
@@ -313,7 +313,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
           _buildCabinOption(
             'main_cabin_flexible',
             'ECONOMY Main Cabin Flexible',
-            'US\$218.00',
+            _getCabinClassPriceString('main_cabin_flexible'),
             [
               _buildPolicyIcon(Icons.check_circle, 'Cambiable', Colors.green),
               _buildPolicyIcon(Icons.check_circle, 'Reembolsable', Colors.green),
@@ -329,7 +329,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
           _buildCabinOption(
             'main_plus',
             'ECONOMY Main Plus',
-            'US\$250.00',
+            _getCabinClassPriceString('main_plus'),
             [
               _buildPolicyIcon(Icons.check_circle, 'Cambiable', Colors.green),
               _buildPolicyIcon(Icons.cancel, 'No reembolsable', Colors.red),
@@ -1105,7 +1105,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
                             ? () {
                                 setState(() {
                                   _selectedBaggage--;
-                                  _baggagePrice = _selectedBaggage * 50.0;
+                                  _baggagePrice = _selectedBaggage * 25.0; // $25 por maleta (precio real)
                                 });
                               }
                             : null,
@@ -1123,7 +1123,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
                             ? () {
                                 setState(() {
                                   _selectedBaggage++;
-                                  _baggagePrice = _selectedBaggage * 50.0;
+                                  _baggagePrice = _selectedBaggage * 25.0; // $25 por maleta (precio real)
                                 });
                               }
                             : null,
@@ -1141,7 +1141,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
                   SizedBox(height: 16),
                   
                   Text(
-                    'Cada maleta adicional: \$50 USD (hasta 23kg)',
+                    'Cada maleta adicional: \$25 USD (hasta 23kg)',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 12,
@@ -1415,12 +1415,14 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
                   ),
                   SizedBox(height: 12),
                   
-                  _buildPriceRow('Tarifa base:', widget.flight.formattedPrice),
-                  _buildPriceRow('Impuestos de tarifa:', '\$58.00 USD'),
                   _buildPriceRow('Tipo de cabina:', _getCabinClassPriceString(_selectedCabinClass)),
                   
                   if (_selectedSeat.isNotEmpty) ...[
                     _buildPriceRow('Asiento seleccionado:', _getSeatPrice(_selectedSeat)),
+                  ],
+                  
+                  if (_selectedBaggage > 0) ...[
+                    _buildPriceRow('Equipaje adicional:', '${_selectedBaggage}x \$25.00 = \$${(_selectedBaggage * 25.0).toStringAsFixed(2)} USD'),
                   ],
                   
                   Divider(),
@@ -1550,28 +1552,24 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
   }
 
   String _getCabinClassPriceString(String cabinClass) {
-    switch (cabinClass) {
-      case 'main_cabin':
-        return 'US\$173.00';
-      case 'main_cabin_flexible':
-        return 'US\$218.00';
-      case 'main_plus':
-        return 'US\$250.00';
-      default:
-        return 'US\$173.00';
-    }
+    final basePrice = double.tryParse(widget.flight.totalAmount) ?? 0.0;
+    final price = _getCabinClassPrice(cabinClass);
+    return 'US\$${price.toStringAsFixed(2)}';
   }
 
   double _getCabinClassPrice(String cabinClass) {
+    // Usar precio real del vuelo de Duffel como base
+    final basePrice = double.tryParse(widget.flight.totalAmount) ?? 0.0;
+    
     switch (cabinClass) {
       case 'main_cabin':
-        return 173.0;
+        return basePrice; // Precio base del vuelo
       case 'main_cabin_flexible':
-        return 218.0;
+        return basePrice + 45.0; // +$45 por flexibilidad
       case 'main_plus':
-        return 250.0;
+        return basePrice + 77.0; // +$77 por main plus
       default:
-        return 173.0;
+        return basePrice;
     }
   }
 
@@ -1615,12 +1613,11 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
   }
 
   String _getTotalPrice() {
-    double basePrice = double.tryParse(widget.flight.totalAmount) ?? 0.0;
-    double taxes = 58.0; // Impuestos fijos como en Duffel
-    double cabinClassPrice = _getCabinClassPrice(_selectedCabinClass);
-    double seatPrice = _seatPrice;
+    final cabinPrice = _getCabinClassPrice(_selectedCabinClass);
+    final seatPrice = _getSeatPriceValue(_selectedSeat);
+    final baggagePrice = _selectedBaggage * 25.0;
     
-    double total = basePrice + taxes + cabinClassPrice + seatPrice;
+    final total = cabinPrice + seatPrice + baggagePrice;
     return '\$${total.toStringAsFixed(2)} USD';
   }
 

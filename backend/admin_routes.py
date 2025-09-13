@@ -10,6 +10,14 @@ from auth_routes import require_auth
 from werkzeug.utils import secure_filename
 from database import local_db
 
+# Importar servicio de Duffel
+try:
+    from duffel_service import duffel_service
+    print("✅ Duffel service importado correctamente")
+except ImportError as e:
+    print(f"⚠️ No se pudo importar Duffel service: {e}")
+    duffel_service = None
+
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
 # Configuración para subida de archivos
@@ -750,6 +758,56 @@ def get_routes():
         return jsonify(routes)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/flights/booking', methods=['POST'])
+def create_flight_booking():
+    """Crear reserva de vuelo con Duffel API"""
+    try:
+        data = request.json
+        
+        # Validar datos requeridos
+        required_fields = ['offer_id', 'passengers', 'payment_method']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'success': False,
+                    'error': f'Campo requerido faltante: {field}'
+                }), 400
+        
+        # Procesar reserva con Duffel
+        booking_result = duffel_service.create_booking(
+            offer_id=data['offer_id'],
+            passengers=data['passengers'],
+            payment_method=data.get('payment_method', 'balance'),
+            selected_seats=data.get('selected_seats'),
+            selected_baggage=data.get('selected_baggage'),
+            payment_intent_id=data.get('payment_intent_id')
+        )
+        
+        if booking_result and booking_result.get('success'):
+            return jsonify({
+                'success': True,
+                'booking_id': booking_result.get('booking_id'),
+                'booking_reference': booking_result.get('booking_reference'),
+                'status': booking_result.get('status'),
+                'total_amount': booking_result.get('total_amount'),
+                'currency': booking_result.get('currency'),
+                'passenger_tickets': booking_result.get('passenger_tickets'),
+                'message': 'Reserva creada exitosamente'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': booking_result.get('error', 'Error creando reserva'),
+                'details': booking_result.get('details')
+            }), 400
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'details': str(e)
+        }), 500
 
 # ===== HISTORIAL DE RECARGAS =====
 @admin.route('/api/recharges')
