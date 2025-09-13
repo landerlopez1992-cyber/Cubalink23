@@ -124,11 +124,16 @@ class DatabaseService {
           id: data['id'] ?? '',
           userId: data['user_id'] ?? userId,
           phoneNumber: data['phone_number'] ?? '',
-          amount: (data['amount'] ?? 0.0).toDouble(),
+          operator: data['operator'] ?? 'Square Payment',
           operatorId: data['operator_id'] ?? '',
-          transactionId: data['transaction_id'] ?? '',
-          status: data['status'] ?? 'completed',
+          amount: (data['amount'] ?? 0.0).toDouble(),
+          timestamp: DateTime.parse(data['created_at'] ?? DateTime.now().toIso8601String()),
           createdAt: DateTime.parse(data['created_at'] ?? DateTime.now().toIso8601String()),
+          status: data['status'] ?? 'completed',
+          transactionId: data['transaction_id'] ?? '',
+          paymentMethod: data['payment_method'],
+          fee: data['fee']?.toDouble(),
+          total: data['total']?.toDouble(),
         );
       }).toList();
       
