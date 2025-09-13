@@ -17,5 +17,14 @@ class PaymentConfig {
   static const String DUFFEL_PAYMENT_METHOD_HOLD = 'hold'; // Mantener reserva
 }
 
+/// Configuración de Square sin secretos (solo IDs públicos o flags)
+class SquarePublicConfig {
+  static const String applicationIdSandbox = 'sandbox-sq0idb-IsIJtKqx2OHdVJjYmg6puA';
+  static const String applicationIdProduction = '';
+  static const String locationIdSandbox = 'LZVTP0YQ9YQBB';
+  static const String locationIdProduction = '';
 
-
+  /// Backend que procesa pagos y genera Payment Links (no exponer tokens aquí)
+  static const String backendProcessPaymentUrl =
+      'https://cubalink23-backend.onrender.com/api/payments/process';
+}

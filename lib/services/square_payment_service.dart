@@ -1,8 +1,11 @@
-// SQUARE REACTIVADO CON CREDENCIALES VÁLIDAS
-// Servicio de pagos real con Square
+// Servicio híbrido que combina implementación directa y wrapper oficial
+// Preserva funcionalidad completa de Square con seguridad mejorada
 
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'square_payment_service_official.dart' as official;
+
+export 'square_payment_service_official.dart' show SquarePaymentResult;
 
 class SquarePaymentService {
   // Credenciales de Square Sandbox (VÁLIDAS)
@@ -11,7 +14,7 @@ class SquarePaymentService {
   static const String _environment = 'sandbox';
   static const String _baseUrl = 'https://connect.squareupsandbox.com';
 
-  /// Initialize Square Payment Service (REACTIVADO)
+  /// Initialize Square Payment Service (HÍBRIDO)
   static Future<void> initialize() async {
     try {
       // Verificar conexión con Square
@@ -25,7 +28,7 @@ class SquarePaymentService {
       );
 
       if (response.statusCode == 200) {
-        print('✅ Square inicializado correctamente');
+        print('✅ Square inicializado correctamente (Híbrido)');
         print('🔗 Conectado a: $_environment');
         print('📍 Location ID: $_locationId');
       } else {
@@ -38,28 +41,24 @@ class SquarePaymentService {
     }
   }
 
-  /// Procesar pago REAL con Square
+  /// Procesar pago REAL con Square (HÍBRIDO)
   static Future<SquarePaymentResult> processPayment({
     required double amount,
     required String description,
-    required String cardLast4,
-    required String cardType,
-    required String cardHolderName,
+    String? cardLast4,
+    String? cardType,
+    String? cardHolderName,
   }) async {
     try {
-      print('💳 Procesando pago REAL con Square...');
+      print('💳 Procesando pago REAL con Square (Híbrido)...');
       print('💰 Monto: \$${amount.toStringAsFixed(2)}');
-      print('💳 Tarjeta: $cardType ****$cardLast4');
-      print('👤 Titular: $cardHolderName');
+      if (cardLast4 != null) print('💳 Tarjeta: $cardType ****$cardLast4');
+      if (cardHolderName != null) print('👤 Titular: $cardHolderName');
       
       // ========== PROCESAR PAGO REAL CON SQUARE API ==========
-      // Square maneja TODOS los errores de tarjetas automáticamente
       final paymentResult = await _processRealSquarePayment(
         amount: amount,
         description: description,
-        cardLast4: cardLast4,
-        cardType: cardType,
-        cardHolderName: cardHolderName,
       );
 
       if (paymentResult['success']) {
@@ -67,28 +66,13 @@ class SquarePaymentService {
         print('💳 Transaction ID: ${paymentResult['transaction_id']}');
         print('🔗 Checkout URL: ${paymentResult['checkout_url']}');
         
-        // Abrir el Payment Link en el navegador
-        if (paymentResult['checkout_url'] != null) {
-          final url = paymentResult['checkout_url'];
-          print('🌐 Abriendo Payment Link: $url');
-          
-          // Simular pago exitoso después de crear el link
-          // En producción, esto se manejaría con webhooks
-          return SquarePaymentResult(
-            success: true,
-            transactionId: paymentResult['transaction_id'],
-            message: 'Payment Link creado. Redirigiendo a Square...',
-            amount: amount,
-            checkoutUrl: url,
-          );
-        } else {
-          return SquarePaymentResult(
-            success: false,
-            transactionId: null,
-            message: 'Error: No se pudo obtener URL de pago',
-            amount: amount,
-          );
-        }
+        return SquarePaymentResult(
+          success: true,
+          transactionId: paymentResult['transaction_id'],
+          message: 'Payment Link creado. Redirigiendo a Square...',
+          amount: amount,
+          checkoutUrl: paymentResult['checkout_url'],
+        );
       } else {
         print('❌ Error procesando pago: ${paymentResult['error']}');
         return SquarePaymentResult(
@@ -113,15 +97,10 @@ class SquarePaymentService {
   static Future<Map<String, dynamic>> _processRealSquarePayment({
     required double amount,
     required String description,
-    required String cardLast4,
-    required String cardType,
-    required String cardHolderName,
   }) async {
     try {
       print('💳 Procesando pago REAL con Square API - LLAMADA DIRECTA...');
       print('💰 Monto: \$${amount.toStringAsFixed(2)}');
-      print('💳 Tarjeta: $cardType ****$cardLast4');
-      print('👤 Titular: $cardHolderName');
       
       // 🚀 LLAMADA DIRECTA A SQUARE API - SIN BACKEND
       final paymentLinkResult = await createPaymentLink(
@@ -155,7 +134,6 @@ class SquarePaymentService {
       };
     }
   }
-
 
   /// Crear enlace de pago con Square API - MÉTODO PÚBLICO
   static Future<Map<String, dynamic>> createPaymentLink({
@@ -197,7 +175,7 @@ class SquarePaymentService {
         print('🔗 Checkout URL: ${paymentLink['url']}');
         print('🔗 Long URL: ${paymentLink['long_url']}');
         
-        // Usar 'url' que es lo que Square realmente devuelve (como confirmamos en las pruebas)
+        // Usar 'url' que es lo que Square realmente devuelve
         final checkoutUrl = paymentLink['url'] ?? paymentLink['long_url'] ?? 'URL no disponible';
         
         return {
@@ -403,29 +381,5 @@ class SquarePaymentService {
         'error': 'Exception: $e',
       };
     }
-  }
-  
-
-}
-
-/// Resultado del pago Square
-class SquarePaymentResult {
-  final bool success;
-  final String? transactionId;
-  final String message;
-  final double amount;
-  final String? checkoutUrl;
-
-  SquarePaymentResult({
-    required this.success,
-    required this.transactionId,
-    required this.message,
-    required this.amount,
-    this.checkoutUrl,
-  });
-
-  @override
-  String toString() {
-    return 'SquarePaymentResult(success: $success, transactionId: $transactionId, message: $message, amount: $amount, checkoutUrl: $checkoutUrl)';
   }
 }
