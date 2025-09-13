@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
-import 'package:cubalink23/services/square_payment_service.dart';
+import 'package:cubalink23/services/square_payment_service_official.dart';
 import 'package:cubalink23/screens/payment/add_card_screen.dart';
 import 'package:cubalink23/screens/payment/payment_success_screen.dart';
 import 'package:cubalink23/screens/payment/payment_error_screen.dart';
@@ -47,7 +47,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     }
 
     try {
-      final cardsData = await SupabaseService.instance.getUserPaymentCards(currentUser.id);
+      final cardsData =
+          await SupabaseService.instance.getUserPaymentCards(currentUser.id);
       final cardModels = cardsData.map((cardData) {
         return PaymentCard(
           id: cardData['id'],
@@ -58,7 +59,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           holderName: cardData['holder_name'] ?? '',
           isDefault: cardData['is_default'] ?? false,
           squareCardId: cardData['square_card_id'],
-          createdAt: DateTime.parse(cardData['created_at'] ?? DateTime.now().toIso8601String()),
+          createdAt: DateTime.parse(
+              cardData['created_at'] ?? DateTime.now().toIso8601String()),
         );
       }).toList();
 
@@ -96,23 +98,23 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     try {
       print('💳 Procesando pago con Square...');
       print('💰 Monto: \$${widget.total.toStringAsFixed(2)}');
-      
+
       // 🚀 LLAMADA DIRECTA A SQUARE - SIN BACKEND
-      final returnUrl = 'cubalink23://payment-return?payment_id=${DateTime.now().millisecondsSinceEpoch}';
-      final paymentResult = await SquarePaymentService.createQuickPaymentLink(
+      final returnUrl =
+          'cubalink23://payment-return?payment_id=${DateTime.now().millisecondsSinceEpoch}';
+      final paymentResult = await SquarePaymentServiceOfficial.processPayment(
         amount: widget.total,
         description: 'Recarga de saldo Cubalink23',
-        returnUrl: returnUrl,
       );
 
       if (paymentResult.success) {
         print('✅ Payment Link creado exitosamente');
-        
+
         // Si hay checkoutUrl, abrir el Payment Link
         if (paymentResult.checkoutUrl != null) {
           print('🔗 Abriendo Payment Link: ${paymentResult.checkoutUrl}');
           final urlOpened = await _openCheckoutUrl(paymentResult.checkoutUrl!);
-          
+
           if (urlOpened) {
             // Navegar a la pantalla de retorno para verificar el pago
             await Navigator.push(
@@ -149,17 +151,17 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       print('🔗 === DEBUGGING CHECKOUT URL ===');
       print('🔗 URL recibida: $checkoutUrl');
       print('🔗 URL válida: ${Uri.tryParse(checkoutUrl) != null}');
-      
+
       if (checkoutUrl.isEmpty || checkoutUrl == 'URL no disponible') {
         throw Exception('URL de pago no disponible');
       }
-      
+
       final uri = Uri.parse(checkoutUrl);
       print('🔗 URI parseado: $uri');
-      
+
       // Intentar múltiples métodos para abrir la URL
       bool urlOpened = false;
-      
+
       // Método 1: Intentar con LaunchMode.externalApplication
       try {
         if (await canLaunchUrl(uri)) {
@@ -170,7 +172,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       } catch (e) {
         print('❌ Método 1 falló: $e');
       }
-      
+
       // Método 2: Intentar con LaunchMode.platformDefault
       if (!urlOpened) {
         try {
@@ -181,7 +183,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           print('❌ Método 2 falló: $e');
         }
       }
-      
+
       // Método 3: Intentar con LaunchMode.inAppWebView
       if (!urlOpened) {
         try {
@@ -192,7 +194,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           print('❌ Método 3 falló: $e');
         }
       }
-      
+
       if (urlOpened) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -215,7 +217,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       return false; // Error al abrir URL
     }
   }
-  
+
   void _showUrlToUser(String url) {
     if (mounted) {
       showDialog(
@@ -226,7 +228,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('No se pudo abrir automáticamente la página de pago.'),
+                const Text(
+                    'No se pudo abrir automáticamente la página de pago.'),
                 const SizedBox(height: 16),
                 const Text('Por favor, copia y pega esta URL en tu navegador:'),
                 const SizedBox(height: 8),
@@ -259,10 +262,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   Future<void> _refreshUserDataInAllScreens() async {
     try {
       print('🔄 Refrescando datos del usuario en todas las pantallas...');
-      
+
       // Forzar recarga del usuario en el servicio de autenticación
       await SupabaseAuthService.instance.loadCurrentUserData();
-      
+
       // Notificar a todas las pantallas que el saldo ha cambiado
       // Esto se puede hacer con un stream o notifier
       print('✅ Datos del usuario refrescados en todas las pantallas');
@@ -280,10 +283,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       print('💰 Usuario actual: ${currentUser.name} (${currentUser.email})');
       print('💰 Saldo actual: \$${currentUser.balance}');
       print('💰 Monto a agregar: \$${widget.amount}');
-      
+
       final newBalance = (currentUser.balance) + widget.amount;
       print('💰 Nuevo saldo calculado: \$$newBalance');
-      
+
       print('💰 Actualizando saldo en Supabase...');
       final updateResult = await SupabaseService.instance.update(
         'users',
@@ -291,11 +294,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         {'balance': newBalance},
       );
       print('💰 Resultado de actualización: $updateResult');
-      
+
       // Actualizar saldo en el servicio de autenticación
       await SupabaseAuthService.instance.updateUserBalance(newBalance);
       print('💰 ✅ Saldo actualizado en SupabaseAuthService: \$$newBalance');
-      
+
       // Forzar recarga del usuario para sincronizar datos
       await SupabaseAuthService.instance.loadCurrentUserData();
       print('💰 ✅ Usuario recargado con nuevo saldo');
@@ -325,7 +328,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ),
           ),
         );
-        
+
         // Forzar recarga del usuario en todas las pantallas
         await _refreshUserDataInAllScreens();
       }
@@ -455,7 +458,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   @override
   Widget build(BuildContext context) {
     final safeAreaBottom = MediaQuery.of(context).padding.bottom;
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
@@ -519,8 +522,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              _buildSummaryRow('Monto a agregar', '\$${widget.amount.toStringAsFixed(2)}'),
-                              _buildSummaryRow('Comisión de procesamiento', '\$${widget.fee.toStringAsFixed(2)}'),
+                              _buildSummaryRow('Monto a agregar',
+                                  '\$${widget.amount.toStringAsFixed(2)}'),
+                              _buildSummaryRow('Comisión de procesamiento',
+                                  '\$${widget.fee.toStringAsFixed(2)}'),
                               const SizedBox(height: 12),
                               Container(
                                 height: 1,
@@ -528,7 +533,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                               ),
                               const SizedBox(height: 12),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
                                     'Total a pagar',
@@ -623,7 +629,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xFF1976D2) : Colors.grey[300]!,
+                                  color: isSelected
+                                      ? const Color(0xFF1976D2)
+                                      : Colors.grey[300]!,
                                   width: isSelected ? 2 : 1,
                                 ),
                                 boxShadow: [
@@ -662,10 +670,12 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                     if (card.isDefault)
                                       Container(
                                         margin: const EdgeInsets.only(top: 4),
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF1976D2),
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
                                         ),
                                         child: const Text(
                                           'DEFAULT',
@@ -690,7 +700,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             onPressed: _addNewCard,
-                            icon: const Icon(Icons.add, color: Color(0xFF1976D2)),
+                            icon:
+                                const Icon(Icons.add, color: Color(0xFF1976D2)),
                             label: const Text(
                               'Agregar Nueva Tarjeta',
                               style: TextStyle(
@@ -701,7 +712,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             ),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              side: const BorderSide(color: Color(0xFF1976D2), width: 2),
+                              side: const BorderSide(
+                                  color: Color(0xFF1976D2), width: 2),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -734,9 +746,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: (selectedCardId != null && !isProcessingPayment)
-                          ? _processPayment
-                          : null,
+                      onPressed:
+                          (selectedCardId != null && !isProcessingPayment)
+                              ? _processPayment
+                              : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1976D2),
                         foregroundColor: Colors.white,
@@ -752,7 +765,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : Row(

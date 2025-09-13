@@ -60,13 +60,14 @@ import 'package:cubalink23/screens/legal/vendor_terms_screen.dart';
 import 'package:cubalink23/screens/legal/delivery_terms_screen.dart';
 import 'package:cubalink23/theme.dart';
 import 'package:cubalink23/models/user.dart';
+import 'package:cubalink23/services/square_payment_service_official.dart';
 
 /// Main application entry point with Supabase initialization
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   print('🚀 Inicializando CubaLink23...');
-  
+
   // Initialize Firebase (temporalmente deshabilitado para evitar crashes)
   try {
     await Firebase.initializeApp();
@@ -75,13 +76,21 @@ void main() async {
     print('⚠️ Firebase no disponible (continuando sin Firebase): $e');
     // Continuar sin Firebase para evitar crashes
   }
-  
+
   // Initialize Supabase
   await SupabaseConfig.initialize();
-  
+
+  // Initialize Square In-App Payments SDK
+  try {
+    await SquarePaymentServiceOfficial.initialize();
+    print('✅ Square SDK inicializado');
+  } catch (e) {
+    print('⚠️ Square SDK no disponible (continuando sin Square): $e');
+  }
+
   print('✅ CubaLink23 listo para ejecutar');
-  
-  runApp(CubaLink23App());
+
+  runApp(const CubaLink23App());
 }
 
 /// Main CubaLink23 Application
@@ -94,107 +103,36 @@ class CubaLink23App extends StatelessWidget {
       title: 'CubaLink23',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: SplashScreen(), // Will handle authentication flow
+      home: const SplashScreen(), // Will handle authentication flow
       routes: {
         '/home': (context) => HomeScreen(user: _getDemoUser()),
-        '/profile': (context) => ProfileScreen(),
-        '/account': (context) => AccountScreen(),
-        '/settings': (context) => SettingsScreen(),
-        '/referral': (context) => ReferralScreen(),
-        '/store': (context) => StoreScreen(),
-        '/cart': (context) => CartScreen(),
-        '/add-balance': (context) => AddBalanceScreen(),
-        '/communication': (context) => CommunicationScreen(),
-        '/history': (context) => HistoryScreen(),
-        '/notifications': (context) => NotificationsScreen(),
-        '/help': (context) => HelpScreen(),
-        '/activity': (context) => ActivityScreen(),
-        '/transfer': (context) => TransferScreen(),
-        '/recharge': (context) => RechargeHomeScreen(),
-        '/favorites': (context) => FavoritesScreen(),
-        '/flights': (context) => FlightBookingScreen(),
-        '/flight-search': (context) => FlightBookingScreen(),
-        '/flight-results': (context) => FlightResultsScreen(
-          flightOffers: [],
-          fromAirport: '',
-          toAirport: '',
-          departureDate: '',
-          passengers: 1,
-          airlineType: 'all',
-        ),
-        '/flight-details': (context) => FlightDetailSimple(flight: FlightOffer(
-          id: '',
-          totalAmount: '0',
-          totalCurrency: 'USD',
-          airline: '',
-          departureTime: '',
-          arrivalTime: '',
-          duration: '',
-          stops: 0,
-          segments: [],
-          rawData: {},
-          airlineLogo: '',
-        )),
-        '/amazon-shopping': (context) => AmazonShoppingScreen(),
-        '/welcome': (context) => WelcomeScreen(),
-        '/login': (context) => LoginScreen(),
-        '/register': (context) => RegisterScreen(),
-        '/maintenance': (context) => MaintenanceScreen(),
-        '/force-update': (context) => ForceUpdateScreen(),
-        '/vendor-dashboard': (context) => VendorDashboardScreen(),
-        '/delivery-dashboard': (context) => DeliveryDashboardScreen(),
-        // Rutas de repartidor
-        '/delivery-notifications': (context) => DeliveryNotificationsScreen(),
-        '/delivery-orders': (context) => DeliveryAssignedOrdersScreen(),
-        '/delivery-wallet': (context) => DeliveryWalletScreen(),
-        '/delivery-profile': (context) => DeliveryProfileScreen(),
-        '/delivery-support': (context) => DeliverySupportChatScreen(),
-        // Rutas de vendedor
-          '/vendor-orders': (context) => VendorOrdersScreen(),
-          '/vendor-products': (context) => VendorProductsScreen(),
-          '/vendor-wallet': (context) => VendorWalletScreen(),
-          '/vendor-support': (context) => VendorSupportScreen(),
-          '/vendor-notifications': (context) => VendorNotificationsScreen(),
-        '/work_selection': (context) => WorkSelectionScreen(),
-        '/seller_application': (context) => SellerApplicationScreen(),
-        '/delivery_application': (context) => DeliveryApplicationScreen(),
-        '/vendor_detail': (context) => VendorDetailScreen(
-          vendorId: '',
-          vendorName: '',
-        ),
-        '/terms_conditions': (context) => TermsConditionsScreen(),
-        '/privacy_policy': (context) => PrivacyPolicyScreen(),
-        '/vendor_terms': (context) => VendorTermsScreen(),
-        '/delivery_terms': (context) => DeliveryTermsScreen(),
-        // Rutas de las 10 pantallas principales
-        '/payment_method': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-          return PaymentMethodScreen(
-            amount: args?['amount'] ?? 0.0,
-            fee: args?['fee'] ?? 0.0,
-            total: args?['total'] ?? 0.0,
-            metadata: args?['metadata'],
-          );
-        },
-        '/support-chat': (context) => SupportChatScreen(),
-        '/change-password': (context) => ChangePasswordScreen(),
-        '/shipping': (context) => ShippingScreen(),
-        '/checkout': (context) => CheckoutScreen(),
-        '/order-confirmation': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-          return OrderConfirmationScreen(
-            orderNumber: args?['orderNumber'],
-            total: args?['total'],
-            items: args?['items'],
-          );
-        },
-        '/news': (context) => NewsScreen(),
-        '/language-settings': (context) => LanguageSettingsScreen(),
-        '/chat': (context) => ChatScreen(),
-        '/flight-booking-enhanced': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-          return FlightBookingEnhanced(
-            flight: args?['flight'] ?? FlightOffer(
+        '/profile': (context) => const ProfileScreen(),
+        '/account': (context) => const AccountScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/referral': (context) => const ReferralScreen(),
+        '/store': (context) => const StoreScreen(),
+        '/cart': (context) => const CartScreen(),
+        '/add-balance': (context) => const AddBalanceScreen(),
+        '/communication': (context) => const CommunicationScreen(),
+        '/history': (context) => const HistoryScreen(),
+        '/notifications': (context) => const NotificationsScreen(),
+        '/help': (context) => const HelpScreen(),
+        '/activity': (context) => const ActivityScreen(),
+        '/transfer': (context) => const TransferScreen(),
+        '/recharge': (context) => const RechargeHomeScreen(),
+        '/favorites': (context) => const FavoritesScreen(),
+        '/flights': (context) => const FlightBookingScreen(),
+        '/flight-search': (context) => const FlightBookingScreen(),
+        '/flight-results': (context) => const FlightResultsScreen(
+              flightOffers: [],
+              fromAirport: '',
+              toAirport: '',
+              departureDate: '',
+              passengers: 1,
+              airlineType: 'all',
+            ),
+        '/flight-details': (context) => FlightDetailSimple(
+                flight: FlightOffer(
               id: '',
               totalAmount: '0',
               totalCurrency: 'USD',
@@ -206,7 +144,84 @@ class CubaLink23App extends StatelessWidget {
               segments: [],
               rawData: {},
               airlineLogo: '',
+            )),
+        '/amazon-shopping': (context) => const AmazonShoppingScreen(),
+        '/welcome': (context) => const WelcomeScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/maintenance': (context) => const MaintenanceScreen(),
+        '/force-update': (context) => const ForceUpdateScreen(),
+        '/vendor-dashboard': (context) => const VendorDashboardScreen(),
+        '/delivery-dashboard': (context) => const DeliveryDashboardScreen(),
+        // Rutas de repartidor
+        '/delivery-notifications': (context) =>
+            const DeliveryNotificationsScreen(),
+        '/delivery-orders': (context) => const DeliveryAssignedOrdersScreen(),
+        '/delivery-wallet': (context) => const DeliveryWalletScreen(),
+        '/delivery-profile': (context) => const DeliveryProfileScreen(),
+        '/delivery-support': (context) => const DeliverySupportChatScreen(),
+        // Rutas de vendedor
+        '/vendor-orders': (context) => const VendorOrdersScreen(),
+        '/vendor-products': (context) => const VendorProductsScreen(),
+        '/vendor-wallet': (context) => const VendorWalletScreen(),
+        '/vendor-support': (context) => const VendorSupportScreen(),
+        '/vendor-notifications': (context) => const VendorNotificationsScreen(),
+        '/work_selection': (context) => const WorkSelectionScreen(),
+        '/seller_application': (context) => const SellerApplicationScreen(),
+        '/delivery_application': (context) => const DeliveryApplicationScreen(),
+        '/vendor_detail': (context) => const VendorDetailScreen(
+              vendorId: '',
+              vendorName: '',
             ),
+        '/terms_conditions': (context) => const TermsConditionsScreen(),
+        '/privacy_policy': (context) => const PrivacyPolicyScreen(),
+        '/vendor_terms': (context) => const VendorTermsScreen(),
+        '/delivery_terms': (context) => const DeliveryTermsScreen(),
+        // Rutas de las 10 pantallas principales
+        '/payment_method': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          return PaymentMethodScreen(
+            amount: args?['amount'] ?? 0.0,
+            fee: args?['fee'] ?? 0.0,
+            total: args?['total'] ?? 0.0,
+            metadata: args?['metadata'],
+          );
+        },
+        '/support-chat': (context) => const SupportChatScreen(),
+        '/change-password': (context) => const ChangePasswordScreen(),
+        '/shipping': (context) => const ShippingScreen(),
+        '/checkout': (context) => const CheckoutScreen(),
+        '/order-confirmation': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          return OrderConfirmationScreen(
+            orderNumber: args?['orderNumber'],
+            total: args?['total'],
+            items: args?['items'],
+          );
+        },
+        '/news': (context) => const NewsScreen(),
+        '/language-settings': (context) => const LanguageSettingsScreen(),
+        '/chat': (context) => const ChatScreen(),
+        '/flight-booking-enhanced': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          return FlightBookingEnhanced(
+            flight: args?['flight'] ??
+                FlightOffer(
+                  id: '',
+                  totalAmount: '0',
+                  totalCurrency: 'USD',
+                  airline: '',
+                  departureTime: '',
+                  arrivalTime: '',
+                  duration: '',
+                  stops: 0,
+                  segments: [],
+                  rawData: {},
+                  airlineLogo: '',
+                ),
           );
         },
       },
