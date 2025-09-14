@@ -281,12 +281,13 @@ def get_airports():
             airports = []
             
             for airport in data.get('data', []):
-                airports.append({
-                    'iata_code': airport.get('iata_code'),
-                    'name': airport.get('name'),
-                    'city': airport.get('city_name'),
-                    'country': airport.get('iata_country_code')
-                })
+                # Removed type check - all results are airports
+                    airports.append({
+                        'iata_code': airport.get('iata_code'),
+                        'name': airport.get('name'),
+                        'city': airport.get('city_name'),
+                        'country': airport.get('iata_country_code')
+                    })
             
             return jsonify({
                 "success": True,

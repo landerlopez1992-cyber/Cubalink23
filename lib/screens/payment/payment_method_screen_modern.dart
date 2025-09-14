@@ -8,6 +8,7 @@ import 'package:cubalink23/services/supabase_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cubalink23/services/square_payment_service.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
   final double amount;
@@ -99,21 +100,28 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       print('💳 Procesando pago con Square...');
       print('💰 Monto: \$${widget.total.toStringAsFixed(2)}');
       
-      // Procesar pago real con Square (aparecerá en Dashboard cuando se complete)
-      final result = await _createRealSquarePayment(selectedCard);
+      // Procesar pago DIRECTAMENTE con Square API
+      print('🚀 Creando Payment Link directamente con Square API...');
+      final paymentResult = await SquarePaymentService.createQuickPaymentLink(
+        amount: widget.total,
+        description: 'Recarga CubaLink23 - ${selectedCard.cardType} ••••${selectedCard.last4}',
+        returnUrl: 'https://cubalink23.com/payment-success',
+      );
       
-      if (result['success'] == true && result['checkout_url'] != null) {
-        print('✅ Payment Link real creado - aparecerá en Square Dashboard');
-        print('🔗 Checkout URL: ${result['checkout_url']}');
+      if (paymentResult.success && paymentResult.checkoutUrl != null) {
+        print('✅ Payment Link creado exitosamente');
+        print('🔗 Checkout URL: ${paymentResult.checkoutUrl}');
+        print('🆔 Payment Link ID: ${paymentResult.transactionId}');
         
-        // Abrir checkout real de Square
-        await _openSquareCheckout(result['checkout_url'], result['payment_link_id']);
+        // Abrir checkout de Square
+        await _openSquareCheckout(paymentResult.checkoutUrl!, paymentResult.transactionId!);
       } else {
+        print('❌ Error creando Payment Link: ${paymentResult.message}');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => PaymentErrorScreen(
-              errorMessage: result['error'] ?? 'Error procesando pago',
+              errorMessage: paymentResult.message,
               amount: widget.amount,
               fee: widget.fee,
               total: widget.total,
@@ -129,68 +137,6 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     }
   }
 
-  Future<void> _openCheckoutUrl(String checkoutUrl) async {
-    try {
-      final uri = Uri.parse(checkoutUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Abriendo página de pago de Square...'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      } else {
-        throw Exception('No se pudo abrir la URL de pago');
-      }
-    } catch (e) {
-      _showPaymentError('Error abriendo página de pago: $e');
-    }
-  }
-
-  Future<void> _handleSuccessfulPayment(SquarePaymentResult result) async {
-    try {
-      final currentUser = SupabaseAuthService.instance.currentUser;
-      if (currentUser == null) throw Exception('Usuario no autenticado');
-
-      final newBalance = (currentUser.balance) + widget.amount;
-      
-      await SupabaseService.instance.update(
-        'users',
-        currentUser.id,
-        {'balance': newBalance},
-      );
-
-      await SupabaseService.instance.insert('recharge_history', {
-        'user_id': currentUser.id,
-        'amount': widget.amount,
-        'fee': widget.fee,
-        'total': widget.total,
-        'payment_method': 'square',
-        'transaction_id': result.transactionId,
-        'status': 'completed',
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ Saldo agregado exitosamente: +\$${widget.amount.toStringAsFixed(2)}'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        
-        Navigator.pop(context, {'success': true, 'new_balance': newBalance});
-      }
-    } catch (e) {
-      _showPaymentError('Error actualizando saldo: $e');
-    }
-  }
 
   void _showPaymentError(String message) {
     if (mounted) {
@@ -632,62 +578,22 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     );
   }
 
-  Future<Map<String, dynamic>> _createRealSquarePayment(PaymentCard card) async {
-    try {
-      final currentUser = SupabaseAuthService.instance.currentUser;
-      
-      final response = await http.post(
-        Uri.parse('https://cubalink23-backend.onrender.com/api/payments/process'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'amount': widget.total,
-          'description': 'Recarga CubaLink23 - ${card.cardType} ••••${card.last4}',
-          'email': currentUser?.email ?? 'user@cubalink23.com',
-          'customer_name': card.holderName,
-        }),
-      );
-
-      print('📡 Square Backend Response: ${response.statusCode}');
-      print('📡 Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {
-          'success': data['success'],
-          'checkout_url': data['checkout_url'],
-          'payment_link_id': data['payment_link_id'] ?? 'square_${DateTime.now().millisecondsSinceEpoch}',
-          'message': data['message'],
-        };
-      } else {
-        return {
-          'success': false,
-          'error': 'Error del servidor: ${response.statusCode}',
-        };
-      }
-    } catch (e) {
-      print('❌ Error creando Payment Link: $e');
-      return {
-        'success': false,
-        'error': 'Error de conexión: $e',
-      };
-    }
-  }
 
   Future<void> _openSquareCheckout(String checkoutUrl, String paymentLinkId) async {
     try {
+      print('🔗 Abriendo checkout de Square: $checkoutUrl');
+      
       final uri = Uri.parse(checkoutUrl);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
         
-        // Mostrar diálogo de confirmación
+        // Mostrar diálogo de confirmación mejorado
         if (mounted) {
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (context) => AlertDialog(
-              title: const Text('Completando Pago Real'),
+              title: const Text('Procesando Pago'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -698,8 +604,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   Text('ID: $paymentLinkId', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 16),
                   const Text(
-                    'Este pago aparecerá en Square Developer Dashboard cuando se complete.',
-                    style: TextStyle(fontSize: 12, color: Colors.green),
+                    'Una vez completado el pago, regresa a la app y presiona "Verificar Pago".',
+                    style: TextStyle(fontSize: 12, color: Colors.blue),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -725,17 +631,73 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 ElevatedButton(
                   onPressed: () async {
                     Navigator.of(context).pop();
-                    await _handlePaymentCompletion(paymentLinkId);
+                    await _verifyAndCompletePayment(paymentLinkId);
                   },
-                  child: const Text('Completé el pago'),
+                  child: const Text('Verificar Pago'),
                 ),
               ],
             ),
           );
         }
+      } else {
+        throw Exception('No se pudo abrir la URL de pago');
       }
     } catch (e) {
+      print('❌ Error abriendo checkout: $e');
       _showPaymentError('Error abriendo pago: $e');
+    }
+  }
+
+  /// Verificar y completar el pago con Square
+  Future<void> _verifyAndCompletePayment(String paymentLinkId) async {
+    try {
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Verificando pago...'),
+            ],
+          ),
+        ),
+      );
+
+      // Verificar el estado del pago en Square
+      final verificationResult = await SquarePaymentService.verifyPaymentCompletion(paymentLinkId);
+      
+      // Cerrar diálogo de carga
+      if (mounted) Navigator.of(context).pop();
+
+      if (verificationResult['success']) {
+        final status = verificationResult['status'];
+        print('📊 Estado del pago: $status');
+        
+        if (status == 'COMPLETED') {
+          // Pago completado exitosamente
+          await _handlePaymentCompletion(paymentLinkId);
+        } else if (status == 'FAILED') {
+          _showPaymentError('El pago falló. Por favor intenta nuevamente.');
+        } else if (status == 'CANCELED') {
+          _showPaymentError('El pago fue cancelado.');
+        } else {
+          // Pago aún pendiente
+          _showPaymentError('El pago aún está pendiente. Por favor completa el pago en Square y vuelve a verificar.');
+        }
+      } else {
+        // Error verificando el pago
+        print('❌ Error verificando pago: ${verificationResult['error']}');
+        _showPaymentError('Error verificando el pago. Por favor intenta nuevamente.');
+      }
+    } catch (e) {
+      // Cerrar diálogo de carga si está abierto
+      if (mounted) Navigator.of(context).pop();
+      print('❌ Error verificando pago: $e');
+      _showPaymentError('Error verificando el pago: $e');
     }
   }
 
@@ -745,7 +707,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       
       if (currentUser != null) {
         // Actualizar saldo del usuario
-        final newBalance = (currentUser.balance ?? 0.0) + widget.amount;
+        final newBalance = currentUser.balance + widget.amount;
         await SupabaseService.instance.update(
           'users',
           currentUser.id,

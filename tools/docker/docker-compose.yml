@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  android-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cubalink23-android-builder:latest
+    container_name: cubalink23-android-builder
+    volumes:
+      # Montar el proyecto Flutter
+      - ../../:/workspace
+      # Cache de Gradle para acelerar builds
+      - gradle-cache:/home/flutter/.gradle
+      # Cache de Flutter
+      - flutter-cache:/home/flutter/.flutter
+    working_dir: /workspace
+    environment:
+      - FLUTTER_VERSION=3.24.5
+      - ANDROID_SDK_VERSION=34
+      - ANDROID_BUILD_TOOLS_VERSION=34.0.0
+    ports:
+      - "8080:8080"  # Para hot reload
+    stdin_open: true
+    tty: true
+    user: flutter
+
+volumes:
+  gradle-cache:
+  flutter-cache:

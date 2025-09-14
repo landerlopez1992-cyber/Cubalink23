@@ -42,7 +42,7 @@ class SquarePaymentService {
   }
 
   /// Procesar pago REAL con Square (HÍBRIDO)
-  static Future<SquarePaymentResult> processPayment({
+  static Future<official.SquarePaymentResult> processPayment({
     required double amount,
     required String description,
     String? cardLast4,
@@ -66,7 +66,7 @@ class SquarePaymentService {
         print('💳 Transaction ID: ${paymentResult['transaction_id']}');
         print('🔗 Checkout URL: ${paymentResult['checkout_url']}');
         
-        return SquarePaymentResult(
+        return official.SquarePaymentResult(
           success: true,
           transactionId: paymentResult['transaction_id'],
           message: 'Payment Link creado. Redirigiendo a Square...',
@@ -75,7 +75,7 @@ class SquarePaymentService {
         );
       } else {
         print('❌ Error procesando pago: ${paymentResult['error']}');
-        return SquarePaymentResult(
+        return official.SquarePaymentResult(
           success: false,
           transactionId: null,
           message: 'Error procesando pago: ${paymentResult['error']}',
@@ -84,7 +84,7 @@ class SquarePaymentService {
       }
     } catch (e) {
       print('❌ Error procesando pago: $e');
-      return SquarePaymentResult(
+      return official.SquarePaymentResult(
         success: false,
         transactionId: null,
         message: 'Error procesando pago: $e',
@@ -142,6 +142,9 @@ class SquarePaymentService {
     String? returnUrl,
   }) async {
     try {
+      // URL de retorno por defecto - usar una URL web válida
+      final defaultReturnUrl = returnUrl ?? 'https://cubalink23.com/payment-success';
+      
       final body = {
         "quick_pay": {
           "name": description,
@@ -150,7 +153,7 @@ class SquarePaymentService {
             "currency": "USD"
           },
           "location_id": _locationId,
-          if (returnUrl != null) "redirect_url": returnUrl,
+          "redirect_url": defaultReturnUrl,
         }
       };
 
@@ -240,23 +243,23 @@ class SquarePaymentService {
   }) async {
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        final result = await getPaymentStatus(paymentId);
+        // Para Payment Links, necesitamos verificar de manera diferente
+        final result = await _verifyPaymentLinkStatus(paymentId);
         
         if (result['success']) {
-          final payment = result['payment'];
-          final status = payment['status'];
+          final status = result['status'];
           
           // Si el pago está en estado final, retornar
           if (['COMPLETED', 'FAILED', 'CANCELED'].contains(status)) {
             return {
               'success': true,
               'status': status,
-              'payment': payment,
+              'payment': result['payment'],
             };
           }
         }
         
-        print('🔄 Intento ${attempt + 1}: Pago $paymentId aún pendiente...');
+        print('🔄 Intento ${attempt + 1}: Payment Link $paymentId aún pendiente...');
         
         // Esperar antes del siguiente intento
         if (attempt < maxAttempts - 1) {
@@ -273,9 +276,114 @@ class SquarePaymentService {
       'error': 'Timeout verificando completitud del pago',
     };
   }
+
+  /// Verificar estado de un Payment Link
+  static Future<Map<String, dynamic>> _verifyPaymentLinkStatus(String paymentLinkId) async {
+    try {
+      // Obtener información del Payment Link
+      final response = await http.get(
+        Uri.parse('$_baseUrl/v2/online-checkout/payment-links/$paymentLinkId'),
+        headers: {
+          'Authorization': 'Bearer $_accessToken',
+          'Content-Type': 'application/json',
+          'Square-Version': '2024-12-01',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final paymentLink = data['payment_link'];
+        
+        // Verificar si hay pagos asociados
+        final orders = paymentLink['order_ids'] as List?;
+        if (orders != null && orders.isNotEmpty) {
+          // Si hay órdenes, verificar el estado de la primera
+          final orderId = orders.first;
+          final orderResult = await _getOrderStatus(orderId);
+          
+          if (orderResult['success']) {
+            return {
+              'success': true,
+              'status': orderResult['status'],
+              'payment': orderResult['order'],
+            };
+          }
+        }
+        
+        // Si no hay órdenes aún, el pago está pendiente
+        return {
+          'success': true,
+          'status': 'PENDING',
+          'payment': paymentLink,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Error ${response.statusCode}: ${response.body}',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Exception: $e',
+      };
+    }
+  }
+
+  /// Obtener estado de una orden
+  static Future<Map<String, dynamic>> _getOrderStatus(String orderId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/v2/orders/$orderId'),
+        headers: {
+          'Authorization': 'Bearer $_accessToken',
+          'Content-Type': 'application/json',
+          'Square-Version': '2024-12-01',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final order = data['order'];
+        final state = order['state'];
+        
+        // Mapear estados de orden a estados de pago
+        String paymentStatus;
+        switch (state) {
+          case 'COMPLETED':
+            paymentStatus = 'COMPLETED';
+            break;
+          case 'CANCELED':
+            paymentStatus = 'CANCELED';
+            break;
+          case 'OPEN':
+            paymentStatus = 'PENDING';
+            break;
+          default:
+            paymentStatus = 'PENDING';
+        }
+        
+        return {
+          'success': true,
+          'status': paymentStatus,
+          'order': order,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Error ${response.statusCode}: ${response.body}',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Exception: $e',
+      };
+    }
+  }
   
   /// 🚀 MÉTODO SIMPLIFICADO: Crear Payment Link directamente
-  static Future<SquarePaymentResult> createQuickPaymentLink({
+  static Future<official.SquarePaymentResult> createQuickPaymentLink({
     required double amount,
     required String description,
     String? returnUrl,
@@ -299,7 +407,7 @@ class SquarePaymentService {
         print('🔗 ID: ${result['payment_link_id']}');
         print('🌐 URL: ${result['checkout_url']}');
         
-        return SquarePaymentResult(
+        return official.SquarePaymentResult(
           success: true,
           transactionId: result['payment_link_id'],
           message: 'Payment Link creado. Redirigiendo a Square...',
@@ -308,7 +416,7 @@ class SquarePaymentService {
         );
       } else {
         print('❌ Error creando Payment Link: ${result['error']}');
-        return SquarePaymentResult(
+        return official.SquarePaymentResult(
           success: false,
           transactionId: null,
           message: 'Error: ${result['error']}',
@@ -317,7 +425,7 @@ class SquarePaymentService {
       }
     } catch (e) {
       print('❌ Error creando Payment Link: $e');
-      return SquarePaymentResult(
+      return official.SquarePaymentResult(
         success: false,
         transactionId: null,
         message: 'Error: $e',

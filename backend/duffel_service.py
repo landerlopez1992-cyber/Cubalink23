@@ -33,8 +33,8 @@ class DuffelService:
             # Endpoint para buscar aeropuertos
             url = '{}/air/airports'.format(self.api_url)
             params = {
-                'name': query,
-                'limit': 10
+                'search': query,
+                'limit': 20
             }
             
             response = requests.get(url, headers=self.headers, params=params)

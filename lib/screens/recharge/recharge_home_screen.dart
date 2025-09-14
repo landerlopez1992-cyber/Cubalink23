@@ -3,7 +3,10 @@ import 'package:cubalink23/screens/payment/payment_method_screen.dart';
 import 'package:cubalink23/models/recharge_history.dart';
 import 'package:cubalink23/models/operator.dart';
 import 'package:cubalink23/models/user.dart';
-import 'package:cubalink23/services/ding_connect_service.dart';
+import 'package:cubalink23/services/dingconnect_service.dart';
+import 'package:cubalink23/models/topup_product.dart';
+import 'package:contacts_service/contacts_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class RechargeHomeScreen extends StatefulWidget {
   const RechargeHomeScreen({super.key});
@@ -18,8 +21,9 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
   String? _selectedCountry = 'CU'; // Default to Cuba
   Map<String, dynamic>? _selectedProduct;
 
-  List<Map<String, dynamic>> _products = [];
-  List<Map<String, dynamic>> _cubaOffers = [];
+  List<TopupProduct> _products = [];
+  List<TopupProduct> _cubaOffers = [];
+  List<TopupCountry> _countries = [];
   bool _isLoadingProducts = false;
   bool _isLoadingOffers = true;
   bool _isValidatingNumber = false;
@@ -49,52 +53,20 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
     try {
       print('🧪 Iniciando verificación de API DingConnect...');
       
-      // Verificar conectividad de API
-      final isConnected = await DingConnectService.instance.testApiConnection();
-      print('🧪 API Conectada: $isConnected');
+      setState(() {
+        _isLoadingOffers = true;
+        _isLoadingProducts = true;
+      });
       
-      if (isConnected) {
-        // Cargar datos reales de la API
-        await _loadCubaOffers();
-        await _loadProductsForCountry(_selectedCountry!);
-      } else {
-        print('❌ No se pudo conectar a DingConnect API');
-        
-        if (mounted) {
-          // Mostrar mensaje de error al usuario
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.error, color: Colors.white, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '❌ Error: No se puede conectar a DingConnect API. Verifica tu conexión a internet o contacta soporte.',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.red[600],
-              duration: Duration(seconds: 10),
-              action: SnackBarAction(
-                label: 'Reintentar',
-                textColor: Colors.white,
-                onPressed: () => _testApiAndLoadData(),
-              ),
-            ),
-          );
-        }
-        
-        // Limpiar listas y mostrar estado vacío
-        setState(() {
-          _cubaOffers = [];
-          _products = [];
-          _isLoadingOffers = false;
-          _isLoadingProducts = false;
-        });
-      }
+      // Cargar países disponibles
+      await _loadCountries();
+      
+      // Cargar ofertas para Cuba (país por defecto)
+      await _loadCubaOffers();
+      
+      // Cargar productos para el país seleccionado
+      await _loadProductsForCountry(_selectedCountry!);
+      
     } catch (e) {
       print('❌ Error en inicialización: $e');
       
@@ -122,6 +94,33 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
     }
   }
 
+  /// Cargar países disponibles
+  Future<void> _loadCountries() async {
+    try {
+      print('🌍 Cargando países disponibles...');
+      
+      final result = await DingConnectService.getCountries();
+      
+      if (result['success']) {
+        final countriesData = result['countries'] as List;
+        final countries = countriesData
+            .map((country) => TopupCountry.fromJson(country))
+            .toList();
+        
+        if (mounted) {
+          setState(() {
+            _countries = countries;
+          });
+          print('✅ Cargados ${countries.length} países');
+        }
+      } else {
+        print('❌ Error cargando países: ${result['error']}');
+      }
+    } catch (e) {
+      print('❌ Error cargando países: $e');
+    }
+  }
+
 
   /// Cargar ofertas específicas para Cuba desde DingConnect
   Future<void> _loadCubaOffers() async {
@@ -129,24 +128,38 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
       print('🇨🇺 Cargando ofertas especiales para Cuba...');
       setState(() => _isLoadingOffers = true);
 
-      final products = await DingConnectService.instance.getCubaProducts();
+      final result = await DingConnectService.getProducts(countryIso: 'CU');
 
-      // Formatear productos para mostrar como ofertas
-      final offers = products.take(6).map((product) {
-        return DingConnectService.formatProductForUI(product);
-      }).toList();
+      if (result['success']) {
+        final productsData = result['products'] as List;
+        final offers = productsData
+            .take(6)
+            .map((product) => TopupProduct.fromJson(product))
+            .toList();
 
-      if (mounted) {
-        setState(() {
-          _cubaOffers = offers;
-          _isLoadingOffers = false;
-        });
-        print('✅ Cargadas ${offers.length} ofertas para Cuba');
+        if (mounted) {
+          setState(() {
+            _cubaOffers = offers;
+            _isLoadingOffers = false;
+          });
+          print('✅ Cargadas ${offers.length} ofertas para Cuba');
+        }
+      } else {
+        print('❌ Error cargando ofertas de Cuba: ${result['error']}');
+        if (mounted) {
+          setState(() {
+            _cubaOffers = [];
+            _isLoadingOffers = false;
+          });
+        }
       }
     } catch (e) {
       print('❌ Error cargando ofertas de Cuba: $e');
       if (mounted) {
-        setState(() => _isLoadingOffers = false);
+        setState(() {
+          _cubaOffers = [];
+          _isLoadingOffers = false;
+        });
       }
     }
   }
@@ -183,22 +196,266 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
     }
   }
 
-  void _selectFromContacts() {
-    // Simular selección de contactos (aquí iría la integración real con contactos)
+  /// Seleccionar contacto del directorio telefónico
+  Future<void> _selectFromContacts() async {
+    try {
+      // Solicitar permisos de contactos
+      final permission = await Permission.contacts.request();
+      
+      if (permission.isGranted) {
+        // Mostrar diálogo de carga
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Text('Cargando contactos...'),
+              ],
+            ),
+          ),
+        );
+
+        // Obtener contactos
+        final contacts = await ContactsService.getContacts();
+        
+        // Cerrar diálogo de carga
+        Navigator.pop(context);
+        
+        // Filtrar contactos que tengan números telefónicos
+        final contactsWithPhones = contacts
+            .where((contact) => 
+                contact.phones != null && contact.phones!.isNotEmpty)
+            .toList();
+
+        if (contactsWithPhones.isEmpty) {
+          _showMessage('No se encontraron contactos con números telefónicos');
+          return;
+        }
+
+        // Mostrar selector de contactos
+        _showContactSelector(contactsWithPhones);
+        
+      } else if (permission.isDenied) {
+        _showPermissionDialog();
+      } else if (permission.isPermanentlyDenied) {
+        _showSettingsDialog();
+      }
+    } catch (e) {
+      print('❌ Error accediendo a contactos: $e');
+      _showMessage('Error accediendo a contactos: $e');
+    }
+  }
+
+  /// Mostrar selector de contactos
+  void _showContactSelector(List<Contact> contacts) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(Icons.contacts, color: Theme.of(context).colorScheme.primary),
+                      SizedBox(width: 12),
+                      Text(
+                        'Seleccionar Contacto',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '${contacts.length} contactos disponibles',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            Divider(height: 1),
+            
+            // Lista de contactos
+            Expanded(
+              child: ListView.builder(
+                itemCount: contacts.length,
+                itemBuilder: (context, index) {
+                  final contact = contacts[index];
+                  return _buildContactItem(contact);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Construir item de contacto
+  Widget _buildContactItem(Contact contact) {
+    return Column(
+      children: contact.phones!.map((phone) {
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            child: contact.avatar != null && contact.avatar!.isNotEmpty
+                ? ClipOval(
+                    child: Image.memory(
+                      contact.avatar!,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Text(
+                    contact.displayName?.substring(0, 1).toUpperCase() ?? '?',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+          ),
+          title: Text(
+            contact.displayName ?? 'Sin nombre',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(phone.value ?? ''),
+              if (phone.label != null)
+                Text(
+                  phone.label!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+            ],
+          ),
+          trailing: Icon(
+            Icons.phone,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          onTap: () {
+            // Seleccionar este contacto
+            final phoneNumber = phone.value ?? '';
+            _selectContact(contact.displayName ?? 'Contacto', phoneNumber);
+            Navigator.pop(context);
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  /// Seleccionar contacto y llenar campos
+  void _selectContact(String name, String phoneNumber) {
+    setState(() {
+      _phoneController1.text = phoneNumber;
+      _phoneController2.text = phoneNumber;
+    });
+    
+    // Validar el número seleccionado
+    _validatePhoneNumber(phoneNumber);
+    
+    // Mostrar confirmación
+    _showMessage('✅ Contacto seleccionado: $name');
+  }
+
+  /// Mostrar diálogo de permisos
+  void _showPermissionDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Acceso a Contactos'),
+        title: Text('Permisos de Contactos'),
         content: Text(
-            'Función de contactos se integrará con los permisos del dispositivo'),
+          'CubaLink23 necesita acceso a tus contactos para facilitar la selección de números telefónicos para recargas.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+            child: Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _selectFromContacts();
+            },
+            child: Text('Conceder Permisos'),
           ),
         ],
       ),
     );
+  }
+
+  /// Mostrar diálogo para ir a configuraciones
+  void _showSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Permisos Requeridos'),
+        content: Text(
+          'Los permisos de contactos han sido denegados permanentemente. Ve a Configuraciones para habilitarlos.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: Text('Ir a Configuraciones'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Mostrar mensaje
+  void _showMessage(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _showCountrySelector() {
