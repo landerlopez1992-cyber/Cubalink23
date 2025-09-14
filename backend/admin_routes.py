@@ -673,8 +673,8 @@ def search_airports():
             'Duffel-Version': 'v2'
         }
         
-        # Usar Place Suggestion API según documentación oficial
-        url = 'https://api.duffel.com/air/airports?search={}&limit=20'.format(query)
+        # Usar Airports API según documentación oficial de Duffel
+        url = 'https://api.duffel.com/air/airports?limit=200'
         print("URL Duffel Place Suggestion API: {}".format(url))
         
         response = requests.get(url, headers=headers)
