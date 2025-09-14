@@ -62,3 +62,8 @@ echo "   2. Ve a la sección 'Recargas'"
 echo "   3. Prueba el selector de contactos"
 echo "   4. Verifica las ofertas de Cuba"
 echo "   5. Completa una recarga de prueba"
+
+
+
+
+

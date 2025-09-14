@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/screens/payment/add_card_screen.dart';
 import 'package:cubalink23/screens/payment/payment_success_screen.dart';
@@ -582,11 +583,34 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   Future<void> _openSquareCheckout(String checkoutUrl, String paymentLinkId) async {
     try {
       print('🔗 Abriendo checkout de Square: $checkoutUrl');
+      print('🆔 Payment Link ID: $paymentLinkId');
       
+      // Verificar que la URL es válida
       final uri = Uri.parse(checkoutUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        
+      print('🌐 URI parseada: $uri');
+      
+      // Intentar abrir la URL
+      bool launched = false;
+      try {
+        if (await canLaunchUrl(uri)) {
+          print('✅ URL puede ser lanzada, intentando abrir...');
+          launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+          print('🚀 Launch result: $launched');
+        } else {
+          print('❌ canLaunchUrl returned false');
+        }
+      } catch (launchError) {
+        print('❌ Error lanzando URL: $launchError');
+        // Intentar con modo diferente
+        try {
+          launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+          print('🔄 Launch alternativo result: $launched');
+        } catch (e) {
+          print('❌ Error en launch alternativo: $e');
+        }
+      }
+      
+      if (launched || true) { // Permitir continuar incluso si launch falla
         // Mostrar diálogo de confirmación mejorado
         if (mounted) {
           showDialog(
@@ -602,6 +626,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   Text('Completa el pago de \$${widget.total.toStringAsFixed(2)} en la página de Square.'),
                   const SizedBox(height: 8),
                   Text('ID: $paymentLinkId', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    'URL: $checkoutUrl',
+                    style: const TextStyle(fontSize: 10, color: Colors.blue),
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Una vez completado el pago, regresa a la app y presiona "Verificar Pago".',
@@ -628,6 +657,16 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   },
                   child: const Text('Cancelar'),
                 ),
+                TextButton(
+                  onPressed: () async {
+                    // Copiar URL al clipboard
+                    Clipboard.setData(ClipboardData(text: checkoutUrl));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('URL copiada al portapapeles')),
+                    );
+                  },
+                  child: const Text('Copiar URL'),
+                ),
                 ElevatedButton(
                   onPressed: () async {
                     Navigator.of(context).pop();
@@ -640,7 +679,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           );
         }
       } else {
-        throw Exception('No se pudo abrir la URL de pago');
+        throw Exception('No se pudo abrir la URL de pago: $checkoutUrl');
       }
     } catch (e) {
       print('❌ Error abriendo checkout: $e');

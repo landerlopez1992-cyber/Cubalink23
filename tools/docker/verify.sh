@@ -118,3 +118,8 @@ else
     echo "❌ Algunos archivos faltan. Revisa la estructura."
     exit 1
 fi
+
+
+
+
+

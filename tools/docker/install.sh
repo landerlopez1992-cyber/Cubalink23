@@ -78,3 +78,8 @@ echo "📱 La aplicación CubaLink23 está instalada en todos los dispositivos"
 echo ""
 echo "🔧 Para verificar la instalación:"
 echo "   adb shell pm list packages | grep cubalink"
+
+
+
+
+

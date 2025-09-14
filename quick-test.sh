@@ -34,3 +34,8 @@ else
     echo "❌ Error en compilación"
     exit 1
 fi
+
+
+
+
+

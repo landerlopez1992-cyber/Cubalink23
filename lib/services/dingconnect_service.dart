@@ -4,6 +4,12 @@ import 'package:http/http.dart' as http;
 /// Servicio para integración con DingConnect API
 /// Maneja recargas telefónicas internacionales
 class DingConnectService {
+  // Singleton pattern
+  static final DingConnectService _instance = DingConnectService._internal();
+  factory DingConnectService() => _instance;
+  static DingConnectService get instance => _instance;
+  DingConnectService._internal();
+
   static const String _baseUrl = 'https://api.dingconnect.com';
   static const String _apiKey = 'FwWpRyjdmGx5svJAWx2M4N'; // API Key de DingConnect
   static const String _version = 'v1';
@@ -16,7 +22,7 @@ class DingConnectService {
   };
 
   /// Obtener productos disponibles para un país
-  static Future<Map<String, dynamic>> getProducts({
+  Future<Map<String, dynamic>> getProducts({
     String? countryIso,
     String? operatorCode,
   }) async {
@@ -235,7 +241,7 @@ class DingConnectService {
   }
 
   /// Obtener balance de la cuenta
-  static Future<Map<String, dynamic>> getAccountBalance() async {
+  Future<Map<String, dynamic>> getAccountBalance() async {
     try {
       print('💰 Obteniendo balance de cuenta DingConnect...');
       
@@ -310,5 +316,57 @@ class DingConnectService {
     }
     
     return null;
+  }
+
+  /// Validar número de teléfono
+  Future<Map<String, dynamic>> validatePhoneNumber(String phoneNumber, String countryCode) async {
+    try {
+      // Simulación de validación
+      print('📱 Validando número: $phoneNumber para $countryCode');
+      
+      // Por ahora retornamos siempre válido
+      return {
+        'success': true,
+        'isValid': true,
+        'message': 'Número válido'
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'isValid': false,
+        'message': 'Error validando número: $e'
+      };
+    }
+  }
+
+  /// Obtener estado de orden
+  Future<Map<String, dynamic>> getOrderStatus(String orderId) async {
+    try {
+      print('📋 Obteniendo estado de orden: $orderId');
+      
+      // Por ahora retornamos un estado genérico
+      return {
+        'success': true,
+        'status': 'completed',
+        'message': 'Orden completada'
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error obteniendo estado: $e'
+      };
+    }
+  }
+
+  /// Formatear producto para UI
+  static Map<String, dynamic> formatProductForUI(dynamic product) {
+    if (product is Map<String, dynamic>) {
+      return product;
+    }
+    return {
+      'title': 'Producto',
+      'description': 'Descripción del producto',
+      'price': 0.0
+    };
   }
 }

@@ -142,3 +142,8 @@ chmod +x tools/docker/*.sh
 ---
 
 **🚀 ¡Disfruta de compilaciones Android consistentes y sin problemas de configuración!**
+
+
+
+
+

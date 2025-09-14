@@ -5,7 +5,7 @@ import 'package:cubalink23/models/operator.dart';
 import 'package:cubalink23/models/user.dart';
 import 'package:cubalink23/services/dingconnect_service.dart';
 import 'package:cubalink23/models/topup_product.dart';
-import 'package:contacts_service/contacts_service.dart';
+// import 'package:contacts_service/contacts_service.dart'; // Temporalmente deshabilitado
 import 'package:permission_handler/permission_handler.dart';
 
 class RechargeHomeScreen extends StatefulWidget {
@@ -21,9 +21,9 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
   String? _selectedCountry = 'CU'; // Default to Cuba
   Map<String, dynamic>? _selectedProduct;
 
-  List<TopupProduct> _products = [];
-  List<TopupProduct> _cubaOffers = [];
-  List<TopupCountry> _countries = [];
+  List<Map<String, dynamic>> _products = [];
+  List<Map<String, dynamic>> _cubaOffers = [];
+  List<TopupCountry> _topupCountries = [];
   bool _isLoadingProducts = false;
   bool _isLoadingOffers = true;
   bool _isValidatingNumber = false;
@@ -109,7 +109,7 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
         
         if (mounted) {
           setState(() {
-            _countries = countries;
+            _topupCountries = countries;
           });
           print('✅ Cargados ${countries.length} países');
         }
@@ -128,13 +128,13 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
       print('🇨🇺 Cargando ofertas especiales para Cuba...');
       setState(() => _isLoadingOffers = true);
 
-      final result = await DingConnectService.getProducts(countryIso: 'CU');
+      final result = await DingConnectService.instance.getProducts(countryIso: 'CU');
 
       if (result['success']) {
         final productsData = result['products'] as List;
         final offers = productsData
             .take(6)
-            .map((product) => TopupProduct.fromJson(product))
+            .map((product) => DingConnectService.formatProductForUI(product))
             .toList();
 
         if (mounted) {
@@ -170,12 +170,13 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
       print('🌍 Cargando productos para $countryCode...');
       setState(() => _isLoadingProducts = true);
 
-      final products = await DingConnectService.instance.getProducts(
-        countryCode: countryCode,
+      final result = await DingConnectService.instance.getProducts(
+        countryIso: countryCode,
       );
 
       // Formatear productos para el selector
-      final formattedProducts = products.map((product) {
+      final productsData = result['success'] ? (result['products'] as List?) ?? [] : [];
+      final formattedProducts = productsData.map((product) {
         return DingConnectService.formatProductForUI(product);
       }).toList();
 
@@ -220,24 +221,26 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
         );
 
         // Obtener contactos
-        final contacts = await ContactsService.getContacts();
+        // final contacts = await ContactsService.getContacts(); // Temporalmente deshabilitado
         
         // Cerrar diálogo de carga
         Navigator.pop(context);
         
-        // Filtrar contactos que tengan números telefónicos
-        final contactsWithPhones = contacts
-            .where((contact) => 
-                contact.phones != null && contact.phones!.isNotEmpty)
-            .toList();
+        // Filtrar contactos que tengan números telefónicos (Temporalmente deshabilitado)
+        // final contactsWithPhones = contacts
+        //     .where((contact) => 
+        //         contact.phones != null && contact.phones!.isNotEmpty)
+        //     .toList();
 
-        if (contactsWithPhones.isEmpty) {
-          _showMessage('No se encontraron contactos con números telefónicos');
-          return;
-        }
+        // if (contactsWithPhones.isEmpty) {
+        //   _showMessage('No se encontraron contactos con números telefónicos');
+        //   return;
+        // }
 
-        // Mostrar selector de contactos
-        _showContactSelector(contactsWithPhones);
+        // // Mostrar selector de contactos
+        // _showContactSelector(contactsWithPhones);
+        
+        _showMessage('Función de contactos temporalmente deshabilitada');
         
       } else if (permission.isDenied) {
         _showPermissionDialog();
@@ -251,7 +254,7 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
   }
 
   /// Mostrar selector de contactos
-  void _showContactSelector(List<Contact> contacts) {
+  void _showContactSelector(List<dynamic> contacts) { // Contact temporalmente cambiado a dynamic
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -324,7 +327,19 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
   }
 
   /// Construir item de contacto
-  Widget _buildContactItem(Contact contact) {
+  Widget _buildContactItem(dynamic contact) { // Contact temporalmente cambiado a dynamic
+    // Función temporalmente deshabilitada
+    return Container(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          child: Icon(Icons.person, color: Theme.of(context).colorScheme.primary),
+        ),
+        title: Text('Contactos deshabilitados'),
+        subtitle: Text('Función temporalmente no disponible'),
+      ),
+    );
+    /*
     return Column(
       children: contact.phones!.map((phone) {
         return ListTile(
@@ -378,6 +393,7 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
         );
       }).toList(),
     );
+    */
   }
 
   /// Seleccionar contacto y llenar campos
@@ -1648,74 +1664,15 @@ class _RechargeHomeScreenState extends State<RechargeHomeScreen> {
     );
   }
 
-  /// Verificar balance de cuenta DingConnect
+  /// Verificar balance de cuenta DingConnect (COMENTADO - No necesario para usuarios)
   Future<void> _checkAccountBalance() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text('💰 Verificando Balance'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Consultando balance de cuenta DingConnect...'),
-          ],
-        ),
+    // Función deshabilitada - Los usuarios no necesitan ver el balance de DingConnect
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('ℹ️ Función de balance no disponible para usuarios'),
+        backgroundColor: Colors.blue,
       ),
     );
-    
-    try {
-      final balance = await DingConnectService.instance.getAccountBalance();
-      
-      Navigator.pop(context); // Cerrar dialog de loading
-      
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.account_balance_wallet, color: Colors.green),
-              SizedBox(width: 10),
-              Text('Balance DingConnect'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '\$${balance.toStringAsFixed(2)} USD',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Balance disponible para recargas',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cerrar'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      Navigator.pop(context); // Cerrar dialog de loading
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Error consultando balance: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
   
   /// Mostrar diálogo para consultar estado de orden

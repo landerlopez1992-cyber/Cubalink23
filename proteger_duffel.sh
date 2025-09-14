@@ -62,3 +62,8 @@ echo "📋 PRÓXIMOS PASOS:"
 echo "1. Hacer deploy de los cambios"
 echo "2. Probar búsqueda de aeropuertos"
 echo "3. Si algo falla, usar rollback automático"
+
+
+
+
+
