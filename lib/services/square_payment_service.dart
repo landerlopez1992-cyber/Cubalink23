@@ -7,6 +7,9 @@ import 'square_payment_service_official.dart' as official;
 
 export 'square_payment_service_official.dart' show SquarePaymentResult;
 
+// Re-export para compatibilidad
+typedef SquarePaymentResult = official.SquarePaymentResult;
+
 class SquarePaymentService {
   // Credenciales de Square Sandbox (VÁLIDAS)
   static const String _locationId = 'LZVTP0YQ9YQBB';

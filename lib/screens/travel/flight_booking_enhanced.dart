@@ -1772,7 +1772,10 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
             total: totalPrice * 1.03,
             metadata: {
               'service_type': 'flight',
+<<<<<<< HEAD
               'description': 'Vuelo ${widget.flight.airline} ${widget.flight.flightNumber}',
+=======
+>>>>>>> 5c6d2ca5553d01fe6990fda6d5f218e3ce9acc9c
               'flight_id': widget.flight.id,
               'passenger_data': passengerData,
               'selected_seat': _selectedSeat,
