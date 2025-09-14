@@ -661,8 +661,8 @@ def search_airports():
         # API KEY REAL de Duffel desde variables de entorno (usar la misma que app.py)
         api_token = os.environ.get('DUFFEL_API_KEY') or os.environ.get('DUFFEL_API_TOKEN')
         if not api_token:
-            print("DUFFEL_API_KEY no configurada en variables de entorno")
-            return jsonify([])
+            print("⚠️ DUFFEL_API_KEY no configurada - usando aeropuertos de emergencia")
+            return _get_emergency_airports(query)
         
         print(f"🔑 Usando Duffel API Key: {'✅ Configurada' if api_token else '❌ No configurada'}")
         
