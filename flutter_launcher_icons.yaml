@@ -1,0 +1,20 @@
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/assets_task_01k3m7yveaebmtdrdnybpe7ngv_1756247471_img_1.webp"
+  min_sdk_android: 21
+  # Configuración más específica para mejor calidad
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/images/assets_task_01k3m7yveaebmtdrdnybpe7ngv_1756247471_img_1.webp"
+  web:
+    generate: true
+    image_path: "assets/images/assets_task_01k3m7yveaebmtdrdnybpe7ngv_1756247471_img_1.webp"
+    background_color: "#ffffff"
+    theme_color: "#2196F3"
+  windows:
+    generate: true
+    image_path: "assets/images/assets_task_01k3m7yveaebmtdrdnybpe7ngv_1756247471_img_1.webp"
+    icon_size: 256 # Aumentar el tamaño máximo
+  macos:
+    generate: true
+    image_path: "assets/images/assets_task_01k3m7yveaebmtdrdnybpe7ngv_1756247471_img_1.webp"

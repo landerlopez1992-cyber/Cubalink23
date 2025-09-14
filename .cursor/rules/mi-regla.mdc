@@ -1,0 +1,6 @@
+prohivido parar---
+description:no parar asta que cumpla la orden, no preguntar que si quiere cuando anteriormnete ordenen resolver el problema
+
+globs:
+alwaysApply: true
+---

@@ -1,0 +1,170 @@
+{
+  "search_data": {
+    "origin": "Miami",
+    "destination": "Havana",
+    "departure_date": "2025-09-06",
+    "return_date": "2025-09-13",
+    "passengers": 2
+  },
+  "xael_flights": [
+    {
+      "airline": "Xael Charter",
+      "flight_number": "XA001",
+      "origin": "Miami",
+      "destination": "Havana",
+      "departure_time": "08:00",
+      "arrival_time": "09:30",
+      "date": "2025-09-06",
+      "duration": "1h 30m",
+      "price": 300,
+      "original_price": 250,
+      "markup": 50,
+      "available_seats": 45,
+      "aircraft": "Boeing 737",
+      "type": "charter",
+      "source": "xael_fallback"
+    },
+    {
+      "airline": "Xael Charter",
+      "flight_number": "XA002",
+      "origin": "Miami",
+      "destination": "Havana",
+      "departure_time": "14:00",
+      "arrival_time": "15:30",
+      "date": "2025-09-06",
+      "duration": "1h 30m",
+      "price": 325,
+      "original_price": 275,
+      "markup": 50,
+      "available_seats": 32,
+      "aircraft": "Boeing 737",
+      "type": "charter",
+      "source": "xael_fallback"
+    }
+  ],
+  "cubazul_flights": [
+    {
+      "airline": "Cubazul Air Charter",
+      "flight_number": "CZ001",
+      "origin": "Miami",
+      "destination": "Havana",
+      "departure_time": "10:00",
+      "arrival_time": "11:25",
+      "date": "2025-09-06",
+      "duration": "1h 25m",
+      "price": 285,
+      "original_price": 240,
+      "markup": 45,
+      "available_seats": 38,
+      "aircraft": "Embraer 190",
+      "type": "charter",
+      "source": "cubazul_fallback"
+    }
+  ],
+  "havana_flights": [
+    {
+      "airline": "Havana Air Charter",
+      "flight_number": "HA001",
+      "origin": "Miami",
+      "destination": "Havana",
+      "departure_time": "12:00",
+      "arrival_time": "13:35",
+      "date": "2025-09-06",
+      "duration": "1h 35m",
+      "price": 315,
+      "original_price": 260,
+      "markup": 55,
+      "available_seats": 42,
+      "aircraft": "Boeing 737",
+      "type": "charter",
+      "source": "havana_air_fallback"
+    }
+  ],
+  "all_flights": [
+    {
+      "airline": "Xael Charter",
+      "flight_number": "XA001",
+      "origin": "Miami",
+      "destination": "Havana",
+      "departure_time": "08:00",
+      "arrival_time": "09:30",
+      "date": "2025-09-06",
+      "duration": "1h 30m",
+      "price": 300,
+      "original_price": 250,
+      "markup": 50,
+      "available_seats": 45,
+      "aircraft": "Boeing 737",
+      "type": "charter",
+      "source": "xael_fallback"
+    },
+    {
+      "airline": "Xael Charter",
+      "flight_number": "XA002",
+      "origin": "Miami",
+      "destination": "Havana",
+      "departure_time": "14:00",
+      "arrival_time": "15:30",
+      "date": "2025-09-06",
+      "duration": "1h 30m",
+      "price": 325,
+      "original_price": 275,
+      "markup": 50,
+      "available_seats": 32,
+      "aircraft": "Boeing 737",
+      "type": "charter",
+      "source": "xael_fallback"
+    },
+    {
+      "airline": "Cubazul Air Charter",
+      "flight_number": "CZ001",
+      "origin": "Miami",
+      "destination": "Havana",
+      "departure_time": "10:00",
+      "arrival_time": "11:25",
+      "date": "2025-09-06",
+      "duration": "1h 25m",
+      "price": 285,
+      "original_price": 240,
+      "markup": 45,
+      "available_seats": 38,
+      "aircraft": "Embraer 190",
+      "type": "charter",
+      "source": "cubazul_fallback"
+    },
+    {
+      "airline": "Havana Air Charter",
+      "flight_number": "HA001",
+      "origin": "Miami",
+      "destination": "Havana",
+      "departure_time": "12:00",
+      "arrival_time": "13:35",
+      "date": "2025-09-06",
+      "duration": "1h 35m",
+      "price": 315,
+      "original_price": 260,
+      "markup": 55,
+      "available_seats": 42,
+      "aircraft": "Boeing 737",
+      "type": "charter",
+      "source": "havana_air_fallback"
+    }
+  ],
+  "summary": {
+    "Xael Charter": {
+      "count": 2,
+      "total_price": 625,
+      "avg_price": 312.5
+    },
+    "Cubazul Air Charter": {
+      "count": 1,
+      "total_price": 285,
+      "avg_price": 285.0
+    },
+    "Havana Air Charter": {
+      "count": 1,
+      "total_price": 315,
+      "avg_price": 315.0
+    }
+  }
+}

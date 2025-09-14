@@ -1,0 +1,8 @@
+# Variables de entorno para Render.com
+DUFFEL_API_TOKEN=your-duffel-token-here
+FLASK_ENV=production
+SECRET_KEY=cubalink23-secret-key-2023
+
+# Configuración de base de datos (opcional)
+DATABASE_URL=sqlite:///charter_flights.db
+

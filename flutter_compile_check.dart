@@ -1,0 +1,1 @@
+// Archivo de verificación de compilación - puede ser eliminado

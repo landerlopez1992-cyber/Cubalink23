@@ -1,0 +1,41 @@
+{
+  "project_info": {
+    "project_number": "544367519155",
+    "project_id": "cubalink23-cursor",
+    "storage_bucket": "cubalink23-cursor.appspot.com",
+    "firebase_url": "https://cubalink23-cursor-default-rtdb.firebaseio.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:544367519155:android:a1b2c3d4e5f6g7h8i9j0k1",
+        "android_client_info": {
+          "package_name": "com.turecarga.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "544367519155-example.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkN9G7K8zB3zF7q9Lg8yJ5xM2pP4vN8wE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "544367519155-example.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+

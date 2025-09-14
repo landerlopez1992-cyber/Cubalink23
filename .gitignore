@@ -1,0 +1,81 @@
+# ---- Generales / Python
+*.log
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+.env.*
+
+# ---- Flutter / Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# ---- Flutter builds
+build/
+# Android (Gradle)
+android/.gradle/
+android/.idea/
+android/local.properties
+android/app/build/
+android/app/debug
+android/app/profile
+android/app/release
+
+# iOS (CocoaPods / Xcode)
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/DerivedData/
+**/ios/Flutter/.last_build_id
+
+# ---- Frontend (si aplica)
+node_modules/
+dist/
+out/
+
+# ---- Comprimidos / artefactos
+*.zip
+*.tar
+*.tgz
+turecarga(1).zip
+
+# ---- Cursor
+.cursor/*
+!.cursor/rules/*.mdc
+
+# ---- Sistema
+.DS_Store
+*.swp
+*.class
+
+# ---- IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# ---- Subrepos (no versionar como archivos)
+admin-panel/backend-duffel/
+backend-duffel/
+cubalink23-web/
+backend-duffel_backup_*/
+
+# ---- Documentación temporal
+IMPLEMENTACION_PROGRESS.md
+NOTAS_PROYECTO.md
+deploy_render.md
+
+# ---- Firebase credentials
+firebase_config.json
+android-sdk/
+*.apk
+flutter/

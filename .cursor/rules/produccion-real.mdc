@@ -1,0 +1,8 @@
+---
+description: >
+  Todas las conexiones y configuraciones deben ser reales y de producción, nunca demos ni entornos simulados.
+  Nunca uses entornos temporales o locales salvo que yo lo indique explícitamente.
+  Siempre usa APIs reales, Supabase real y servicios reales en este proyecto.
+globs: ["**/*"]
+alwaysApply: true
+---

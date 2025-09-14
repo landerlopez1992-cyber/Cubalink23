@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id">544367519155-example.apps.googleusercontent.com</string>
+    <string name="firebase_database_url">https://cubalink23-cursor-default-rtdb.firebaseio.com</string>
+    <string name="gcm_defaultSenderId">544367519155</string>
+    <string name="google_api_key">AIzaSyCkN9G7K8zB3zF7q9Lg8yJ5xM2pP4vN8wE</string>
+    <string name="google_app_id">1:544367519155:android:a1b2c3d4e5f6g7h8i9j0k1</string>
+    <string name="google_crash_reporting_api_key">AIzaSyCkN9G7K8zB3zF7q9Lg8yJ5xM2pP4vN8wE</string>
+    <string name="google_storage_bucket">cubalink23-cursor.appspot.com</string>
+    <string name="project_id">cubalink23-cursor</string>
+</resources>
+
+
+
+
+
+
+
+
+
+
+

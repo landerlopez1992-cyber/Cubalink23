@@ -1,0 +1,10 @@
+🚀 Iniciando Duffel API Backend con API REAL...
+🔑 Token configurado: True
+🌐 API URL: https://api.duffel.com/air
+🚀 API Base URL: http://localhost:3005/api/duffel
+ * Serving Flask app 'app'
+ * Debug mode: off
+/Users/cubcolexpress/Library/Python/3.8/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Address already in use
+Port 3005 is in use by another program. Either identify and stop that program, or start the server with a different port.

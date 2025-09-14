@@ -1,0 +1,11 @@
+---
+description: >
+  Nunca modifiques ni elimines los siguientes archivos o carpetas críticas sin mi autorización explícita:
+    - backend-duffel/**
+    - backend/**
+    - api/vuelos/**
+    - admin_routes.py
+  Si una tarea requiere cambiar estas rutas, primero pide confirmación.
+globs: ["**/*"]
+alwaysApply: true
+---

@@ -1,0 +1,515 @@
+import 'package:flutter/material.dart';
+
+class SellerApplicationScreen extends StatefulWidget {
+  const SellerApplicationScreen({Key? key}) : super(key: key);
+
+  @override
+  State<SellerApplicationScreen> createState() => _SellerApplicationScreenState();
+}
+
+class _SellerApplicationScreenState extends State<SellerApplicationScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _businessController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  
+  String _selectedProvince = 'La Habana';
+  String _selectedExperience = 'Principiante';
+  bool _hasBusiness = false;
+
+  final List<String> _provinces = [
+    'La Habana',
+    'Santiago de Cuba',
+    'Camagüey',
+    'Holguín',
+    'Villa Clara',
+    'Pinar del Río',
+    'Matanzas',
+    'Cienfuegos',
+    'Sancti Spíritus',
+    'Ciego de Ávila',
+    'Las Tunas',
+    'Granma',
+    'Guantánamo',
+    'Artemisa',
+    'Mayabeque',
+    'Isla de la Juventud',
+  ];
+
+  final List<String> _experienceLevels = [
+    'Principiante',
+    'Intermedio (1-3 años)',
+    'Avanzado (3-5 años)',
+    'Experto (5+ años)',
+  ];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _businessController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: Text(
+          'Aplicar como Vendedor',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Color(0xFF2196F3),
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 40),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header con logo
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF2196F3),
+                        Color(0xFF42A5F5),
+                        Color(0xFF64B5F6),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      // Logo
+                      Container(
+                        width: 60,
+                        height: 60,
+                        child: Image.asset(
+                          'assets/images/assets_task_01k3m7yveaebmtdrdnybpe7ngv_1756247471_img_1.webp',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFF2196F3), Color(0xFF42A5F5)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'CubaLink23',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '🛍️ Vendedor en CubaLink23',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'Vende tus productos a miles de usuarios',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              
+              SizedBox(height: 20),
+              
+              // Información personal
+              _buildSectionTitle('Información Personal'),
+              SizedBox(height: 12),
+              
+              _buildTextField(
+                controller: _nameController,
+                label: 'Nombre Completo',
+                hint: 'Ingresa tu nombre completo',
+                icon: Icons.person,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu nombre';
+                  }
+                  return null;
+                },
+              ),
+              
+              SizedBox(height: 16),
+              
+              _buildTextField(
+                controller: _emailController,
+                label: 'Correo Electrónico',
+                hint: 'tu@email.com',
+                icon: Icons.email,
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Por favor ingresa un email válido';
+                  }
+                  return null;
+                },
+              ),
+              
+              SizedBox(height: 16),
+              
+              _buildTextField(
+                controller: _phoneController,
+                label: 'Teléfono',
+                hint: '+53 5X XXX XXXX',
+                icon: Icons.phone,
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu teléfono';
+                  }
+                  return null;
+                },
+              ),
+              
+              SizedBox(height: 16),
+              
+              // Provincia
+              _buildDropdown(
+                label: 'Provincia',
+                value: _selectedProvince,
+                items: _provinces,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedProvince = value!;
+                  });
+                },
+                icon: Icons.location_on,
+              ),
+              
+              SizedBox(height: 30),
+              
+              // Información del negocio
+              _buildSectionTitle('Información del Negocio'),
+              SizedBox(height: 16),
+              
+              // Tiene negocio
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.business, color: Color(0xFF2196F3)),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '¿Tienes un negocio registrado?',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Switch(
+                      value: _hasBusiness,
+                      onChanged: (value) {
+                        setState(() {
+                          _hasBusiness = value;
+                        });
+                      },
+                      activeColor: Color(0xFF2196F3),
+                    ),
+                  ],
+                ),
+              ),
+              
+              if (_hasBusiness) ...[
+                SizedBox(height: 16),
+                _buildTextField(
+                  controller: _businessController,
+                  label: 'Nombre del Negocio',
+                  hint: 'Nombre de tu empresa o negocio',
+                  icon: Icons.store,
+                  validator: (value) {
+                    if (_hasBusiness && (value == null || value.isEmpty)) {
+                      return 'Por favor ingresa el nombre de tu negocio';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+              
+              SizedBox(height: 16),
+              
+              // Experiencia
+              _buildDropdown(
+                label: 'Experiencia en Ventas',
+                value: _selectedExperience,
+                items: _experienceLevels,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedExperience = value!;
+                  });
+                },
+                icon: Icons.trending_up,
+              ),
+              
+              SizedBox(height: 16),
+              
+              // Descripción
+              _buildTextField(
+                controller: _descriptionController,
+                label: 'Descripción de tus productos',
+                hint: 'Describe qué tipo de productos vendes o planeas vender...',
+                icon: Icons.description,
+                maxLines: 4,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor describe tus productos';
+                  }
+                  return null;
+                },
+              ),
+              
+              SizedBox(height: 40),
+              
+              // Botón de envío
+              Container(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _submitApplication,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF2196F3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.send, color: Colors.white),
+                      SizedBox(width: 12),
+                      Text(
+                        'Enviar Aplicación',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              SizedBox(height: 20),
+              
+              // Información adicional
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info, color: Color(0xFF2196F3)),
+                        SizedBox(width: 8),
+                        Text(
+                          'Proceso de Aprobación',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2196F3),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      '• Revisaremos tu aplicación en 2-3 días hábiles\n'
+                      '• Te contactaremos por email o teléfono\n'
+                      '• Una vez aprobado, podrás subir tus productos\n'
+                      '• Recibirás capacitación sobre la plataforma',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF2196F3),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon: Icon(icon, color: Color(0xFF2196F3)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    required IconData icon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Color(0xFF2196F3)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        items: items.map((String item) {
+          return DropdownMenuItem<String>(
+            value: item,
+            child: Text(item),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _submitApplication() {
+    if (_formKey.currentState!.validate()) {
+      // Mostrar diálogo de confirmación
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green),
+                SizedBox(width: 8),
+                Text('Aplicación Enviada'),
+              ],
+            ),
+            content: Text(
+              'Tu aplicación ha sido enviada exitosamente. Te contactaremos en 2-3 días hábiles para continuar con el proceso.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
+                child: Text('Entendido'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+}

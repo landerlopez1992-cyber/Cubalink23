@@ -1,0 +1,11 @@
+---
+description: >
+  Siempre revisa el archivo WORKLOG.md al comenzar una sesión en este proyecto.
+  Retoma desde la sección "Tarea activa" y, al terminar cualquier acción, 
+  actualiza WORKLOG.md con:
+    - Tarea activa
+    - Qué se hizo hoy
+    - Próximo paso
+globs: ["**/*"]
+alwaysApply: true
+---

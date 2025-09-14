@@ -1,0 +1,33 @@
+<svg width="300" height="200" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo con gradiente azul -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1976D2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#42A5F5;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E3F2FD;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fondo -->
+  <rect width="300" height="200" fill="url(#bgGradient)" rx="12"/>
+  
+  <!-- Icono de conexión -->
+  <circle cx="80" cy="100" r="25" fill="white" opacity="0.9"/>
+  <circle cx="220" cy="100" r="25" fill="white" opacity="0.9"/>
+  
+  <!-- Línea de conexión -->
+  <line x1="105" y1="100" x2="195" y2="100" stroke="white" stroke-width="4" opacity="0.8"/>
+  
+  <!-- Puntos de conexión -->
+  <circle cx="105" cy="100" r="4" fill="white"/>
+  <circle cx="195" cy="100" r="4" fill="white"/>
+  
+  <!-- Texto CubaLink23 -->
+  <text x="150" y="160" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="url(#textGradient)">CubaLink23</text>
+  
+  <!-- Subtítulo -->
+  <text x="150" y="180" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white" opacity="0.8">Tu Conexión con Cuba</text>
+</svg>
