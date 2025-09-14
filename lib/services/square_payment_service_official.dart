@@ -86,7 +86,7 @@ class SquarePaymentServiceOfficial {
 
           return SquarePaymentResult(
             success: true,
-            transactionId: data['payment_id'] ?? 'square_${DateTime.now().millisecondsSinceEpoch}',
+            transactionId: data['payment_link_id'] ?? data['payment_id'] ?? 'square_${DateTime.now().millisecondsSinceEpoch}',
             message: 'Payment Link creado exitosamente',
             amount: amount,
             checkoutUrl: data['checkout_url'],
