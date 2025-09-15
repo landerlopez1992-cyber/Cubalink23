@@ -39,19 +39,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
   bool _isLoadingFlights = false;
   String? _errorMessage;
   
-  // Lista de destinos populares con códigos IATA exactos
-  final List<Map<String, dynamic>> _popularDestinations = [
-    {'name': 'Miami International Airport', 'display_name': 'Miami, FL, USA (MIA)', 'code': 'MIA'},
-    {'name': 'José Martí International Airport', 'display_name': 'La Habana, Cuba (HAV)', 'code': 'HAV'},
-    {'name': 'John F Kennedy International Airport', 'display_name': 'New York, NY, USA (JFK)', 'code': 'JFK'},
-    {'name': 'Los Angeles International Airport', 'display_name': 'Los Angeles, CA, USA (LAX)', 'code': 'LAX'},
-    {'name': 'Madrid-Barajas Airport', 'display_name': 'Madrid, España (MAD)', 'code': 'MAD'},
-    {'name': 'Charles de Gaulle Airport', 'display_name': 'París, Francia (CDG)', 'code': 'CDG'},
-    {'name': 'Heathrow Airport', 'display_name': 'Londres, Reino Unido (LHR)', 'code': 'LHR'},
-    {'name': 'Cancún International Airport', 'display_name': 'Cancún, México (CUN)', 'code': 'CUN'},
-    {'name': 'Toronto Pearson International Airport', 'display_name': 'Toronto, Canadá (YYZ)', 'code': 'YYZ'},
-    {'name': 'Barcelona–El Prat Airport', 'display_name': 'Barcelona, España (BCN)', 'code': 'BCN'},
-  ];
+  // REMOVIDO: Sugerencias locales. Solo se mostrarán resultados reales de Duffel
   
   List<Map<String, dynamic>> _fromSearchResults = [];
   List<Map<String, dynamic>> _toSearchResults = [];
@@ -1605,21 +1593,11 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
         return;
       }
 
-      // Primero buscar en destinos populares
-      final popularResults = _popularDestinations.where((airport) =>
-        airport['name'].toString().toLowerCase().contains(cleanQuery.toLowerCase()) ||
-        airport['display_name'].toString().toLowerCase().contains(cleanQuery.toLowerCase()) ||
-        airport['code'].toString().toLowerCase().contains(cleanQuery.toLowerCase())
-      ).toList();
-
-      // Luego buscar en la API de Duffel con query limpio
+      // Buscar SOLO en la API de Duffel con query limpio (sin locales)
       final apiResults = await DuffelApiService.searchAirports(cleanQuery);
       
-      // Combinar resultados (destinos populares primero)
-      final allResults = [...popularResults, ...apiResults];
-
       setState(() {
-        _fromSearchResults = allResults;
+        _fromSearchResults = apiResults;
         _isSearchingFrom = false;
       });
     } catch (e) {
@@ -1650,21 +1628,11 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
         return;
       }
 
-      // Primero buscar en destinos populares
-      final popularResults = _popularDestinations.where((airport) =>
-        airport['name'].toString().toLowerCase().contains(cleanQuery.toLowerCase()) ||
-        airport['display_name'].toString().toLowerCase().contains(cleanQuery.toLowerCase()) ||
-        airport['code'].toString().toLowerCase().contains(cleanQuery.toLowerCase())
-      ).toList();
-
-      // Luego buscar en la API de Duffel con query limpio
+      // Buscar SOLO en la API de Duffel con query limpio (sin locales)
       final apiResults = await DuffelApiService.searchAirports(cleanQuery);
       
-      // Combinar resultados (destinos populares primero)
-      final allResults = [...popularResults, ...apiResults];
-
       setState(() {
-        _toSearchResults = allResults;
+        _toSearchResults = apiResults;
         _isSearchingTo = false;
       });
     } catch (e) {

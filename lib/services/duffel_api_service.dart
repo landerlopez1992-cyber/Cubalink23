@@ -214,10 +214,12 @@ class DuffelApiService {
       }
 
       print('📡 Realizando petición HTTP...');
-      print('🌐 URL: $_baseUrl/admin/api/flights/airports?query=${Uri.encodeComponent(query)}');
+      // Enviar ambos parámetros por compatibilidad: 'q' y 'query'
+      final airportsUrl = '$_baseUrl/admin/api/flights/airports?q=${Uri.encodeComponent(query)}&query=${Uri.encodeComponent(query)}';
+      print('🌐 URL: $airportsUrl');
       
       final response = await http.get(
-        Uri.parse('$_baseUrl/admin/api/flights/airports?query=${Uri.encodeComponent(query)}'),
+        Uri.parse(airportsUrl),
         headers: _headers,
       ).timeout(Duration(seconds: 15)); // Timeout aumentado a 15s para API Duffel
 
@@ -248,8 +250,8 @@ class DuffelApiService {
           // Usar display_name del backend si existe, sino construir uno
           String displayName = airport['display_name']?.toString() ?? '';
           if (displayName.isEmpty) {
-            final city = airport['city']?.toString() ?? '';
-            final country = airport['country']?.toString() ?? '';
+            final city = airport['city']?.toString() ?? airport['city_name']?.toString() ?? '';
+            final country = airport['country']?.toString() ?? airport['iata_country_code']?.toString() ?? '';
             displayName = '$city${country.isNotEmpty ? ', $country' : ''}';
           }
           
@@ -257,8 +259,8 @@ class DuffelApiService {
             'code': airport['iata_code']?.toString() ?? airport['code']?.toString() ?? '',
             'name': airport['name']?.toString() ?? '',
             'display_name': displayName,
-            'city': airport['city']?.toString() ?? '',
-            'country': airport['country']?.toString() ?? '',
+            'city': airport['city']?.toString() ?? airport['city_name']?.toString() ?? '',
+            'country': airport['country']?.toString() ?? airport['iata_country_code']?.toString() ?? '',
           };
         }).where((airport) => airport['code']?.isNotEmpty == true).toList();
         
