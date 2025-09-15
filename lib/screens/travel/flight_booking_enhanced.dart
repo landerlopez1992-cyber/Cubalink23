@@ -1773,9 +1773,12 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
             metadata: {
               'service_type': 'flight',
 <<<<<<< HEAD
+<<<<<<< HEAD
               'description': 'Vuelo ${widget.flight.airline} ${widget.flight.flightNumber}',
 =======
 >>>>>>> 5c6d2ca5553d01fe6990fda6d5f218e3ce9acc9c
+=======
+>>>>>>> 8e3cf512612555b5b2baf36b926d9aecd1b2acb7
               'flight_id': widget.flight.id,
               'passenger_data': passengerData,
               'selected_seat': _selectedSeat,
