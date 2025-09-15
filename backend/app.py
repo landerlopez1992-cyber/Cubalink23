@@ -28,6 +28,14 @@ except ImportError as e:
 from admin_routes import admin
 app.register_blueprint(admin)
 
+# Importar rutas de pagos Square
+try:
+    from payment_routes_test import payment_bp
+    app.register_blueprint(payment_bp)
+    print("✅ Rutas de pagos Square importadas correctamente")
+except ImportError as e:
+    print(f"⚠️ No se pudieron importar las rutas de pagos: {e}")
+
 # Configuración
 PORT = int(os.environ.get('PORT', 10000))
 DUFFEL_API_KEY = os.environ.get('DUFFEL_API_KEY')
@@ -44,7 +52,7 @@ def home():
         "status": "online",
         "timestamp": datetime.now().isoformat(),
         "version": "FINAL_100%",
-        "endpoints": ["/api/health", "/admin/api/flights/search", "/admin/api/flights/airports"]
+        "endpoints": ["/api/health", "/admin/api/flights/search", "/admin/api/flights/airports", "/api/payments/process", "/api/payments/square-status"]
     })
 
 @app.route('/api/health')
@@ -86,7 +94,7 @@ def search_airports():
             print(f"📡 Consultando Duffel API para: {query}")
             
             # Usar el endpoint correcto de Duffel para aeropuertos
-            url = f'https://api.duffel.com/air/airports?search={query}&limit=20'
+            url = f'https://api.duffel.com/places?query={query}'
             response = requests.get(url, headers=headers, timeout=10)
             
             print(f"📡 Status Duffel: {response.status_code}")
@@ -96,19 +104,20 @@ def search_airports():
                 airports = []
                 
                 if 'data' in data:
-                    for airport in data['data']:
-                        # Estructura del endpoint /air/airports
-                        airport_data = {
-                            'code': airport.get('iata_code', ''),  # Para compatibilidad con frontend
-                            'iata_code': airport.get('iata_code', ''),
-                            'name': airport.get('name', ''),
-                            'display_name': f"{airport.get('name', '')} ({airport.get('iata_code', '')})",  # Formato: "José Martí International Airport (HAV)"
-                            'city': airport.get('city', {}).get('name', '') if airport.get('city') else '',
-                            'country': airport.get('city', {}).get('country', {}).get('name', '') if airport.get('city') and airport.get('city', {}).get('country') else '',
-                            'time_zone': airport.get('time_zone', '')
-                        }
-                        if airport_data['iata_code'] and airport_data['name']:
-                            airports.append(airport_data)
+                    for place in data['data']:
+                        # Solo aeropuertos (type = airport)
+                        if place.get('type') == 'airport':
+                            airport_data = {
+                                'code': place.get('iata_code', ''),  # Para compatibilidad con frontend
+                                'iata_code': place.get('iata_code', ''),
+                                'name': place.get('name', ''),
+                                'display_name': f"{place.get('name', '')} ({place.get('iata_code', '')})",  # Formato: "José Martí International Airport (HAV)"
+                                'city': place.get('city_name', ''),
+                                'country': place.get('country_name', ''),
+                                'time_zone': place.get('time_zone', '')
+                            }
+                            if airport_data['iata_code'] and airport_data['name']:
+                                airports.append(airport_data)
                 
                 # 🔧 FILTRO LOCAL: Filtrar por la consulta del usuario
                 query_lower = query.lower()
@@ -350,6 +359,7 @@ def search_flights():
         return jsonify({"error": f"Error general: {str(e)}"}), 500
 
 if __name__ == '__main__':
+    # Solo para desarrollo local
     print(f"🚀 INICIANDO BACKEND FINAL EN PUERTO {PORT}")
     print("🌐 Listo para deploy en Render.com")
     
