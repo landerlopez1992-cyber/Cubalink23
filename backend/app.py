@@ -94,7 +94,7 @@ def search_airports():
             print(f"📡 Consultando Duffel API para: {query}")
             
             # Usar el endpoint correcto de Duffel para aeropuertos
-            url = f'https://api.duffel.com/air/airports?search={query}&limit=20'
+            url = f'https://api.duffel.com/places?query={query}'
             response = requests.get(url, headers=headers, timeout=10)
             
             print(f"📡 Status Duffel: {response.status_code}")
@@ -104,19 +104,20 @@ def search_airports():
                 airports = []
                 
                 if 'data' in data:
-                    for airport in data['data']:
-                        # Estructura del endpoint /air/airports
-                        airport_data = {
-                            'code': airport.get('iata_code', ''),  # Para compatibilidad con frontend
-                            'iata_code': airport.get('iata_code', ''),
-                            'name': airport.get('name', ''),
-                            'display_name': f"{airport.get('name', '')} ({airport.get('iata_code', '')})",  # Formato: "José Martí International Airport (HAV)"
-                            'city': airport.get('city_name', ''),
-                            'country': airport.get('iata_country_code', ''),
-                            'time_zone': airport.get('time_zone', '')
-                        }
-                        if airport_data['iata_code'] and airport_data['name']:
-                            airports.append(airport_data)
+                    for place in data['data']:
+                        # Solo aeropuertos (type = airport)
+                        if place.get('type') == 'airport':
+                            airport_data = {
+                                'code': place.get('iata_code', ''),  # Para compatibilidad con frontend
+                                'iata_code': place.get('iata_code', ''),
+                                'name': place.get('name', ''),
+                                'display_name': f"{place.get('name', '')} ({place.get('iata_code', '')})",  # Formato: "José Martí International Airport (HAV)"
+                                'city': place.get('city_name', ''),
+                                'country': place.get('country_name', ''),
+                                'time_zone': place.get('time_zone', '')
+                            }
+                            if airport_data['iata_code'] and airport_data['name']:
+                                airports.append(airport_data)
                 
                 # 🔧 FILTRO LOCAL: Filtrar por la consulta del usuario
                 query_lower = query.lower()
