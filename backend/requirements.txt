@@ -3,3 +3,4 @@ Flask-CORS==4.0.0
 requests==2.31.0
 python-dotenv==1.0.0
 gunicorn==21.2.0
+squareup==36.0.0.20240417
