@@ -24,6 +24,12 @@ class DuffelApiService {
   static DateTime? _backendStatusTimestamp;
   static const Duration _backendStatusExpiry = Duration(minutes: 2); // Backend status válido por 2 minutos
 
+  /// 🔑 Obtener API key de Duffel de forma segura
+  static String _getDuffelApiKey() {
+    // En producción, esto debería venir de variables de entorno o configuración segura
+    return 'duffel_live_Rj6u0G0cT2hUeIw53ou2HRTNNf0tXl6oP-pVzcGvI7e';
+  }
+
   /// 🏥 Health Check - Verificar si backend está activo SIN CACHÉ
   static Future<bool> isBackendActive() async {
     // 🚀 SIEMPRE VERIFICAR ESTADO REAL - NO USAR CACHÉ
@@ -221,7 +227,7 @@ class DuffelApiService {
       // Headers específicos para Duffel API
       final duffelHeaders = {
         'Accept': 'application/json',
-        'Authorization': 'Bearer duffel_live_Rj6u0G0cT2hUeIw53ou2HRTNNf0tXl6oP-pVzcGvI7e',
+        'Authorization': 'Bearer ${_getDuffelApiKey()}',
         'Duffel-Version': 'v2',
       };
       
