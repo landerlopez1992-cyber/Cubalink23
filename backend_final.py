@@ -94,20 +94,19 @@ def search_airports():
             print(f"📡 Consultando Duffel API para: {query}")
             
             # Usar el endpoint correcto de Duffel para aeropuertos
-            url = f'https://api.duffel.com/places/suggestions?query={query}'
+            url = f'https://api.duffel.com/places?query={query}'
             response = requests.get(url, headers=headers, timeout=10)
             
             print(f"📡 Status Duffel: {response.status_code}")
             
             if response.status_code == 200:
                 data = response.json()
-                print(f"🔍 RESPUESTA DUFFEL: {data}")  # Debug: ver qué devuelve Duffel
                 airports = []
                 
                 if 'data' in data:
                     for place in data['data']:
-                        # Solo aeropuertos (type = airport)       
-                        if place.get('type') == 'airport':        
+                        # Solo aeropuertos (type = airport)
+                        if place.get('type') == 'airport':
                             airport_data = {
                                 'code': place.get('iata_code', ''),  # Para compatibilidad con frontend
                                 'iata_code': place.get('iata_code', ''),
@@ -120,8 +119,6 @@ def search_airports():
                             if airport_data['iata_code'] and airport_data['name']:
                                 airports.append(airport_data)
                 
-                print(f"✅ Total aeropuertos obtenidos: {len(airports)}")
-                
                 # 🔧 FILTRO LOCAL: Filtrar por la consulta del usuario
                 query_lower = query.lower()
                 filtered_airports = []
@@ -133,8 +130,7 @@ def search_airports():
                         query_lower in airport['city'].lower()):
                         filtered_airports.append(airport)
                 
-                print(f"✅ Filtrados {len(filtered_airports)} de {len(airports)} aeropuertos")
-                print(f"✅ Aeropuertos encontrados: {len(filtered_airports)}")
+                print(f"✅ Encontrados {len(filtered_airports)} aeropuertos FILTRADOS para: {query}")
                 if filtered_airports:
                     print("🔍 PREVIEW aeropuertos FILTRADOS:")
                     for i, airport in enumerate(filtered_airports[:5]):
