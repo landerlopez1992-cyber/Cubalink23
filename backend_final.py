@@ -94,7 +94,7 @@ def search_airports():
             print(f"📡 Consultando Duffel API para: {query}")
             
             # Usar el endpoint correcto de Duffel para aeropuertos
-            url = f'https://api.duffel.com/air/airports?query={query}'
+            url = f'https://api.duffel.com/air/airports?search={query}&limit=20'
             response = requests.get(url, headers=headers, timeout=10)
             
             print(f"📡 Status Duffel: {response.status_code}")
@@ -112,7 +112,7 @@ def search_airports():
                             'name': airport.get('name', ''),    
                             'display_name': f"{airport.get('name', '')} ({airport.get('iata_code', '')})",  # Formato: "José Martí International Airport (HAV)"      
                             'city': airport.get('city_name', ''),                                
-                            'country': airport.get('country_name', ''),                          
+                            'country': airport.get('iata_country_code', ''),                          
                             'time_zone': airport.get('time_zone', '')                            
                         }
                         if airport_data['iata_code'] and airport_data['name']:                 
