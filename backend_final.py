@@ -113,7 +113,7 @@ def search_airports():
                                 'name': place.get('name', ''),
                                 'display_name': f"{place.get('name', '')} ({place.get('iata_code', '')})",  # Formato: "José Martí International Airport (HAV)"
                                 'city': place.get('city_name', ''),
-                                'country': place.get('country_name', ''),
+                                'country': place.get('iata_country_code', ''),
                                 'time_zone': place.get('time_zone', '')
                             }
                             if airport_data['iata_code'] and airport_data['name']:
