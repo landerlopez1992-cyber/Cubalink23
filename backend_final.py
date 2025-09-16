@@ -94,7 +94,7 @@ def search_airports():
             print(f"📡 Consultando Duffel API para: {query}")
             
             # Usar el endpoint correcto de Duffel para aeropuertos
-            url = f'https://api.duffel.com/places?query={query}'
+            url = f'https://api.duffel.com/places/suggestions?query={query}'
             response = requests.get(url, headers=headers, timeout=10)
             
             print(f"📡 Status Duffel: {response.status_code}")
@@ -114,11 +114,13 @@ def search_airports():
                                 'name': place.get('name', ''),
                                 'display_name': f"{place.get('name', '')} ({place.get('iata_code', '')})",  # Formato: "José Martí International Airport (HAV)"
                                 'city': place.get('city_name', ''),
-                                'country': place.get('iata_country_code', ''),
+                                'country': place.get('country_name', ''),
                                 'time_zone': place.get('time_zone', '')
                             }
                             if airport_data['iata_code'] and airport_data['name']:
                                 airports.append(airport_data)
+                
+                print(f"✅ Total aeropuertos obtenidos: {len(airports)}")
                 
                 # 🔧 FILTRO LOCAL: Filtrar por la consulta del usuario
                 query_lower = query.lower()
@@ -131,7 +133,8 @@ def search_airports():
                         query_lower in airport['city'].lower()):
                         filtered_airports.append(airport)
                 
-                print(f"✅ Encontrados {len(filtered_airports)} aeropuertos FILTRADOS para: {query}")
+                print(f"✅ Filtrados {len(filtered_airports)} de {len(airports)} aeropuertos")
+                print(f"✅ Aeropuertos encontrados: {len(filtered_airports)}")
                 if filtered_airports:
                     print("🔍 PREVIEW aeropuertos FILTRADOS:")
                     for i, airport in enumerate(filtered_airports[:5]):
