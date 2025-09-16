@@ -99,24 +99,23 @@ def search_airports():
             
             print(f"📡 Status Duffel: {response.status_code}")
             
-            if response.status_code == 200:                       
-                data = response.json()                            
-                print(f"🔍 RESPUESTA DUFFEL: {data}")  # Debug: ver qué devuelve Duffel
+            if response.status_code == 200:
+                data = response.json()
                 airports = []
                 
-                if 'data' in data:                                
-                    for airport in data['data']:                    
-                        # La API /air/airports ya devuelve solo aeropuertos
-                        airport_data = {                      
-                            'code': airport.get('iata_code', ''),  # Para compatibilidad con frontend                             
-                            'iata_code': airport.get('iata_code', ''),                           
-                            'name': airport.get('name', ''),    
-                            'display_name': f"{airport.get('name', '')} ({airport.get('iata_code', '')})",  # Formato: "José Martí International Airport (HAV)"      
-                            'city': airport.get('city_name', ''),                                
-                            'country': airport.get('iata_country_code', ''),                          
-                            'time_zone': airport.get('time_zone', '')                            
+                if 'data' in data:
+                    for airport in data['data']:
+                        # Estructura del endpoint /air/airports
+                        airport_data = {
+                            'code': airport.get('iata_code', ''),  # Para compatibilidad con frontend
+                            'iata_code': airport.get('iata_code', ''),
+                            'name': airport.get('name', ''),
+                            'display_name': f"{airport.get('name', '')} ({airport.get('iata_code', '')})",  # Formato: "José Martí International Airport (HAV)"
+                            'city': airport.get('city_name', ''),
+                            'country': airport.get('iata_country_code', ''),
+                            'time_zone': airport.get('time_zone', '')
                         }
-                        if airport_data['iata_code'] and airport_data['name']:                 
+                        if airport_data['iata_code'] and airport_data['name']:
                             airports.append(airport_data)
                 
                 # 🔧 FILTRO LOCAL: Filtrar por la consulta del usuario
