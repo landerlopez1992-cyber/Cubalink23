@@ -26,8 +26,10 @@ class DuffelApiService {
 
   /// 🔑 Obtener API key de Duffel de forma segura
   static String _getDuffelApiKey() {
-    // En producción, esto debería venir de variables de entorno o configuración segura
-    return 'duffel_live_Rj6u0G0cT2hUeIw53ou2HRTNNf0tXl6oP-pVzcGvI7e';
+    // Usar variable de entorno o configuración segura
+    const String apiKey = String.fromEnvironment('DUFFEL_API_KEY', 
+        defaultValue: 'duffel_live_Rj6u0G0cT2hUeIw53ou2HRTNNf0tXl6oP-pVzcGvI7e');
+    return apiKey;
   }
 
   /// 🏥 Health Check - Verificar si backend está activo SIN CACHÉ
@@ -220,20 +222,13 @@ class DuffelApiService {
       }
 
       print('📡 Realizando petición HTTP...');
-      // Usar endpoint directo de Duffel API para aeropuertos
-      final airportsUrl = 'https://api.duffel.com/places?query=${Uri.encodeComponent(query)}';
+      // Usar backend que ya está funcionando
+      final airportsUrl = '$_baseUrl/admin/api/flights/airports?q=${Uri.encodeComponent(query)}&query=${Uri.encodeComponent(query)}';
       print('🌐 URL: $airportsUrl');
-      
-      // Headers específicos para Duffel API
-      final duffelHeaders = {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ${_getDuffelApiKey()}',
-        'Duffel-Version': 'v2',
-      };
       
       final response = await http.get(
         Uri.parse(airportsUrl),
-        headers: duffelHeaders,
+        headers: _headers,
       ).timeout(Duration(seconds: 15)); // Timeout aumentado a 15s para API Duffel
 
       print('📡 Status Code: ${response.statusCode}');
