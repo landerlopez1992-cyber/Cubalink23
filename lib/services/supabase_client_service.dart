@@ -2,11 +2,11 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cubalink23/supabase/supabase_config.dart';
 import 'package:cubalink23/models/user.dart' as UserModel;
-import 'package:cubalink23/models/payment_card.dart';
+// import 'package:cubalink23/models/payment_card.dart'; // Removed unused import
 import 'package:cubalink23/models/contact.dart';
 import 'package:cubalink23/models/recharge_history.dart';
 import 'package:cubalink23/models/store_product.dart';
-import 'package:cubalink23/models/order.dart';
+// import 'package:cubalink23/models/order.dart'; // Removed unused import
 import 'package:cubalink23/models/cart_item.dart';
 
 /// Comprehensive Supabase client service for CubaLink23 app
@@ -271,6 +271,10 @@ class SupabaseClientService {
         amount: (rechargeData['amount'] ?? 0.0).toDouble(),
         timestamp: DateTime.parse(rechargeData['created_at']),
         status: rechargeData['status'],
+        userId: rechargeData['user_id'] ?? '',
+        operatorId: rechargeData['operator_id'] ?? '',
+        createdAt: DateTime.parse(rechargeData['created_at']),
+        transactionId: rechargeData['transaction_id'] ?? '',
       )).toList();
     } catch (e) {
       print('❌ Error obteniendo historial de recargas: $e');
@@ -317,6 +321,10 @@ class SupabaseClientService {
         amount: (response['amount'] ?? 0.0).toDouble(),
         timestamp: DateTime.parse(response['created_at']),
         status: response['status'],
+        userId: response['user_id'] ?? '',
+        operatorId: response['operator_id'] ?? '',
+        createdAt: DateTime.parse(response['created_at']),
+        transactionId: response['transaction_id'] ?? '',
       );
     } catch (e) {
       print('❌ Error agregando registro de recarga: $e');

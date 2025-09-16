@@ -40,7 +40,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
   String _selectedSeat = '';
   String _selectedCountryOfIssue = '';
   String _passportExpiryDate = '';
-  final String _selectedExtraBaggage = '';
+  // final String _selectedExtraBaggage = ''; // Removed unused variable
   String _selectedCabinClass = 'main_cabin';
   String _paymentOption = 'pay_now';
   bool _acceptTerms = false;
@@ -53,7 +53,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
   // Variables para precios
   double _seatPrice = 0.0;
   double _baggagePrice = 0.0;
-  double _cabinClassPrice = 0.0;
+  // double _cabinClassPrice = 0.0; // Removed unused variable
 
   @override
   void dispose() {
@@ -351,7 +351,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
       onTap: () {
         setState(() {
           _selectedCabinClass = value;
-          _cabinClassPrice = _getCabinClassPrice(value);
+          // _cabinClassPrice = _getCabinClassPrice(value); // Removed unused variable
         });
       },
       child: Container(
@@ -1552,7 +1552,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
   }
 
   String _getCabinClassPriceString(String cabinClass) {
-    final basePrice = double.tryParse(widget.flight.totalAmount) ?? 0.0;
+    // final basePrice = double.tryParse(widget.flight.totalAmount) ?? 0.0; // Removed unused variable
     final price = _getCabinClassPrice(cabinClass);
     return 'US\$${price.toStringAsFixed(2)}';
   }
@@ -1772,13 +1772,7 @@ class _FlightBookingEnhancedState extends State<FlightBookingEnhanced> {
             total: totalPrice * 1.03,
             metadata: {
               'service_type': 'flight',
-<<<<<<< HEAD
-<<<<<<< HEAD
               'description': 'Vuelo ${widget.flight.airline} ${widget.flight.flightNumber}',
-=======
->>>>>>> 5c6d2ca5553d01fe6990fda6d5f218e3ce9acc9c
-=======
->>>>>>> 8e3cf512612555b5b2baf36b926d9aecd1b2acb7
               'flight_id': widget.flight.id,
               'passenger_data': passengerData,
               'selected_seat': _selectedSeat,

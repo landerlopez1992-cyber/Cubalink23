@@ -214,13 +214,20 @@ class DuffelApiService {
       }
 
       print('📡 Realizando petición HTTP...');
-      // Enviar ambos parámetros por compatibilidad: 'q' y 'query'
-      final airportsUrl = '$_baseUrl/admin/api/flights/airports?q=${Uri.encodeComponent(query)}&query=${Uri.encodeComponent(query)}';
+      // Usar endpoint directo de Duffel API para aeropuertos
+      final airportsUrl = 'https://api.duffel.com/places?query=${Uri.encodeComponent(query)}';
       print('🌐 URL: $airportsUrl');
+      
+      // Headers específicos para Duffel API
+      final duffelHeaders = {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer duffel_live_Rj6u0G0cT2hUeIw53ou2HRTNNf0tXl6oP-pVzcGvI7e',
+        'Duffel-Version': 'v2',
+      };
       
       final response = await http.get(
         Uri.parse(airportsUrl),
-        headers: _headers,
+        headers: duffelHeaders,
       ).timeout(Duration(seconds: 15)); // Timeout aumentado a 15s para API Duffel
 
       print('📡 Status Code: ${response.statusCode}');
@@ -246,23 +253,24 @@ class DuffelApiService {
           return [];
         }
         
-        final airports = airportsList.map((airport) {
-          // Usar display_name del backend si existe, sino construir uno
-          String displayName = airport['display_name']?.toString() ?? '';
-          if (displayName.isEmpty) {
-            final city = airport['city']?.toString() ?? airport['city_name']?.toString() ?? '';
-            final country = airport['country']?.toString() ?? airport['iata_country_code']?.toString() ?? '';
-            displayName = '$city${country.isNotEmpty ? ', $country' : ''}';
+        final airports = airportsList.map((place) {
+          // Procesar respuesta de Duffel API /places
+          String displayName = '';
+          if (place['name']?.toString().isNotEmpty == true && place['iata_code']?.toString().isNotEmpty == true) {
+            displayName = '${place['name']} (${place['iata_code']})';
           }
           
           return {
-            'code': airport['iata_code']?.toString() ?? airport['code']?.toString() ?? '',
-            'name': airport['name']?.toString() ?? '',
+            'code': place['iata_code']?.toString() ?? '',
+            'name': place['name']?.toString() ?? '',
             'display_name': displayName,
-            'city': airport['city']?.toString() ?? airport['city_name']?.toString() ?? '',
-            'country': airport['country']?.toString() ?? airport['iata_country_code']?.toString() ?? '',
+            'city': place['city_name']?.toString() ?? '',
+            'country': place['iata_country_code']?.toString() ?? '',
           };
-        }).where((airport) => airport['code']?.isNotEmpty == true).toList();
+        }).where((airport) => 
+          airport['code']?.isNotEmpty == true && 
+          airport['name']?.isNotEmpty == true
+        ).toList();
         
         // 🚀 GUARDAR EN CACHÉ
         _airportCache[normalizedQuery] = airports;
