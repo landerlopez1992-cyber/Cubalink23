@@ -101,6 +101,7 @@ def search_airports():
             
             if response.status_code == 200:
                 data = response.json()
+                print(f"🔍 RESPUESTA DUFFEL: {data}")  # Debug: ver qué devuelve Duffel
                 airports = []
                 
                 if 'data' in data:
