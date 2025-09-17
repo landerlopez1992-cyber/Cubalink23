@@ -83,8 +83,65 @@ class Order {
     };
   }
   
-  /// Alias for toJson() for compatibility
-  Map<String, dynamic> toMap() => toJson();
+  /// Enhanced toMap() for database operations with cart items
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'order_number': orderNumber,
+      'items': items.map((item) => item.toJson()).toList(),
+      'shipping_address': shippingAddress.toJson(),
+      // Campos individuales para shipping address (mejor acceso en DB)
+      'customer_name': shippingAddress.recipient,
+      'customer_phone': shippingAddress.phone,
+      'shipping_recipient': shippingAddress.recipient,
+      'shipping_phone': shippingAddress.phone,
+      'shipping_street': shippingAddress.address,
+      'shipping_city': shippingAddress.city,
+      'shipping_province': shippingAddress.province,
+      'shipping_method': shippingMethod,
+      'subtotal': subtotal,
+      'shipping_cost': shippingCost,
+      'total': total,
+      'payment_method': paymentMethod,
+      'payment_status': paymentStatus,
+      'order_status': orderStatus,
+      'estimated_delivery': estimatedDelivery?.toIso8601String(),
+      'zelle_payment_proof': zellePaymentProof,
+      'tracking_number': null, // Se puede agregar después
+      'metadata': metadata,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+      // Agregar items del carrito para crear order_items
+      'cart_items': items.map((item) => {
+        'product_id': item.productId,
+        'product_name': item.name,
+        'product_price': item.price,
+        'quantity': item.quantity,
+        'product_type': item.type == 'amazon' ? 'amazon' : 'store',
+        'weight_lb': _getItemWeightFromType(item.type, item.category),
+        'selected_size': null, // Se puede agregar después
+        'selected_color': null, // Se puede agregar después
+        'amazon_asin': item.type == 'amazon' ? item.productId : null,
+        'amazon_data': item.type == 'amazon' ? {'category': item.category} : null,
+      }).toList(),
+    };
+  }
+
+  // Helper method to get weight from item type
+  double _getItemWeightFromType(String? type, String? category) {
+    if (type == 'amazon') {
+      // Peso estimado basado en categoría de Amazon
+      switch (category?.toLowerCase()) {
+        case 'electronics': return 2.0;
+        case 'books': return 0.5;
+        case 'clothing': return 0.3;
+        case 'home': return 1.5;
+        default: return 1.0;
+      }
+    }
+    return 0.5; // Peso por defecto para productos de tienda
+  }
 
   Order copyWith({
     String? id,

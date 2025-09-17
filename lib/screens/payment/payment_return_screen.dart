@@ -45,7 +45,6 @@ class _PaymentReturnScreenState extends State<PaymentReturnScreen> {
       final paymentStatus = await SquarePaymentService.verifyPaymentCompletion(
         widget.paymentLinkId,
         maxAttempts: 5,
-        delay: const Duration(seconds: 3),
       );
 
       if (paymentStatus['success']) {

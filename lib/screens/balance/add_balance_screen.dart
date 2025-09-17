@@ -127,6 +127,7 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
       return;
     }
 
+    // Ir a la pantalla de método de pago existente
     Navigator.pushNamed(
       context, 
       '/payment_method',

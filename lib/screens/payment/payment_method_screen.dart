@@ -93,6 +93,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       return;
     }
 
+    final currentUser = SupabaseAuthService.instance.currentUser;
     setState(() => isProcessingPayment = true);
 
     try {
@@ -100,11 +101,18 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       print('💰 Monto: \$${widget.total.toStringAsFixed(2)}');
 
       // 🚀 LLAMADA DIRECTA A SQUARE - SIN BACKEND
-      final returnUrl =
-          'cubalink23://payment-return?payment_id=${DateTime.now().millisecondsSinceEpoch}';
+      // Obtener datos de la tarjeta seleccionada
+      final selectedCard = savedCards.firstWhere((card) => card.id == selectedCardId);
+      
       final paymentResult = await SquarePaymentServiceOfficial.processPayment(
+        context: context,
         amount: widget.total,
         description: 'Recarga de saldo Cubalink23',
+        cardLast4: selectedCard.last4,
+        cardType: selectedCard.cardType,
+        cardHolderName: selectedCard.holderName,
+        customerId: currentUser?.id,
+        cardId: selectedCard.id,
       );
 
       if (paymentResult.success) {

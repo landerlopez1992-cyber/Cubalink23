@@ -6,12 +6,14 @@ import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'square_webview_service.dart';
 
 class SquarePaymentServiceOfficial {
   // Configuración de Square (Sandbox)
   static const String _applicationId = 'sandbox-sq0idb-IsIJtKqx2OHdVJjYmg6puA';
   static const String _locationId = 'LZVTP0YQ9YQBB';
-  static const String _backendUrl = 'https://cubalink23-backend.onrender.com/api/payments/process';
+  static const String _backendUrl = 'https://cubalink23-payments.onrender.com/api/payments';
 
   /// Inicializar Square Payment Service
   static Future<void> initialize() async {
@@ -24,19 +26,53 @@ class SquarePaymentServiceOfficial {
     }
   }
 
-  /// Procesar pago - Usa Payment Links para experiencia segura
+  /// Procesar pago - Con WebView para tokenización REAL
   static Future<SquarePaymentResult> processPayment({
+    required BuildContext context,
     required double amount,
     required String description,
+    String? cardLast4,
+    String? cardType,
+    String? cardHolderName,
+    String? customerId,
+    String? cardId,
   }) async {
     try {
-      print('💳 Iniciando flujo de pago con Square Payment Links...');
+      print('💳 Procesando pago con Square...');
       print('💰 Monto: \$${amount.toStringAsFixed(2)}');
       print('📝 Descripción: $description');
 
-      return await _processPaymentWithLinks(
+      final amountCents = (amount * 100).round();
+      final userId = customerId ?? 'user_${DateTime.now().millisecondsSinceEpoch}';
+
+      // ⚠️ TEMPORAL: Siempre usar WebView hasta implementar Card on File correctamente
+      // Las tarjetas guardadas en Supabase NO son tarjetas reales de Square
+      print('🌐 Forzando WebView - tarjetas Supabase no son válidas para Square');
+
+      // Si no tiene tarjeta guardada, abrir WebView para tokenizar
+      print('🌐 Abriendo WebView para tokenización...');
+      final result = await SquareWebViewService.openTokenizeSheet(
+        context: context,
+        amountCents: amountCents,
+        customerId: userId,
+        note: description,
+      );
+
+      if (result == null) {
+        return SquarePaymentResult(
+          success: false,
+          transactionId: null,
+          message: 'Pago cancelado por el usuario',
+          amount: amount,
+        );
+      }
+
+      final success = result['status'] == 'COMPLETED';
+      return SquarePaymentResult(
+        success: success,
+        transactionId: result['payment_id'],
+        message: result['message'] ?? (success ? 'Pago exitoso' : 'Pago fallido'),
         amount: amount,
-        description: description,
       );
     } catch (e) {
       print('❌ Error procesando pago: $e');
@@ -49,7 +85,107 @@ class SquarePaymentServiceOfficial {
     }
   }
 
-  /// Procesar pago con Payment Links
+  /// Procesar pago con nonce específico
+  static Future<SquarePaymentResult> _processPaymentWithNonce({
+    required double amount,
+    required String description,
+    required String nonce,
+  }) async {
+    try {
+      print('🌐 Procesando pago con nonce: $nonce');
+      print('💰 Monto: \$${amount.toStringAsFixed(2)}');
+      print('📝 Descripción: $description');
+
+      final body = {
+        "nonce": nonce,
+        "amount_cents": (amount * 100).round(),
+        "currency": "USD",
+        "note": description,
+      };
+
+      final response = await http.post(
+        Uri.parse(_backendUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(body),
+      );
+
+      print('📡 Backend Response: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        // Si hay status COMPLETED, es exitoso
+        if (data['status'] == 'COMPLETED') {
+          print('✅ Pago exitoso: ${data['id']}');
+          return SquarePaymentResult(
+            success: true,
+            transactionId: data['id'],
+            message: 'Pago procesado exitosamente',
+            amount: amount,
+          );
+        } else {
+          // Si hay status pero no es COMPLETED, es error
+          print('❌ Pago fallido: ${data['status']}');
+          return SquarePaymentResult(
+            success: false,
+            transactionId: null,
+            message: 'Pago fallido: ${data['status']}',
+            amount: amount,
+          );
+        }
+      } else {
+        // Error HTTP - extraer mensaje de Square
+        String errorMessage = 'Error procesando pago';
+        if (data['error'] != null && data['error']['errors'] != null) {
+          final errors = data['error']['errors'] as List;
+          if (errors.isNotEmpty) {
+            final firstError = errors.first;
+            final code = firstError['code'];
+            final detail = firstError['detail'];
+            
+            // Mensajes amigables según el código de error
+            switch (code) {
+              case 'GENERIC_DECLINE':
+                errorMessage = 'Tu tarjeta fue declinada. Intenta con otra tarjeta.';
+                break;
+              case 'INSUFFICIENT_FUNDS':
+                errorMessage = 'Fondos insuficientes en tu tarjeta.';
+                break;
+              case 'CVV_FAILURE':
+                errorMessage = 'El código CVV es incorrecto.';
+                break;
+              case 'EXPIRED_CARD':
+                errorMessage = 'Tu tarjeta ha expirado.';
+                break;
+              default:
+                errorMessage = detail ?? code ?? errorMessage;
+            }
+          }
+        }
+
+        print('❌ Error HTTP ${response.statusCode}: $errorMessage');
+        return SquarePaymentResult(
+          success: false,
+          transactionId: null,
+          message: errorMessage,
+          amount: amount,
+        );
+      }
+    } catch (e) {
+      print('💥 Error en _processPaymentWithNonce: $e');
+      return SquarePaymentResult(
+        success: false,
+        transactionId: null,
+        message: 'Error de conexión: $e',
+        amount: amount,
+      );
+    }
+  }
+
+  /// Procesar pago con Payment Links (método original - mantener para compatibilidad)
   static Future<SquarePaymentResult> _processPaymentWithLinks({
     required double amount,
     required String description,
@@ -60,10 +196,10 @@ class SquarePaymentServiceOfficial {
       print('📝 Descripción: $description');
 
       final body = {
-        "amount": amount,
-        "description": description,
-        "location_id": _locationId,
-        "email": "user@cubalink23.com",
+        "nonce": "cnon:card-nonce-ok", // Tarjeta de prueba exitosa
+        "amount_cents": (amount * 100).round(),
+        "currency": "USD",
+        "note": description,
       };
 
       final response = await http.post(
@@ -80,23 +216,22 @@ class SquarePaymentServiceOfficial {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        if (data['success'] == true && data['checkout_url'] != null) {
-          print('✅ Payment Link creado exitosamente');
-          print('🔗 Checkout URL: ${data['checkout_url']}');
+        if (data['status'] == 'COMPLETED') {
+          print('✅ Pago procesado exitosamente');
+          print('🆔 Transaction ID: ${data['id']}');
 
           return SquarePaymentResult(
             success: true,
-            transactionId: data['payment_link_id'] ?? data['payment_id'] ?? 'square_${DateTime.now().millisecondsSinceEpoch}',
-            message: 'Payment Link creado exitosamente',
+            transactionId: data['id'],
+            message: 'Pago procesado exitosamente',
             amount: amount,
-            checkoutUrl: data['checkout_url'],
           );
         } else {
-          print('❌ Error del backend: ${data['error']}');
+          print('❌ Error del backend: ${data['status']}');
           return SquarePaymentResult(
             success: false,
             transactionId: null,
-            message: data['error'] ?? 'Error creando Payment Link',
+            message: 'Error procesando pago: ${data['status']}',
             amount: amount,
           );
         }

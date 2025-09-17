@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/flight_offer.dart';
 import '../../services/duffel_api_service.dart';
 import 'seat_selection_screen.dart';
-import '../payment/payment_method_screen_modern.dart';
+import '../payment/payment_method_screen.dart';
 
 class FlightBookingEnhanced extends StatefulWidget {
   final FlightOffer flight;

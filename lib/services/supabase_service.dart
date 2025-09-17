@@ -428,15 +428,78 @@ class SupabaseService {
 
   // ==================== ORDERS MANAGEMENT ====================
   
-  /// Create order (raw data)
+  /// Create order (raw data) with order_items support
   Future<Map<String, dynamic>?> createOrderRaw(Map<String, dynamic> orderData) async {
     try {
-      final data = await insert('orders', orderData);
-      return data;
+      print('🛒 Creating order with data: ${orderData.keys}');
+      
+      // Extraer items del carrito para crear order_items separadamente
+      final cartItems = orderData.remove('cart_items') as List<dynamic>? ?? [];
+      
+      // Asegurar que tenemos order_number
+      if (orderData['order_number'] == null) {
+        orderData['order_number'] = generateOrderNumber();
+      }
+      
+      // Crear la orden principal
+      final orderResult = await insert('orders', orderData);
+      if (orderResult == null) {
+        throw Exception('Failed to create order');
+      }
+      
+      final orderId = orderResult['id'] as String;
+      print('✅ Order created with ID: $orderId');
+      
+      // Crear order_items si tenemos items del carrito
+      if (cartItems.isNotEmpty) {
+        print('📦 Creating ${cartItems.length} order items...');
+        
+        for (final item in cartItems) {
+          final orderItemData = {
+            'order_id': orderId,
+            'product_type': item['product_type'] ?? 'store',
+            'name': item['product_name'] ?? item['name'],
+            'unit_price': item['product_price'] ?? item['price'],
+            'quantity': item['quantity'] ?? 1,
+            'total_price': (item['product_price'] ?? item['price']) * (item['quantity'] ?? 1),
+            'selected_size': item['selected_size'],
+            'selected_color': item['selected_color'],
+            'asin': item['amazon_asin'],
+            'amazon_data': item['amazon_data'],
+            'unit_weight_lb': item['weight_lb'] ?? 0.0,
+            'total_weight_lb': (item['weight_lb'] ?? 0.0) * (item['quantity'] ?? 1),
+            'metadata': {
+              'original_product_id': item['product_id'],
+              'cart_item_id': item['id'],
+            },
+          };
+          
+          // Crear order_item
+          final itemResult = await insert('order_items', orderItemData);
+          if (itemResult != null) {
+            print('   ✅ Order item created: ${orderItemData['name']}');
+          } else {
+            print('   ❌ Failed to create order item: ${orderItemData['name']}');
+          }
+        }
+        
+        // Calcular totales automáticamente (el trigger se encarga de esto)
+        print('🧮 Calculating order totals automatically...');
+      }
+      
+      print('✅ Order creation completed successfully');
+      return orderResult;
     } catch (e) {
       print('❌ Error creating order: $e');
       return null;
     }
+  }
+
+  /// Generate unique order number
+  String generateOrderNumber() {
+    final now = DateTime.now();
+    final timestamp = now.millisecondsSinceEpoch;
+    return 'ORD-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-$timestamp';
   }
 
   /// Get user orders (raw data)
