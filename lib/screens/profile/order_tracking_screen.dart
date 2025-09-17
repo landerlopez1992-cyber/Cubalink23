@@ -66,7 +66,23 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
         print('👤 Current user: ${currentUser.id}');
         
         // Cargar órdenes reales desde Supabase
+        print('🔍 Cargando órdenes para usuario: ${currentUser.id}');
         final ordersData = await SupabaseService.instance.getUserOrdersRaw(currentUser.id);
+        print('📦 Órdenes cargadas desde Supabase: ${ordersData.length}');
+        
+        if (ordersData.isEmpty) {
+          print('⚠️ NO SE ENCONTRARON ÓRDENES para usuario ${currentUser.id}');
+          print('💡 Posibles causas:');
+          print('   1. Las órdenes no se están creando correctamente');
+          print('   2. Error en el filtro por user_id');
+          print('   3. Error en los permisos RLS de Supabase');
+        } else {
+          print('✅ Órdenes encontradas:');
+          for (int i = 0; i < ordersData.length && i < 3; i++) {
+            final order = ordersData[i];
+            print('   ${i + 1}. ${order['order_number']} - \$${order['total']} - ${order['order_status']}');
+          }
+        }
         
         final orders = ordersData.map((orderData) {
           try {

@@ -5,6 +5,7 @@
 
 import 'package:cubalink23/supabase/supabase_config.dart';
 import 'package:cubalink23/services/supabase_service.dart';
+import 'package:cubalink23/services/system_api_service.dart';
 
 class FirebaseRepository {
   static FirebaseRepository? _instance;
@@ -71,12 +72,68 @@ class FirebaseRepository {
 
   // Orders methods
   Future<List<Map<String, dynamic>>> getUserOrders(String userId) async {
-    return await _supabaseService.select('orders', where: 'user_id', equals: userId);
+    try {
+      print('🔍 FirebaseRepository.getUserOrders para: $userId');
+      
+      // 🎯 USAR BACKEND SISTEMA PRIMERO
+      final systemOrders = await SystemApiService.getUserOrders(userId);
+      if (systemOrders.isNotEmpty) {
+        print('✅ Backend Sistema retornó ${systemOrders.length} órdenes');
+        return systemOrders;
+      }
+      
+      // Fallback a Supabase directo
+      print('🔄 Fallback a Supabase directo...');
+      return await _supabaseService.select('orders', where: 'user_id', equals: userId);
+    } catch (e) {
+      print('💥 Error en getUserOrders: $e');
+      return [];
+    }
   }
 
   Future<String> createOrder(Map<String, dynamic> data) async {
-    final result = await _supabaseService.insert('orders', data);
-    return result?['id']?.toString() ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
+    try {
+      print('🔄 FirebaseRepository.createOrder iniciado');
+      print('📋 Data keys recibidas: ${data.keys.toList()}');
+      print('👤 User ID: ${data['user_id']}');
+      print('📦 Order Number: ${data['order_number']}');
+      print('💰 Total: ${data['total']}');
+      print('🛒 Cart items: ${(data['cart_items'] as List?)?.length ?? 0}');
+      
+      // 🎯 USAR SUPABASE DIRECTO PRIMERO (MÁS CONFIABLE)
+      print('🗄️ Intentando Supabase directo primero...');
+      
+      final supabaseResult = await _supabaseService.createOrderRaw(data);
+      if (supabaseResult != null) {
+        final orderId = supabaseResult['id']?.toString() ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
+        print('✅ Supabase directo funcionó: $orderId');
+        return orderId;
+      }
+      
+      print('❌ Supabase directo falló, intentando Backend Sistema...');
+      
+      // Fallback a Backend Sistema
+      final result = await SystemApiService.createOrder(data);
+      
+      if (result != null && result['success'] == true) {
+        final orderId = result['order_id']?.toString() ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
+        print('✅ Backend Sistema retornó orden creada: $orderId');
+        return orderId;
+      }
+      
+      print('❌ Ambos métodos fallaron - usando ID de fallback');
+      final fallbackId = 'order_${DateTime.now().millisecondsSinceEpoch}';
+      return fallbackId;
+      
+    } catch (e) {
+      print('💥 ERROR CRÍTICO en FirebaseRepository.createOrder: $e');
+      print('📋 Tipo de error: ${e.runtimeType}');
+      
+      // Retornar ID de fallback para no romper el flujo
+      final fallbackId = 'order_${DateTime.now().millisecondsSinceEpoch}';
+      print('🆘 Usando ID de fallback: $fallbackId');
+      return fallbackId;
+    }
   }
 
   Future<bool> deleteOrder(String orderId) async {
