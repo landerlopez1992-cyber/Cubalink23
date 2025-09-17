@@ -13,13 +13,27 @@ class SquareWebViewService {
     required String customerId,
     String currency = 'USD',
     String note = 'CubaLink23',
+    String? cardNumber,
+    String? cardExpiry,
+    String? cardCvv,
   }) async {
-    final url = Uri.parse(
-      '$_backendUrl/sdk/card'
-      '?mode=pay&amount=$amountCents&currency=$currency'
-      '&customer_id=${Uri.encodeComponent(customerId)}'
-      '&note=${Uri.encodeComponent(note)}'
-    );
+    var urlString = '$_backendUrl/sdk/card'
+        '?mode=pay&amount=$amountCents&currency=$currency'
+        '&customer_id=${Uri.encodeComponent(customerId)}'
+        '&note=${Uri.encodeComponent(note)}';
+    
+    // ✅ Pre-llenar datos si se proporcionan
+    if (cardNumber != null) {
+      urlString += '&prefill_number=${Uri.encodeComponent(cardNumber)}';
+    }
+    if (cardExpiry != null) {
+      urlString += '&prefill_expiry=${Uri.encodeComponent(cardExpiry)}';
+    }
+    if (cardCvv != null) {
+      urlString += '&prefill_cvv=${Uri.encodeComponent(cardCvv)}';
+    }
+    
+    final url = Uri.parse(urlString);
 
     print('🌐 Abriendo WebView tokenización: $url');
 
@@ -66,7 +80,7 @@ class SquareWebViewService {
       MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: const Text('Procesar pago'),
+            title: const Text('🔒 Pago Final - ¿Estás seguro?'),
             backgroundColor: Colors.blue,
             foregroundColor: Colors.white,
             leading: IconButton(

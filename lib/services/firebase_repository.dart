@@ -285,7 +285,7 @@ class FirebaseRepository {
       'type': type,
       'description': description,
       'amount': amount,
-      'timestamp': DateTime.now().toIso8601String(),
+      'created_at': DateTime.now().toIso8601String(),
     };
     return await _supabaseService.insert('activities', data);
   }

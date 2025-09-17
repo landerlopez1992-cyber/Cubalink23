@@ -7,7 +7,7 @@ import 'package:cubalink23/services/profile_image_service.dart';
 import 'package:cubalink23/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cubalink23/screens/profile/addresses_screen.dart';
-import 'package:cubalink23/screens/profile/order_tracking_screen.dart';
+import 'package:cubalink23/screens/profile/orders_list_screen.dart';
 import 'package:cubalink23/screens/wallet/saved_cards_screen.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -630,7 +630,7 @@ class _AccountScreenState extends State<AccountScreen> {
   Future<void> _goToOrderTracking() async {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const OrderTrackingScreen()),
+      MaterialPageRoute(builder: (context) => const OrdersListScreen()),
     );
   }
 

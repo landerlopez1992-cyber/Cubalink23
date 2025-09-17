@@ -44,6 +44,7 @@ class SquarePaymentServiceOfficial {
 
       final amountCents = (amount * 100).round();
       final userId = customerId ?? 'user_${DateTime.now().millisecondsSinceEpoch}';
+      print('👤 Customer ID para WebView: $userId');
 
       // ⚠️ TEMPORAL: Siempre usar WebView hasta implementar Card on File correctamente
       // Las tarjetas guardadas en Supabase NO son tarjetas reales de Square
@@ -51,11 +52,28 @@ class SquarePaymentServiceOfficial {
 
       // Si no tiene tarjeta guardada, abrir WebView para tokenizar
       print('🌐 Abriendo WebView para tokenización...');
+      
+      // ✅ Pre-llenar datos si se proporcionan (de tarjeta seleccionada)
+      String? prefillNumber, prefillExpiry, prefillCvv;
+      if (cardLast4 != null) {
+        // Reconstruir número basado en tipo y last4
+        if (cardType?.toLowerCase().contains('visa') == true) {
+          prefillNumber = '4111 1111 1111 1111'; // Visa de prueba
+        } else if (cardType?.toLowerCase().contains('master') == true) {
+          prefillNumber = '5105 1051 0510 5100'; // Mastercard de prueba
+        }
+        prefillExpiry = '12/25'; // Fecha de prueba
+        prefillCvv = '123'; // CVV de prueba
+      }
+      
       final result = await SquareWebViewService.openTokenizeSheet(
         context: context,
         amountCents: amountCents,
         customerId: userId,
         note: description,
+        cardNumber: prefillNumber,
+        cardExpiry: prefillExpiry,
+        cardCvv: prefillCvv,
       );
 
       if (result == null) {
@@ -68,9 +86,13 @@ class SquarePaymentServiceOfficial {
       }
 
       final success = result['status'] == 'COMPLETED';
+      print('🎯 Resultado WebView: $result');
+      print('📊 Success: $success');
+      print('💬 Message: ${result['message']}');
+      
       return SquarePaymentResult(
         success: success,
-        transactionId: result['payment_id'],
+        transactionId: result['payment_id'] ?? result['id'], // Probar ambos campos
         message: result['message'] ?? (success ? 'Pago exitoso' : 'Pago fallido'),
         amount: amount,
       );

@@ -92,8 +92,8 @@ class Order {
       'items': items.map((item) => item.toJson()).toList(),
       'shipping_address': shippingAddress.toJson(),
       // Campos individuales para shipping address (mejor acceso en DB)
-      'customer_name': shippingAddress.recipient,
-      'customer_phone': shippingAddress.phone,
+      // 'customer_name': shippingAddress.recipient, // REMOVED - no existe en Supabase
+      // 'customer_phone': shippingAddress.phone, // REMOVED - no existe en Supabase
       'shipping_recipient': shippingAddress.recipient,
       'shipping_phone': shippingAddress.phone,
       'shipping_street': shippingAddress.address,

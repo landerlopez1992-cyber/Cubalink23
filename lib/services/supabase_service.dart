@@ -18,12 +18,35 @@ class SupabaseService {
   /// Insert a record into a table
   Future<Map<String, dynamic>?> insert(String table, Map<String, dynamic> data) async {
     try {
-      print('Inserting into Supabase table $table: $data');
+      print('🔄 INSERTING INTO SUPABASE TABLE: $table');
+      print('📋 Data keys: ${data.keys.toList()}');
+      print('👤 User ID: ${data['user_id']}');
+      print('📦 Order Number: ${data['order_number']}');
+      print('💰 Total: ${data['total']}');
+      
       final response = await _client.from(table).insert(data).select().single();
-      print('Insert successful: $response');
+      
+      print('✅ INSERT SUCCESSFUL!');
+      print('🆔 Response ID: ${response['id']}');
+      print('📄 Response keys: ${response.keys.toList()}');
+      
       return response;
     } catch (e) {
-      print('Error inserting into Supabase table $table: $e');
+      print('❌ ERROR INSERTING INTO SUPABASE TABLE $table');
+      print('💥 Error details: $e');
+      print('📋 Data that failed: ${data.keys.toList()}');
+      
+      // Información adicional del error
+      if (e.toString().contains('RLS')) {
+        print('🔒 RLS ERROR DETECTED - Row Level Security blocking insert');
+      }
+      if (e.toString().contains('violates')) {
+        print('⚠️  CONSTRAINT VIOLATION DETECTED');
+      }
+      if (e.toString().contains('duplicate')) {
+        print('🔄 DUPLICATE KEY ERROR DETECTED');
+      }
+      
       return null;
     }
   }
