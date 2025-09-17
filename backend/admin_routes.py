@@ -674,7 +674,7 @@ def search_airports():
         }
         
         # Usar Airports API según documentación oficial de Duffel
-        url = 'https://api.duffel.com/air/airports?limit=200'
+        url = 'https://api.duffel.com/places/suggestions?query={}'.format(query)
         print("URL Duffel Place Suggestion API: {}".format(url))
         
         response = requests.get(url, headers=headers)
@@ -690,9 +690,9 @@ def search_airports():
             
             for airport in airports:
                 # Verificar si coincide con IATA, nombre, ciudad
-                iata_code = airport.get('iata_code', '').lower()
-                name = airport.get('name', '').lower()
-                city = airport.get('city_name', '').lower()
+                iata_code = (airport.get('iata_code') or '').lower()
+                name = (airport.get('name') or '').lower()
+                city = (airport.get('city_name') or '').lower()
                 
                 if (query_lower in iata_code or 
                     query_lower in name or 

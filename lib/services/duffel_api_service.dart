@@ -44,7 +44,7 @@ class DuffelApiService {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/health'),
         headers: _headers,
-      ).timeout(Duration(seconds: 10)); // Timeout aumentado para health check // Timeout reducido para health check
+      ).timeout(Duration(seconds: 30)); // Timeout aumentado para health check
 
       print('📡 Respuesta status: ${response.statusCode}');
       print('📡 Respuesta body: ${response.body}');
