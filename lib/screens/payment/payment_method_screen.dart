@@ -8,6 +8,8 @@ import 'package:cubalink23/screens/payment/payment_return_screen.dart';
 import 'package:cubalink23/models/payment_card.dart';
 import 'package:cubalink23/services/supabase_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class PaymentMethodScreen extends StatefulWidget {
   final double amount;
@@ -47,22 +49,41 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     }
 
     try {
-      final cardsData =
-          await SupabaseService.instance.getUserPaymentCards(currentUser.id);
-      final cardModels = cardsData.map((cardData) {
-        return PaymentCard(
-          id: cardData['id'],
-          last4: cardData['last_4'] ?? '',
-          cardType: cardData['card_type'] ?? 'Tarjeta',
-          expiryMonth: cardData['expiry_month'] ?? '',
-          expiryYear: cardData['expiry_year'] ?? '',
-          holderName: cardData['holder_name'] ?? '',
-          isDefault: cardData['is_default'] ?? false,
-          squareCardId: cardData['square_card_id'],
-          createdAt: DateTime.parse(
-              cardData['created_at'] ?? DateTime.now().toIso8601String()),
-        );
-      }).toList();
+      // ✅ USAR ENDPOINT NUEVO que ya funciona
+      print('🔄 Cargando tarjetas desde backend real...');
+      final response = await http.get(
+        Uri.parse('https://cubalink23-payments.onrender.com/api/cards?user_id=${currentUser.id}'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      List<PaymentCard> cardModels = [];
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final cardsData = data['cards'] as List;
+        print('✅ Tarjetas cargadas: ${cardsData.length}');
+        
+        cardModels = cardsData
+          .where((cardData) => cardData['square_card_id'] != null && cardData['square_card_id'].toString().isNotEmpty)
+          .map((cardData) {
+            return PaymentCard(
+              id: cardData['id'], // Supabase ID
+              last4: cardData['last4'] ?? '',
+              cardType: cardData['brand'] ?? 'Tarjeta',
+              expiryMonth: cardData['exp_month']?.toString() ?? '',
+              expiryYear: cardData['exp_year']?.toString() ?? '',
+              holderName: cardData['holder_name'] ?? '',
+              isDefault: cardData['is_default'] ?? false,
+              squareCardId: cardData['square_card_id'], // ✅ Square real ID
+              createdAt: DateTime.parse(cardData['created_at'] ?? DateTime.now().toIso8601String()),
+            );
+          }).toList();
+        
+        print('✅ Tarjetas válidas con Square ID: ${cardModels.length}');
+      } else {
+        print('⚠️ No se pudieron cargar tarjetas: ${response.statusCode}');
+        cardModels = [];
+      }
 
       setState(() {
         savedCards = cardModels;
@@ -104,6 +125,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       // Obtener datos de la tarjeta seleccionada
       final selectedCard = savedCards.firstWhere((card) => card.id == selectedCardId);
       
+      // 🚀 FORZAR WEBVIEW SIEMPRE - PARA PROBAR
+      print('🌐 FORZANDO WebView con backend real...');
+      print('🔗 URL: https://cubalink23-payments.onrender.com/sdk/card');
       final paymentResult = await SquarePaymentServiceOfficial.processPayment(
         context: context,
         amount: widget.total,

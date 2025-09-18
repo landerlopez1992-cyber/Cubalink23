@@ -7,6 +7,8 @@ import 'package:cubalink23/services/auth_service.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/widgets/zelle_payment_dialog.dart';
 import 'package:cubalink23/screens/payment/payment_method_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ShippingScreen extends StatefulWidget {
   const ShippingScreen({super.key});
@@ -1704,14 +1706,43 @@ class _ShippingScreenState extends State<ShippingScreen> {
 
       final currentUser = SupabaseAuthService.instance.getCurrentUser();
       if (currentUser != null) {
-        // Crear la orden con pago completo
-        final orderData = order.toMap();
-        orderData['payment_status'] = 'completed';
-        orderData['order_status'] = 'payment_confirmed';
-        orderData['payment_method'] = 'wallet';
+        // 🎯 CREAR ORDEN SERVER-TO-SERVER (SIN PROBLEMAS DE CAMPOS)
+        print('🚀 Creando orden server-to-server...');
+        
+        final orderData = {
+          'user_id': currentUser.id,
+          'items': order.items.map((item) => item.toJson()).toList(),
+          'shipping_address': order.shippingAddress.toJson(),
+          'shipping_method': _selectedShippingMethod,
+          'subtotal': order.subtotal,
+          'shipping_cost': order.shippingCost,
+          'total': order.total,
+          'estimated_delivery': order.estimatedDelivery?.toIso8601String(),
+          'cart_items': order.items.map((item) => {
+            'product_id': item.productId,
+            'product_name': item.name,
+            'product_price': item.price,
+            'quantity': item.quantity,
+            'product_type': item.type == 'amazon' ? 'amazon' : 'store',
+            'weight_lb': 0.5, // Peso por defecto
+          }).toList(),
+        };
 
-        String orderId = await _repository.createOrder(orderData);
-        print('✅ Orden creada con pago billetera: $orderId');
+        // Llamar al endpoint server-to-server
+        final response = await http.post(
+          Uri.parse('http://localhost:5001/api/orders/from-wallet'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode(orderData),
+        );
+
+        if (response.statusCode == 201) {
+          final result = json.decode(response.body);
+          String orderId = result['order_id'];
+          print('✅ Orden creada server-to-server: $orderId');
+        } else {
+          print('❌ Error server-to-server: ${response.body}');
+          throw Exception('Error creando orden server-to-server');
+        }
 
         // Descontar del saldo del usuario
         final newBalance = _userBalance - order.total;

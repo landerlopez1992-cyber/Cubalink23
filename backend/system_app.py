@@ -90,8 +90,20 @@ def create_order():
         
         # Crear orden principal
         if supabase_client:
-            # Insertar orden principal
-            order_result = supabase_client.table('orders').insert(data).execute()
+            # 🔧 FILTRAR DATOS - SOLO CAMPOS QUE EXISTEN EN SUPABASE
+            allowed_fields = [
+                'user_id', 'order_number', 'items', 'shipping_address', 
+                'shipping_method', 'subtotal', 'shipping_cost', 'total',
+                'payment_method', 'payment_status', 'order_status',
+                'estimated_delivery', 'zelle_payment_proof', 'tracking_number', 'metadata'
+            ]
+            
+            filtered_data = {key: value for key, value in data.items() if key in allowed_fields}
+            
+            print(f"🔧 Datos filtrados: {list(filtered_data.keys())}")
+            
+            # Insertar orden principal (solo campos válidos)
+            order_result = supabase_client.table('orders').insert(filtered_data).execute()
             
             if order_result.data:
                 order_id = order_result.data[0]['id']

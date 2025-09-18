@@ -13,7 +13,7 @@ class SquarePaymentServiceOfficial {
   // Configuración de Square (Sandbox)
   static const String _applicationId = 'sandbox-sq0idb-IsIJtKqx2OHdVJjYmg6puA';
   static const String _locationId = 'LZVTP0YQ9YQBB';
-  static const String _backendUrl = 'https://cubalink23-payments.onrender.com/api/payments';
+  static const String _backendUrl = 'https://cubalink23-payments.onrender.com';
 
   /// Inicializar Square Payment Service
   static Future<void> initialize() async {
@@ -46,25 +46,36 @@ class SquarePaymentServiceOfficial {
       final userId = customerId ?? 'user_${DateTime.now().millisecondsSinceEpoch}';
       print('👤 Customer ID para WebView: $userId');
 
-      // ⚠️ TEMPORAL: Siempre usar WebView hasta implementar Card on File correctamente
-      // Las tarjetas guardadas en Supabase NO son tarjetas reales de Square
-      print('🌐 Forzando WebView - tarjetas Supabase no son válidas para Square');
+      // ⚠️ TEMPORAL: Las tarjetas de Supabase NO son válidas para Square
+      // Necesitamos crear tarjetas reales en Square primero
+      print('⚠️ Tarjetas de Supabase no son válidas para Square - usando WebView');
+      
+      // ✅ NUEVA TARJETA - Solo usar WebView para tarjetas nuevas
+      print('🌐 Tarjeta nueva - usando WebView para tokenizar');
 
       // Si no tiene tarjeta guardada, abrir WebView para tokenizar
       print('🌐 Abriendo WebView para tokenización...');
       
-      // ✅ Pre-llenar datos si se proporcionan (de tarjeta seleccionada)
-      String? prefillNumber, prefillExpiry, prefillCvv;
-      if (cardLast4 != null) {
-        // Reconstruir número basado en tipo y last4
-        if (cardType?.toLowerCase().contains('visa') == true) {
-          prefillNumber = '4111 1111 1111 1111'; // Visa de prueba
-        } else if (cardType?.toLowerCase().contains('master') == true) {
-          prefillNumber = '5105 1051 0510 5100'; // Mastercard de prueba
-        }
-        prefillExpiry = '12/25'; // Fecha de prueba
-        prefillCvv = '123'; // CVV de prueba
+      // ✅ SIEMPRE pre-llenar con tarjetas de prueba válidas de Square
+      String prefillNumber, prefillExpiry, prefillCvv;
+      
+      if (cardType?.toLowerCase().contains('visa') == true) {
+        prefillNumber = '4111 1111 1111 1111'; // Visa exitosa
+        prefillExpiry = '12/25';
+        prefillCvv = '123';
+      } else if (cardType?.toLowerCase().contains('master') == true) {
+        prefillNumber = '5105 1051 0510 5100'; // Mastercard exitosa
+        prefillExpiry = '11/26';
+        prefillCvv = '456';
+      } else {
+        // Por defecto usar Visa exitosa
+        prefillNumber = '4111 1111 1111 1111';
+        prefillExpiry = '12/25';
+        prefillCvv = '123';
       }
+      
+      print('🎯 Pre-llenando: $cardType → $prefillNumber');
+      print('🌐 Usando WebView con backend REAL: https://cubalink23-payments.onrender.com');
       
       final result = await SquareWebViewService.openTokenizeSheet(
         context: context,
@@ -274,6 +285,44 @@ class SquarePaymentServiceOfficial {
         message: 'Error de conexión: $e',
         amount: amount,
       );
+    }
+  }
+
+  /// Cobrar tarjeta guardada (Card on File) - SIN FORMULARIO
+  static Future<Map<String, dynamic>> _chargeCardOnFile({
+    required String customerId,
+    required String cardId,
+    required int amountCents,
+    String note = 'CubaLink23',
+  }) async {
+    try {
+      print('💳 Cobrando Card on File...');
+      print('👤 Customer: $customerId');
+      print('💳 Card: $cardId');
+      print('💰 Amount: $amountCents cents');
+
+      final response = await http.post(
+        Uri.parse('https://cubalink23-payments.onrender.com/api/payments/charge-card-on-file'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'customer_id': customerId,
+          'card_id': cardId,
+          'amount': amountCents,
+          'currency': 'USD',
+          'note': note,
+        }),
+      );
+
+      final data = json.decode(response.body);
+      print('📨 Respuesta Card on File: $data');
+
+      return data;
+    } catch (e) {
+      print('❌ Error Card on File: $e');
+      return {
+        'ok': false,
+        'square': {'error': 'Error de conexión: $e'}
+      };
     }
   }
 

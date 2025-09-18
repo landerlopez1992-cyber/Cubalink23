@@ -6,6 +6,7 @@ class PaymentCard {
   final String expiryYear;
   final String holderName;
   final String? squareCardId;
+  final String? zipCode; // ✅ AGREGAR ZIP CODE
   final DateTime createdAt;
   final bool isDefault;
 
@@ -17,6 +18,7 @@ class PaymentCard {
     required this.expiryYear,
     required this.holderName,
     this.squareCardId,
+    this.zipCode, // ✅ AGREGAR ZIP CODE
     required this.createdAt,
     this.isDefault = false,
   });

@@ -36,6 +36,9 @@ class SquareWebViewService {
     final url = Uri.parse(urlString);
 
     print('🌐 Abriendo WebView tokenización: $url');
+    print('✅ Backend URL: $_backendUrl');
+    print('💰 Monto: $amountCents centavos (\$${amountCents/100})');
+    print('👤 Customer: $customerId');
 
     // Configurar WebView controller
     final controller = WebViewController()
