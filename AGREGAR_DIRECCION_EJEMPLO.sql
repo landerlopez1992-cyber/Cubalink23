@@ -27,3 +27,5 @@ INSERT INTO user_addresses (
 
 -- PASO 3: Verificar que se guardó
 SELECT * FROM user_addresses WHERE full_name ILIKE '%lander%';
+
+

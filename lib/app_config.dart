@@ -11,3 +11,5 @@ class AppConfig {
   static const gitSha = String.fromEnvironment('GIT_SHA', defaultValue: 'unknown');
   static const buildTime = String.fromEnvironment('BUILD_TIME', defaultValue: 'unknown');
 }
+
+

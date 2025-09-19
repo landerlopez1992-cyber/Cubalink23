@@ -491,10 +491,10 @@ class SupabaseService {
           final orderItemData = {
             'order_id': orderId,
             'product_type': item['product_type'] ?? 'store',
-            'name': item['product_name'] ?? item['name'],
-            'unit_price': item['product_price'] ?? item['price'],
+            'name': item['product_name'] ?? 'Sin nombre',
+            'unit_price': item['product_price'] ?? 0.0,
             'quantity': item['quantity'] ?? 1,
-            'total_price': (item['product_price'] ?? item['price']) * (item['quantity'] ?? 1),
+            'total_price': (item['product_price'] ?? 0.0) * (item['quantity'] ?? 1),
             'selected_size': item['selected_size'],
             'selected_color': item['selected_color'],
             'asin': item['amazon_asin'],
