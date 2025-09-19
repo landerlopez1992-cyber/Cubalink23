@@ -361,4 +361,48 @@ class SquarePaymentResult {
   String toString() {
     return 'SquarePaymentResult(success: $success, transactionId: $transactionId, message: $message, amount: $amount, checkoutUrl: $checkoutUrl)';
   }
+
+}
+
+/// Crear Payment Link - MÉTODO SIMPLE Y DIRECTO
+class SquarePaymentLinks {
+  static Future<Map<String, dynamic>> createPaymentLink({
+    required double amount,
+    required String currency,
+    required String note,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('https://cubalink23-payments.onrender.com/api/payment-links/create'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'amount': (amount * 100).round(),
+          'currency': currency,
+          'note': note,
+        }),
+      );
+
+      final data = json.decode(response.body);
+      
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'checkoutUrl': data['payment_url'],
+          'paymentLinkId': data['payment_link_id'],
+          'transactionId': data['payment_link_id'],
+          'amount': amount,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Error creando payment link',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error: $e',
+      };
+    }
+  }
 }

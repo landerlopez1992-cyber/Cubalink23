@@ -23,17 +23,39 @@ class _CartScreenState extends State<CartScreen> {
   void initState() {
     super.initState();
     _cartService.addListener(_onCartChanged);
-    _checkAuthAndLoadCart();
-    _loadFavoriteProducts();
+    _optimizedInitialization();
   }
 
-  Future<void> _checkAuthAndLoadCart() async {
-    final hasAuth = await AuthGuardService.instance.requireAuth(context, serviceName: 'el Carrito de Compras');
-    if (hasAuth) {
-      _cartService.loadFromSupabase();
-    } else {
-      // Si no está autenticado, volver atrás
-      Navigator.pop(context);
+  // ⚡ OPTIMIZACIÓN: Cargar datos en paralelo sin bloquear la UI
+  void _optimizedInitialization() async {
+    try {
+      // Mostrar carrito inmediatamente con datos locales (si existen)
+      setState(() {}); // Trigger rebuild para mostrar items locales
+      
+      // Verificar auth y cargar datos en paralelo
+      final futures = [
+        _checkAuthAndLoadData(),
+        _loadFavoriteProductsInBackground(),
+      ];
+      
+      await Future.wait(futures);
+    } catch (e) {
+      print('⚠️ Error en inicialización optimizada: $e');
+    }
+  }
+
+  Future<void> _checkAuthAndLoadData() async {
+    try {
+      final hasAuth = await AuthGuardService.instance.requireAuth(context, serviceName: 'el Carrito de Compras');
+      if (hasAuth) {
+        // Cargar carrito desde Supabase en background
+        await _cartService.loadFromSupabase();
+      } else {
+        // Si no está autenticado, volver atrás
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (e) {
+      print('⚠️ Error verificando auth y cargando carrito: $e');
     }
   }
 
@@ -77,6 +99,40 @@ class _CartScreenState extends State<CartScreen> {
         _isLoadingFavorites = false;
       });
       print('Error cargando favoritos: $e');
+    }
+  }
+
+  // ⚡ Versión optimizada para cargar en background
+  Future<void> _loadFavoriteProductsInBackground() async {
+    try {
+      final favoritesData = await _likesService.getUserLikes();
+      final favorites = favoritesData.map((data) => StoreProduct.fromJson({
+        'id': data['product_id'],
+        'name': data['product_name'],
+        'price': data['product_price'],
+        'image_url': data['product_image_url'] ?? '',
+        'description': '',
+        'category': '',
+        'subcategory': '',
+        'stock': 0,
+        'is_active': true,
+        'created_at': data['created_at'],
+        'updated_at': data['updated_at'],
+      })).toList();
+      
+      if (mounted) {
+        setState(() {
+          _favoriteProducts = favorites;
+          _isLoadingFavorites = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingFavorites = false;
+        });
+      }
+      print('⚠️ Error cargando productos favoritos en background: $e');
     }
   }
 

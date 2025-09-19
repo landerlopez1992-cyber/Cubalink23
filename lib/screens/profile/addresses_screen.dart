@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/services/supabase_service.dart';
+import 'package:cubalink23/data/cuba_locations.dart';
 
 class AddressesScreen extends StatefulWidget {
   const AddressesScreen({super.key});
@@ -22,11 +24,18 @@ class _AddressesScreenState extends State<AddressesScreen> {
   List<Map<String, dynamic>> addresses = [];
   bool isLoading = false;
   bool isAddingAddress = false;
+  String? editingAddressId; // ✅ NUEVA VARIABLE para saber si estamos editando
+  
+  // Variables para selectores de Cuba
+  String? selectedProvince;
+  String? selectedMunicipality;
+  List<String> availableMunicipalities = [];
 
   @override
   void initState() {
     super.initState();
     print('AddressesScreen initState called');
+    _countryController.text = 'Cuba'; // ✅ País fijo
     _loadAddresses();
   }
 
@@ -90,6 +99,27 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
   Future<void> _saveAddress() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // Validar selectores
+    if (selectedProvince == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor selecciona una provincia'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    if (selectedMunicipality == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor selecciona un municipio'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     try {
       setState(() => isLoading = true);
@@ -101,37 +131,52 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
       final newAddress = {
         'street': _streetController.text.trim(),
-        'municipality': _municipalityController.text.trim(),
-        'province': _provinceController.text.trim(),
+        'municipality': selectedMunicipality ?? '',
+        'province': selectedProvince ?? '',
         'country': _countryController.text.trim(),
         'fullName': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
+        'phone': '+53${_phoneController.text.trim()}', // ✅ Formato cubano
         'idDocument': _idDocumentController.text.trim(),
         'createdAt': DateTime.now(),
       };
 
-      // Guardar en Supabase
-      await SupabaseService.instance.insert('user_addresses', {
+      final addressData = {
         'user_id': currentUser.id,
-        'street': newAddress['street'],
-        'municipality': newAddress['municipality'],
+        'name': newAddress['fullName'], // ✅ NOMBRE COMPLETO
+        'address_line_1': newAddress['street'], // ✅ DIRECCIÓN
+        'address_line_2': '${selectedMunicipality ?? ''} - ${newAddress['idDocument'] ?? ''}', // ✅ MUNICIPIO + ID
+        'city': selectedMunicipality ?? '', // ✅ MUNICIPIO COMO CIUDAD
         'province': newAddress['province'],
         'country': newAddress['country'],
-        'full_name': newAddress['fullName'],
         'phone': newAddress['phone'],
-        'id_document': newAddress['idDocument'],
-      });
-      print('Address saved to Supabase successfully');
+        'municipality': selectedMunicipality, // ✅ MUNICIPIO SEPARADO
+        'id_document': newAddress['idDocument'], // ✅ DOCUMENTO SEPARADO
+        'is_default': false,
+      };
 
-      // Recargar direcciones desde Firebase
+      if (editingAddressId != null) {
+        // ✅ ACTUALIZAR dirección existente
+        print('🔄 Actualizando dirección: $editingAddressId');
+        await SupabaseService.instance.update('user_addresses', editingAddressId!, addressData);
+        print('✅ Dirección actualizada exitosamente');
+      } else {
+        // ✅ CREAR nueva dirección
+        print('🆕 Creando nueva dirección');
+        await SupabaseService.instance.insert('user_addresses', addressData);
+        print('✅ Nueva dirección creada exitosamente');
+      }
+
+      // Recargar direcciones
       await _loadAddresses();
-
       _clearForm();
-      setState(() => isAddingAddress = false);
+      setState(() {
+        isAddingAddress = false;
+        editingAddressId = null; // ✅ LIMPIAR MODO EDICIÓN
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Dirección guardada exitosamente'),
+        SnackBar(
+          content: Text(editingAddressId != null ? '✅ Dirección actualizada exitosamente' : '✅ Dirección guardada exitosamente'),
           backgroundColor: Colors.green,
         ),
       );
@@ -157,9 +202,10 @@ class _AddressesScreenState extends State<AddressesScreen> {
         throw Exception('Usuario no autenticado');
       }
 
-      // Eliminar de Supabase
+      // Eliminar de Supabase - MÉTODO CORREGIDO
+      print('🗑️ Eliminando dirección: $addressId');
       await SupabaseService.instance.delete('user_addresses', addressId);
-      print('Address deleted from Supabase successfully');
+      print('✅ Dirección eliminada de Supabase');
 
       // Recargar direcciones desde Firebase
       await _loadAddresses();
@@ -183,6 +229,53 @@ class _AddressesScreenState extends State<AddressesScreen> {
     }
   }
 
+  void _editAddress(Map<String, dynamic> address) {
+    try {
+      print('🔧 Editando dirección: $address');
+      
+      // Cargar datos de la dirección en el formulario - CON VALIDACIÓN
+      _nameController.text = address['name']?.toString() ?? '';
+      _streetController.text = address['address_line_1']?.toString() ?? '';
+      
+      // Limpiar teléfono de +53 si existe
+      String phone = address['phone']?.toString() ?? '';
+      if (phone.startsWith('+53')) {
+        phone = phone.substring(3);
+      }
+      _phoneController.text = phone;
+      
+      _idDocumentController.text = address['id_document']?.toString() ?? '';
+      _countryController.text = address['country']?.toString() ?? 'Cuba';
+      
+      // Cargar provincia y municipio en selectores - CON VALIDACIÓN
+      String? province = address['province']?.toString();
+      String? municipality = address['municipality']?.toString() ?? address['city']?.toString();
+      
+        setState(() {
+          selectedProvince = province;
+          if (selectedProvince != null && selectedProvince!.isNotEmpty) {
+            availableMunicipalities = CubaLocations.getMunicipalities(selectedProvince!);
+            selectedMunicipality = municipality;
+          } else {
+            availableMunicipalities = [];
+            selectedMunicipality = null;
+          }
+          isAddingAddress = true; // Mostrar formulario
+          editingAddressId = address['id']?.toString(); // ✅ GUARDAR ID PARA EDITAR
+        });
+      
+      print('✅ Dirección cargada en formulario');
+    } catch (e) {
+      print('❌ Error cargando dirección para editar: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error cargando dirección: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   void _clearForm() {
     _streetController.clear();
     _municipalityController.clear();
@@ -191,6 +284,14 @@ class _AddressesScreenState extends State<AddressesScreen> {
     _nameController.clear();
     _phoneController.clear();
     _idDocumentController.clear();
+    
+    // Limpiar selectores y modo edición
+    setState(() {
+      selectedProvince = null;
+      selectedMunicipality = null;
+      availableMunicipalities = [];
+      editingAddressId = null; // ✅ LIMPIAR MODO EDICIÓN
+    });
   }
 
   @override
@@ -298,43 +399,19 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                 ),
                                 const SizedBox(height: 12),
 
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildTextField(
-                                        controller: _municipalityController,
-                                        label: 'Municipio',
-                                        icon: Icons.location_city,
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return 'Requerido';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _buildTextField(
-                                        controller: _provinceController,
-                                        label: 'Provincia',
-                                        icon: Icons.map,
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return 'Requerido';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                // Selector de Provincia
+                                _buildProvinceSelector(),
+                                const SizedBox(height: 12),
+                                
+                                // Selector de Municipio
+                                _buildMunicipalitySelector(),
                                 const SizedBox(height: 12),
 
                                 _buildTextField(
                                   controller: _countryController,
                                   label: 'País',
                                   icon: Icons.flag,
+                                  readOnly: true, // ✅ Solo lectura - Cuba fijo
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
                                       return 'El país es requerido';
@@ -347,32 +424,11 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: _buildTextField(
-                                        controller: _phoneController,
-                                        label: 'Teléfono',
-                                        icon: Icons.phone,
-                                        keyboardType: TextInputType.phone,
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return 'Requerido';
-                                          }
-                                          return null;
-                                        },
-                                      ),
+                                      child: _buildCubanPhoneField(),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      child: _buildTextField(
-                                        controller: _idDocumentController,
-                                        label: 'Documento ID',
-                                        icon: Icons.badge,
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return 'Requerido';
-                                          }
-                                          return null;
-                                        },
-                                      ),
+                                      child: _buildDocumentField(),
                                     ),
                                   ],
                                 ),
@@ -417,7 +473,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                                   strokeWidth: 2,
                                                 ),
                                               )
-                                            : const Text('Guardar'),
+                                            : Text(editingAddressId != null ? 'Actualizar' : 'Guardar'),
                                       ),
                                     ),
                                   ],
@@ -491,11 +547,13 @@ class _AddressesScreenState extends State<AddressesScreen> {
     required IconData icon,
     String? Function(String?)? validator,
     TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
   }) {
     return TextFormField(
       controller: controller,
       validator: validator,
       keyboardType: keyboardType,
+      readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(
@@ -539,13 +597,17 @@ class _AddressesScreenState extends State<AddressesScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    address['full_name'] ?? address['fullName'] ?? 'Sin nombre',
+                    address['name'] ?? address['full_name'] ?? address['fullName'] ?? 'Sin nombre',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                  onPressed: () => _editAddress(address),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red, size: 20),
@@ -625,5 +687,182 @@ class _AddressesScreenState extends State<AddressesScreen> {
     _phoneController.dispose();
     _idDocumentController.dispose();
     super.dispose();
+  }
+
+  // ========================== SELECTORES DE CUBA ==========================
+  
+  Widget _buildProvinceSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.map, color: Colors.grey[600], size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: selectedProvince,
+                hint: const Text('Seleccionar Provincia'),
+                isExpanded: true,
+                items: CubaLocations.provinces.map((String province) {
+                  return DropdownMenuItem<String>(
+                    value: province,
+                    child: Text(province),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    selectedProvince = newValue;
+                    selectedMunicipality = null; // Reset municipality
+                    availableMunicipalities = newValue != null 
+                        ? CubaLocations.getMunicipalities(newValue) 
+                        : [];
+                    _provinceController.text = newValue ?? '';
+                  });
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMunicipalitySelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.location_city, color: Colors.grey[600], size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: selectedMunicipality,
+                hint: Text(selectedProvince == null 
+                    ? 'Primero selecciona una provincia' 
+                    : 'Seleccionar Municipio'),
+                isExpanded: true,
+                items: availableMunicipalities.map((String municipality) {
+                  return DropdownMenuItem<String>(
+                    value: municipality,
+                    child: Text(municipality),
+                  );
+                }).toList(),
+                onChanged: selectedProvince == null ? null : (String? newValue) {
+                  setState(() {
+                    selectedMunicipality = newValue;
+                    _municipalityController.text = newValue ?? '';
+                  });
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCubanPhoneField() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.phone, color: Colors.grey[600], size: 20),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Text(
+              '+53',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextFormField(
+              controller: _phoneController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(8), // Exactamente 8 dígitos
+              ],
+              decoration: const InputDecoration(
+                hintText: '12345678',
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Teléfono requerido';
+                }
+                if (value.length != 8) {
+                  return 'Debe tener 8 dígitos';
+                }
+                return null;
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentField() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.badge, color: Colors.grey[600], size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextFormField(
+              controller: _idDocumentController,
+              keyboardType: TextInputType.number, // ✅ Solo números
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly, // ✅ Solo dígitos
+                LengthLimitingTextInputFormatter(11), // ✅ Exactamente 11 dígitos
+              ],
+              decoration: const InputDecoration(
+                hintText: '12345678901',
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Documento requerido';
+                }
+                if (value.length != 11) {
+                  return 'Debe tener 11 dígitos';
+                }
+                return null;
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

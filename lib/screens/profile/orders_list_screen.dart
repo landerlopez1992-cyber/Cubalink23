@@ -3,7 +3,7 @@ import 'package:cubalink23/models/order.dart';
 import 'package:cubalink23/services/firebase_repository.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/services/supabase_service.dart';
-import 'package:cubalink23/screens/profile/order_details_screen.dart';
+import 'package:cubalink23/screens/profile/order_tracking_screen.dart'; // ✅ PANTALLA CORRECTA
 
 class OrdersListScreen extends StatefulWidget {
   const OrdersListScreen({super.key});
@@ -223,11 +223,11 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
       ),
       child: InkWell(
         onTap: () {
-          // Navegar a pantalla de detalles (la actual order_tracking_screen)
+          // ✅ NAVEGAR A LA PANTALLA CORRECTA CON ARREGLOS
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OrderDetailsScreen(order: order),
+              builder: (context) => OrderTrackingScreen(selectedOrder: order), // ✅ PASAR ORDEN ESPECÍFICA
             ),
           );
         },

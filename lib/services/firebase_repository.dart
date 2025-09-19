@@ -102,6 +102,7 @@ class FirebaseRepository {
       
       // 🎯 USAR SUPABASE DIRECTO PRIMERO (MÁS CONFIABLE)
       print('🗄️ Intentando Supabase directo primero...');
+      print('🛒 Verificando cart_items antes de enviar: ${(data['cart_items'] as List?)?.length ?? 0}');
       
       final supabaseResult = await _supabaseService.createOrderRaw(data);
       if (supabaseResult != null) {

@@ -186,6 +186,7 @@ class CubaLink23App extends StatelessWidget {
             fee: args?['fee'] ?? 0.0,
             total: args?['total'] ?? 0.0,
             metadata: args?['metadata'],
+            isBalanceRecharge: args?['isBalanceRecharge'] ?? false, // ✅ NUEVO PARÁMETRO
           );
         },
         '/support-chat': (context) => const SupportChatScreen(),

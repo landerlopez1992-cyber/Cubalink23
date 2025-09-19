@@ -641,4 +641,5 @@ class SupabaseAuthService {
       print('Error notifying service usage: $e');
     }
   }
+
 }

@@ -21,7 +21,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
   List<Contact> _recentContacts = [];
@@ -30,8 +30,22 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadRecentContacts();
     _loadRecentHistory();
+  }
+
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // La app volvió a primer plano, refrescar datos del usuario
+      print('🔄 Home resumed, refrescando datos del usuario...');
+      setState(() {
+        // Esto forzará a rebuild con los datos actualizados del usuario
+      });
+    }
   }
 
   void _loadRecentContacts() {
@@ -514,6 +528,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
   }

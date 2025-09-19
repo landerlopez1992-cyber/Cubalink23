@@ -473,6 +473,16 @@ class SupabaseService {
       final orderId = orderResult['id'] as String;
       print('✅ Order created with ID: $orderId');
       
+      // 🚨 LOGGING SEGÚN AMIGO: Verificar itemsToProcess
+      print('📦 createOrderRaw START - itemsToProcess type: ${cartItems.runtimeType} length: ${cartItems.length}');
+      if (cartItems == null) {
+        print('⚠️ cartItems is null');
+      } else if (cartItems is! List) {
+        print('⚠️ cartItems no es List => ${cartItems}');
+      } else if (cartItems.isEmpty) {
+        print('⚠️ cartItems está vacío - no hay items para crear');
+      }
+      
       // Crear order_items si tenemos items del carrito
       if (cartItems.isNotEmpty) {
         print('📦 Creating ${cartItems.length} order items...');
@@ -498,11 +508,12 @@ class SupabaseService {
           };
           
           // Crear order_item
+          print('   ▶️ Insert item payload: $orderItemData');
           final itemResult = await insert('order_items', orderItemData);
           if (itemResult != null) {
-            print('   ✅ Order item created: ${orderItemData['name']}');
+            print('   ✅ Order item created: ${orderItemData['name']} idResult: $itemResult');
           } else {
-            print('   ❌ Failed to create order item: ${orderItemData['name']}');
+            print('   ❌ insert returned null for ${orderItemData['name']}');
           }
         }
         

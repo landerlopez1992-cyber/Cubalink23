@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // ✅ PARA FILTROS DE TEXTO
 import 'package:cubalink23/services/cart_service.dart';
 import 'package:cubalink23/models/cart_item.dart';
 import 'package:cubalink23/models/order.dart';
 import 'package:cubalink23/services/firebase_repository.dart';
 import 'package:cubalink23/services/auth_service.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
+import 'package:cubalink23/services/supabase_service.dart';
 import 'package:cubalink23/widgets/zelle_payment_dialog.dart';
 import 'package:cubalink23/screens/payment/payment_method_screen.dart';
+import 'package:cubalink23/data/cuba_locations.dart'; // ✅ IMPORT SELECTORES
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -24,6 +27,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
   final TextEditingController _provinceController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _recipientController = TextEditingController();
+  final TextEditingController _idDocumentController = TextEditingController(); // ✅ CONTROLADOR DOCUMENTO
 
   String _selectedShippingMethod = 'express';
   String? _selectedAddress;
@@ -36,6 +40,11 @@ class _ShippingScreenState extends State<ShippingScreen> {
   bool _isLoading = true;
   bool _isProcessingPayment = false;
   double _userBalance = 0.0;
+  
+  // ✅ VARIABLES PARA SELECTORES CUBA
+  String? selectedProvince;
+  String? selectedMunicipality;
+  List<String> availableMunicipalities = [];
 
   @override
   void initState() {
@@ -55,6 +64,12 @@ class _ShippingScreenState extends State<ShippingScreen> {
         print('Loading addresses...');
         final addresses = await SupabaseAuthService.instance.getUserAddresses(currentUser.id);
         print('✅ Loaded ${addresses.length} addresses');
+        
+        // ✅ ACTUALIZAR ESTADO INMEDIATAMENTE
+        setState(() {
+          _savedAddresses = addresses;
+        });
+        
         for (var addr in addresses) {
           print('   📍 ${addr['fullName']} - ${addr['city']}, ${addr['province']}');
         }
@@ -120,6 +135,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
     _provinceController.dispose();
     _phoneController.dispose();
     _recipientController.dispose();
+    _idDocumentController.dispose(); // ✅ DISPOSE DOCUMENTO
     super.dispose();
   }
 
@@ -159,11 +175,11 @@ class _ShippingScreenState extends State<ShippingScreen> {
                   // Cálculo de envío
                   _buildShippingCalculation(),
 
-                  // Direcciones guardadas
-                  _buildSavedAddresses(),
+                  // Direcciones guardadas (solo si existen)
+                  if (_savedAddresses.isNotEmpty) _buildSavedAddresses(),
 
-                  // Dirección manual (si no selecciona guardada)
-                  if (_selectedAddress == null) _buildManualAddress(),
+                  // Dirección manual (si no hay direcciones O selecciona "nueva dirección")
+                  if (_savedAddresses.isEmpty || _selectedAddress == 'new') _buildManualAddress(),
 
                   // Métodos de pago
                   _buildPaymentMethods(),
@@ -245,7 +261,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
                           ),
                         ),
                         Text(
-                          '48-72 horas • Peso × \$5.50/lb + \$10 base',
+                          '48-72 horas', // ✅ SIMPLIFICADO
                           style: TextStyle(
                             fontSize: 12,
                             color: _selectedShippingMethod == 'express' ? Colors.grey[600] : Colors.white70,
@@ -301,7 +317,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
                           ),
                         ),
                         Text(
-                          '3-5 semanas • Peso × \$2.50/lb',
+                          '3-5 semanas', // ✅ SIMPLIFICADO
                           style: TextStyle(
                             fontSize: 12,
                             color: _selectedShippingMethod == 'maritime' ? Colors.grey[600] : Colors.white70,
@@ -580,15 +596,8 @@ class _ShippingScreenState extends State<ShippingScreen> {
                             color: Color(0xFF232F3E),
                           ),
                         ),
-                        Text(
-                          _selectedShippingMethod == 'express'
-                              ? '${(totalWeightKg * 2.20462).toStringAsFixed(1)} lbs × \$5.50 + \$10.00'
-                              : '${(totalWeightKg * 2.20462).toStringAsFixed(1)} lbs × \$2.50',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
+                        // ✅ OCULTO: Cálculos técnicos no se muestran al usuario
+                        // La lógica interna se mantiene igual
                       ],
                     ),
                     Text(
@@ -667,7 +676,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              address['fullName']?.toString() ?? address['recipient']?.toString() ?? '',
+                              address['name']?.toString() ?? address['fullName']?.toString() ?? address['recipient']?.toString() ?? 'Sin nombre',
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -705,21 +714,21 @@ class _ShippingScreenState extends State<ShippingScreen> {
               )),
           const SizedBox(height: 12),
           GestureDetector(
-            onTap: () => setState(() => _selectedAddress = null),
+            onTap: () => setState(() => _selectedAddress = 'new'),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _selectedAddress == null ? Colors.blue[50] : Colors.grey[50],
+                color: _selectedAddress == 'new' ? Colors.blue[50] : Colors.grey[50],
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: _selectedAddress == null ? Colors.blue[300]! : Colors.grey[200]!,
-                  width: _selectedAddress == null ? 2 : 1,
+                  color: _selectedAddress == 'new' ? Colors.blue[300]! : Colors.grey[200]!,
+                  width: _selectedAddress == 'new' ? 2 : 1,
                 ),
               ),
               child: Row(
                 children: [
                   Radio<String?>(
-                    value: null,
+                    value: 'new',
                     groupValue: _selectedAddress,
                     onChanged: (value) => setState(() => _selectedAddress = value),
                     activeColor: Colors.blue[600],
@@ -782,17 +791,8 @@ class _ShippingScreenState extends State<ShippingScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _phoneController,
-            decoration: InputDecoration(
-              labelText: 'Teléfono del destinatario *',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              prefixIcon: const Icon(Icons.phone),
-            ),
-            keyboardType: TextInputType.phone,
-          ),
+          // ✅ TELÉFONO CON FORMATO CUBANO
+          _buildCubanPhoneField(),
           const SizedBox(height: 16),
           TextField(
             controller: _addressController,
@@ -806,35 +806,13 @@ class _ShippingScreenState extends State<ShippingScreen> {
             maxLines: 2,
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _cityController,
-                  decoration: InputDecoration(
-                    labelText: 'Ciudad *',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.location_city),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextField(
-                  controller: _provinceController,
-                  decoration: InputDecoration(
-                    labelText: 'Provincia *',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.map),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          // ✅ SELECTORES DE CUBA (como en addresses_screen.dart)
+          _buildProvinceSelector(),
+          const SizedBox(height: 16),
+          _buildMunicipalitySelector(),
+          const SizedBox(height: 16),
+          // ✅ CAMPO DOCUMENTO (11 dígitos)
+          _buildDocumentField(),
         ],
       ),
     );
@@ -874,11 +852,12 @@ class _ShippingScreenState extends State<ShippingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Zelle
+          // Zelle - TEMPORALMENTE DESHABILITADO
+          /*
           GestureDetector(
             onTap: () => setState(() => _selectedPaymentMethod = 'zelle'),
             child: Container(
-              margin: const EdgeInsets.only(bottom: 12),
+margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: _selectedPaymentMethod == 'zelle' ? Colors.purple[50] : Colors.grey[50],
@@ -936,6 +915,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
               ),
             ),
           ),
+          */
 
           // Tarjetas de Crédito/Débito
           GestureDetector(
@@ -1064,34 +1044,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
             ),
           ),
 
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: () async {
-              // Navegar a agregar nueva tarjeta
-              final result = await Navigator.pushNamed(context, '/add-card');
-              if (result != null) {
-                // Recargar métodos de pago si se agregó una nueva tarjeta
-                _loadUserData();
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  Icon(Icons.add, color: Colors.blue[600], size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Agregar nueva tarjeta',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.blue[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // ✅ ELIMINADO: Botón "Agregar nueva tarjeta" (ya no se necesita)
         ],
       ),
     );
@@ -1331,19 +1284,35 @@ class _ShippingScreenState extends State<ShippingScreen> {
   }
 
   bool _isFormValid() {
-    if (_selectedAddress != null) {
+    if (_selectedAddress != null && _selectedAddress != 'new') {
       return _selectedPaymentMethod != null;
     }
     return _recipientController.text.trim().isNotEmpty &&
         _phoneController.text.trim().isNotEmpty &&
         _addressController.text.trim().isNotEmpty &&
-        _cityController.text.trim().isNotEmpty &&
-        _provinceController.text.trim().isNotEmpty &&
+        _idDocumentController.text.trim().isNotEmpty && _idDocumentController.text.trim().length == 11 &&
+        selectedMunicipality != null && selectedMunicipality!.isNotEmpty &&
+        selectedProvince != null && selectedProvince!.isNotEmpty &&
         _selectedPaymentMethod != null;
   }
 
   void _proceedToPayment() async {
+    print('🚀 ===== INICIANDO PROCEED TO PAYMENT =====');
+    print('🛒 Items en carrito: ${_cartService.items.length}');
+    for (var item in _cartService.items) {
+      print('   📦 ${item.name} - \$${item.price} x${item.quantity} (${item.vendorId ?? 'local'})');
+    }
+    
     if (_isProcessingPayment) return;
+
+    // ✅ VERIFICAR SI HAY PRODUCTOS EXTERNOS Y MOSTRAR MODAL
+    final externalProducts = _getExternalProducts();
+    if (externalProducts.isNotEmpty) {
+      final accepted = await _showDeliveryTimeModal(externalProducts);
+      if (!accepted) {
+        return; // Usuario canceló
+      }
+    }
 
     setState(() => _isProcessingPayment = true);
 
@@ -1361,76 +1330,204 @@ class _ShippingScreenState extends State<ShippingScreen> {
 
       // Prepare address data
       OrderAddress shippingAddress;
-      if (_selectedAddress != null) {
+      if (_selectedAddress != null && _selectedAddress != 'new') {
+        // ✅ USAR DIRECCIÓN GUARDADA
         var selectedAddr = _savedAddresses.firstWhere((addr) => addr['id']?.toString() == _selectedAddress);
         shippingAddress = OrderAddress(
-          recipient: selectedAddr['fullName']?.toString() ?? selectedAddr['recipient']?.toString() ?? '',
+          recipient: selectedAddr['name']?.toString() ?? selectedAddr['fullName']?.toString() ?? selectedAddr['recipient']?.toString() ?? '',
           phone: selectedAddr['phone']?.toString() ?? '',
-          address: selectedAddr['address']?.toString() ?? '',
-          city: selectedAddr['city']?.toString() ?? '',
-          province: selectedAddr['state']?.toString() ?? selectedAddr['province']?.toString() ?? '',
+          address: selectedAddr['address_line_1']?.toString() ?? selectedAddr['address']?.toString() ?? '',
+          city: selectedAddr['city']?.toString() ?? selectedAddr['municipality']?.toString() ?? '',
+          province: selectedAddr['province']?.toString() ?? '',
         );
       } else {
+        // Usar dirección manual Y guardarla para el futuro
         shippingAddress = OrderAddress(
           recipient: _recipientController.text.trim(),
-          phone: _phoneController.text.trim(),
+          phone: '+53${_phoneController.text.trim()}', // ✅ FORMATO CUBANO
           address: _addressController.text.trim(),
-          city: _cityController.text.trim(),
-          province: _provinceController.text.trim(),
+          city: selectedMunicipality ?? '',
+          province: selectedProvince ?? '',
         );
+        
+        // ✅ GUARDAR NUEVA DIRECCIÓN EN SUPABASE
+        try {
+          await SupabaseService.instance.insert('user_addresses', {
+            'user_id': currentUser.id,
+            'name': _recipientController.text.trim(), // ✅ CAMPO CORRECTO
+            'phone': '+53${_phoneController.text.trim()}', // ✅ FORMATO CUBANO
+            'address_line_1': _addressController.text.trim(), // ✅ CAMPO CORRECTO
+            'city': selectedMunicipality ?? '',
+            'municipality': selectedMunicipality ?? '', // ✅ CAMPO ADICIONAL
+            'id_document': _idDocumentController.text.trim(), // ✅ DOCUMENTO
+            'province': selectedProvince ?? '',
+            'country': 'Cuba',
+            'is_default': _savedAddresses.isEmpty, // Primera dirección es default
+          });
+          print('✅ Nueva dirección guardada en Supabase');
+        } catch (e) {
+          print('⚠️ Error guardando dirección: $e');
+          // No fallar la orden si no se puede guardar la dirección
+        }
       }
 
       double subtotal = _cartService.subtotal;
       double shipping = _calculateShippingCost(totalWeight);
       double total = subtotal + shipping;
 
-      // Convert cart items to order items
-      List<OrderItem> orderItems = _cartService.items
-          .map((cartItem) => OrderItem(
-                id: cartItem.id,
-                productId: cartItem.id,
-                name: cartItem.name,
-                imageUrl: cartItem.imageUrl,
-                price: cartItem.price,
-                quantity: cartItem.quantity,
-                category: cartItem.category ?? 'general',
-                type: cartItem.type,
-              ))
-          .toList();
-
-      // Calculate estimated delivery
-      DateTime estimatedDelivery = DateTime.now();
-      if (_selectedShippingMethod == 'express') {
-        estimatedDelivery = estimatedDelivery.add(const Duration(days: 3));
-      } else {
-        estimatedDelivery = estimatedDelivery.add(const Duration(days: 21));
+      // ✅ SEPARAR PRODUCTOS POR TIPO DE ENTREGA
+      final localProducts = _cartService.items.where((item) {
+        final vendorId = item.vendorId?.toLowerCase();
+        return vendorId == null || vendorId == 'admin' || vendorId == 'system' || vendorId == 'cubalink23';
+      }).toList();
+      
+      final externalProducts = _cartService.items.where((item) {
+        final vendorId = item.vendorId?.toLowerCase();
+        return vendorId == 'amazon' || vendorId == 'walmart' || vendorId == 'homedepot' || vendorId == 'home_depot' || vendorId == 'shein';
+      }).toList();
+      
+      print('🏪 Productos locales: ${localProducts.length}');
+      for (var item in localProducts) {
+        print('   - ${item.name} (${item.vendorId ?? 'local'})');
       }
-
-      // Generate order number
-      String orderNumber = _repository.generateOrderNumber();
-
-      // Create order
-      Order newOrder = Order(
-        id: '',
-        userId: currentUser.id,
-        orderNumber: orderNumber,
-        items: orderItems,
-        shippingAddress: shippingAddress,
-        shippingMethod: _selectedShippingMethod,
-        subtotal: subtotal,
-        shippingCost: shipping,
-        total: total,
-        paymentMethod: _selectedPaymentMethod ?? '',
-        paymentStatus: 'pending',
-        orderStatus: 'created',
-        createdAt: DateTime.now(),
-        estimatedDelivery: estimatedDelivery,
-      );
+      print('🌐 Productos externos: ${externalProducts.length}');
+      for (var item in externalProducts) {
+        print('   - ${item.name} (${item.vendorId})');
+      }
+      
+      // ✅ CREAR ÓRDENES SEPARADAS
+      List<Order> ordersToCreate = [];
+      
+      // ORDEN 1: Productos locales (24-48h)
+      if (localProducts.isNotEmpty) {
+        double localWeight = localProducts.fold(0.0, (total, item) {
+          double itemWeight = _getItemWeight(item);
+          return total + (itemWeight * item.quantity);
+        });
+        double localShippingCost = _calculateShippingCost(localWeight);
+        double localSubtotal = localProducts.fold(0.0, (total, item) => total + item.totalPrice);
+        
+        List<OrderItem> localOrderItems = localProducts.map((cartItem) => OrderItem(
+          id: cartItem.id,
+          productId: cartItem.id,
+          name: cartItem.name,
+          imageUrl: cartItem.imageUrl,
+          price: cartItem.price,
+          quantity: cartItem.quantity,
+          category: cartItem.category ?? 'general',
+          type: cartItem.type,
+        )).toList();
+        
+        DateTime localDelivery = DateTime.now().add(const Duration(days: 2)); // 24-48h
+        
+        ordersToCreate.add(Order(
+          id: '',
+          userId: currentUser.id,
+          orderNumber: 'LOCAL-${DateTime.now().millisecondsSinceEpoch}',
+          items: localOrderItems,
+          shippingAddress: shippingAddress,
+          shippingMethod: _selectedShippingMethod,
+          subtotal: localSubtotal,
+          shippingCost: localShippingCost,
+          total: localSubtotal + localShippingCost,
+          paymentMethod: _selectedPaymentMethod ?? '',
+          paymentStatus: 'pending',
+          orderStatus: 'created',
+          createdAt: DateTime.now(),
+          estimatedDelivery: localDelivery,
+        ));
+      }
+      
+      // ORDEN 2: Productos externos (tiempo variable según tienda)
+      if (externalProducts.isNotEmpty) {
+        double externalWeight = externalProducts.fold(0.0, (total, item) {
+          double itemWeight = _getItemWeight(item);
+          return total + (itemWeight * item.quantity);
+        });
+        double externalShippingCost = _calculateShippingCost(externalWeight);
+        double externalSubtotal = externalProducts.fold(0.0, (total, item) => total + item.totalPrice);
+        
+        List<OrderItem> externalOrderItems = externalProducts.map((cartItem) => OrderItem(
+          id: cartItem.id,
+          productId: cartItem.id,
+          name: cartItem.name,
+          imageUrl: cartItem.imageUrl,
+          price: cartItem.price,
+          quantity: cartItem.quantity,
+          category: cartItem.category ?? 'general',
+          type: cartItem.type,
+        )).toList();
+        
+        // Calcular tiempo máximo de entrega entre todos los productos externos
+        int maxDeliveryDays = externalProducts.map((item) => _getTotalDeliveryDays(item.vendorId)).reduce((a, b) => a > b ? a : b);
+        DateTime externalDelivery = DateTime.now().add(Duration(days: maxDeliveryDays));
+        
+        ordersToCreate.add(Order(
+          id: '',
+          userId: currentUser.id,
+          orderNumber: 'EXT-${DateTime.now().millisecondsSinceEpoch}',
+          items: externalOrderItems,
+          shippingAddress: shippingAddress,
+          shippingMethod: _selectedShippingMethod,
+          subtotal: externalSubtotal,
+          shippingCost: externalShippingCost,
+          total: externalSubtotal + externalShippingCost,
+          paymentMethod: _selectedPaymentMethod ?? '',
+          paymentStatus: 'pending',
+          orderStatus: 'created',
+          createdAt: DateTime.now(),
+          estimatedDelivery: externalDelivery,
+        ));
+      }
+      
+      // Si no hay productos, crear orden vacía (fallback)
+      if (ordersToCreate.isEmpty) {
+        double shippingCost = _calculateShippingCost(totalWeight);
+        String orderNumber = _repository.generateOrderNumber();
+        
+        List<OrderItem> orderItems = _cartService.items.map((cartItem) => OrderItem(
+          id: cartItem.id,
+          productId: cartItem.id,
+          name: cartItem.name,
+          imageUrl: cartItem.imageUrl,
+          price: cartItem.price,
+          quantity: cartItem.quantity,
+          category: cartItem.category ?? 'general',
+          type: cartItem.type,
+        )).toList();
+        
+        DateTime estimatedDelivery = DateTime.now();
+        if (_selectedShippingMethod == 'express') {
+          estimatedDelivery = estimatedDelivery.add(const Duration(days: 3));
+        } else {
+          estimatedDelivery = estimatedDelivery.add(const Duration(days: 21));
+        }
+        
+        ordersToCreate.add(Order(
+          id: '',
+          userId: currentUser.id,
+          orderNumber: orderNumber,
+          items: orderItems,
+          shippingAddress: shippingAddress,
+          shippingMethod: _selectedShippingMethod,
+          subtotal: subtotal,
+          shippingCost: shipping,
+          total: total,
+          paymentMethod: _selectedPaymentMethod ?? '',
+          paymentStatus: 'pending',
+          orderStatus: 'created',
+          createdAt: DateTime.now(),
+          estimatedDelivery: estimatedDelivery,
+        ));
+      }
+      
+      // Usar la primera orden para el pago (o combinar totales si es necesario)
+      Order newOrder = ordersToCreate.first;
 
       if (_selectedPaymentMethod == 'zelle') {
-        _handleZellePayment(newOrder);
+        _handleZellePayment(newOrder); // Zelle maneja una orden a la vez
       } else if (_selectedPaymentMethod == 'card') {
-        _handleCardPayment(newOrder);
+        _handleCardPayment(newOrder, ordersToCreate); // ✅ PASAR TODAS LAS ÓRDENES
       } else if (_selectedPaymentMethod == 'wallet') {
         _handleWalletPayment(newOrder);
       } else {
@@ -1508,8 +1605,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
 
       if (result == true && orderId != null) {
         print('✅ Orden creada exitosamente');
-        _cartService.clearCart();
-        print('🛒 Carrito limpiado');
+        // ✅ NO limpiar carrito aquí - se limpia DESPUÉS de crear todas las órdenes
 
         _showSuccessDialog(order.orderNumber, 'zelle');
       } else if (result == false || result == null) {
@@ -1620,7 +1716,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
     );
   }
 
-  void _handleCardPayment(Order order) async {
+  void _handleCardPayment(Order order, List<Order> allOrders) async {
     try {
       print('💳 ===== INICIANDO PAGO CON TARJETA =====');
       print('   💰 Total: \$${order.total.toStringAsFixed(2)}');
@@ -1639,37 +1735,74 @@ class _ShippingScreenState extends State<ShippingScreen> {
         ),
       );
 
+      print('🔍 RESULTADO DEL PAGO: $result (tipo: ${result.runtimeType})');
+      
       if (result == true) {
-        print('✅ Pago con tarjeta exitoso, creando orden...');
+        print('✅ Pago con tarjeta exitoso, creando ${allOrders.length} órdenes...');
 
-        // Payment was successful, create the order
-        final orderData = order.toMap();
-        orderData['payment_status'] = 'completed';
-        orderData['order_status'] = 'payment_confirmed';
-        orderData['payment_method'] = 'card';
+        // ✅ CREAR TODAS LAS ÓRDENES SEPARADAS
+        List<String> createdOrderIds = [];
+        
+        // 🚨 CRÍTICO: Asegurar que cart_items se preserve
+        final currentCartItems = _cartService.items.map((item) => {
+          'product_id': item.id,
+          'product_name': item.name,
+          'product_price': item.price,
+          'quantity': item.quantity,
+          'product_type': item.type,
+          'image_url': item.imageUrl,
+        }).toList();
+        print('🛒 CART ITEMS PRESERVADOS: ${currentCartItems.length}');
+        
+        for (int i = 0; i < allOrders.length; i++) {
+          final orderToCreate = allOrders[i];
+          print('🔍 Orden ${i + 1}: ${orderToCreate.orderNumber} - Items: ${orderToCreate.items.length}');
+          final orderData = orderToCreate.toMap();
+          
+          // 🚨 CRÍTICO: Forzar cart_items con datos preservados
+          orderData['cart_items'] = orderToCreate.items.map((item) => {
+            'product_id': item.productId,
+            'product_name': item.name,
+            'product_price': item.price,
+            'quantity': item.quantity,
+            'product_type': item.type,
+            'image_url': item.imageUrl,
+          }).toList();
+          
+          print('🔍 OrderData cart_items FORZADOS: ${(orderData['cart_items'] as List?)?.length ?? 0}');
+          orderData['payment_status'] = 'completed';
+          orderData['order_status'] = 'payment_confirmed';
+          orderData['payment_method'] = 'card';
 
-        String orderId = await _repository.createOrder(orderData);
-        print('✅ Orden creada con pago exitoso: $orderId');
+          String orderId = await _repository.createOrder(orderData);
+          createdOrderIds.add(orderId);
+          print('✅ Orden ${i + 1}/${allOrders.length} creada: $orderId (${orderToCreate.orderNumber})');
+        }
 
         // Add delay to ensure proper saving
         await Future.delayed(const Duration(milliseconds: 500));
 
-        // Registrar actividades
+        // ✅ REGISTRAR ACTIVIDADES PARA TODAS LAS ÓRDENES
+        double totalAmount = allOrders.fold(0.0, (sum, ord) => sum + ord.total);
+        
         await _repository.addActivity(
           order.userId,
           'order_created',
-          'Orden #${order.orderNumber} creada y pagada con tarjeta',
-          amount: order.total,
+          '${allOrders.length} órdenes creadas y pagadas con tarjeta por \$${totalAmount.toStringAsFixed(2)}',
+          amount: totalAmount,
         );
-        print('✅ Actividad order_created registrada');
+        print('✅ Actividad order_created registrada para ${allOrders.length} órdenes');
 
-        await _repository.addActivity(
-          order.userId,
-          'amazon_purchase',
-          'Compra en Amazon por \$${order.total.toStringAsFixed(2)}',
-          amount: order.total,
-        );
-        print('✅ Actividad amazon_purchase registrada');
+        // Registrar actividad específica si hay productos externos
+        if (allOrders.any((ord) => ord.orderNumber.startsWith('EXT-'))) {
+          await _repository.addActivity(
+            order.userId,
+            'external_purchase',
+            'Compra en tiendas externas (Amazon/Walmart/etc.) por \$${totalAmount.toStringAsFixed(2)}',
+            amount: totalAmount,
+          );
+          print('✅ Actividad external_purchase registrada');
+        }
 
         // 🎯 NOTIFICAR SERVICIO USADO PARA RECOMPENSAS DE REFERIDOS
         await AuthService.instance.notifyServiceUsed();
@@ -1706,47 +1839,35 @@ class _ShippingScreenState extends State<ShippingScreen> {
 
       final currentUser = SupabaseAuthService.instance.getCurrentUser();
       if (currentUser != null) {
-        // 🎯 CREAR ORDEN SERVER-TO-SERVER (SIN PROBLEMAS DE CAMPOS)
-        print('🚀 Creando orden server-to-server...');
+        // 🎯 CREAR ORDEN DIRECTAMENTE EN SUPABASE
+        print('🚀 Creando orden directamente en Supabase...');
         
+        // Preparar datos de la orden para Supabase
         final orderData = {
           'user_id': currentUser.id,
+          'order_number': order.orderNumber,
           'items': order.items.map((item) => item.toJson()).toList(),
           'shipping_address': order.shippingAddress.toJson(),
           'shipping_method': _selectedShippingMethod,
           'subtotal': order.subtotal,
           'shipping_cost': order.shippingCost,
           'total': order.total,
+          'payment_method': 'wallet',
+          'payment_status': 'completed', // ✅ Pago completado con billetera
+          'order_status': 'payment_confirmed',
+          'created_at': order.createdAt.toIso8601String(),
           'estimated_delivery': order.estimatedDelivery?.toIso8601String(),
-          'cart_items': order.items.map((item) => {
-            'product_id': item.productId,
-            'product_name': item.name,
-            'product_price': item.price,
-            'quantity': item.quantity,
-            'product_type': item.type == 'amazon' ? 'amazon' : 'store',
-            'weight_lb': 0.5, // Peso por defecto
-          }).toList(),
         };
 
-        // Llamar al endpoint server-to-server
-        final response = await http.post(
-          Uri.parse('http://localhost:5001/api/orders/from-wallet'),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode(orderData),
-        );
+        // Crear orden directamente usando el repository
+        String orderId = await _repository.createOrder(orderData);
+        print('✅ Orden creada en Supabase: $orderId');
 
-        if (response.statusCode == 201) {
-          final result = json.decode(response.body);
-          String orderId = result['order_id'];
-          print('✅ Orden creada server-to-server: $orderId');
-        } else {
-          print('❌ Error server-to-server: ${response.body}');
-          throw Exception('Error creando orden server-to-server');
-        }
-
-        // Descontar del saldo del usuario
+        // Descontar del saldo del usuario DESPUÉS de crear la orden
+        print('💰 Descontando saldo: \$${order.total.toStringAsFixed(2)}');
         final newBalance = _userBalance - order.total;
         await _repository.updateUserBalance(currentUser.id, newBalance);
+        print('✅ Nuevo saldo: \$${newBalance.toStringAsFixed(2)}');
         print('✅ Saldo actualizado');
 
         // Add delay to ensure proper saving
@@ -1971,5 +2092,464 @@ class _ShippingScreenState extends State<ShippingScreen> {
         }
         return 1.5; // ~3.3 lbs por defecto
     }
+  }
+
+  // ✅ TELÉFONO CUBANO (copiado de addresses_screen.dart)
+  Widget _buildCubanPhoneField() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.phone, color: Colors.grey[600], size: 20),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Text(
+              '(+53)',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextFormField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(8),
+              ],
+              decoration: const InputDecoration(
+                hintText: '12345678',
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Teléfono requerido';
+                }
+                if (value.length != 8) {
+                  return 'Debe tener 8 dígitos';
+                }
+                return null;
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ CAMPO DOCUMENTO (copiado de addresses_screen.dart)
+  Widget _buildDocumentField() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.badge, color: Colors.grey[600], size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextFormField(
+              controller: _idDocumentController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(11),
+              ],
+              decoration: const InputDecoration(
+                hintText: '12345678901',
+                labelText: 'Documento de identidad (11 dígitos)',
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Documento requerido';
+                }
+                if (value.length != 11) {
+                  return 'Debe tener 11 dígitos';
+                }
+                return null;
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ SELECTORES CUBA (copiados de addresses_screen.dart)
+  Widget _buildProvinceSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.map, color: Colors.grey[600], size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButton<String>(
+              value: selectedProvince,
+              hint: const Text('Selecciona provincia'),
+              isExpanded: true,
+              underline: Container(),
+              items: CubaLocations.provinces.map((String province) {
+                return DropdownMenuItem<String>(
+                  value: province,
+                  child: Text(province),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedProvince = newValue;
+                  selectedMunicipality = null; // Reset municipality
+                  availableMunicipalities = newValue != null 
+                      ? CubaLocations.getMunicipalities(newValue)
+                      : [];
+                });
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMunicipalitySelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.location_city, color: Colors.grey[600], size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButton<String>(
+              value: selectedMunicipality,
+              hint: const Text('Selecciona municipio'),
+              isExpanded: true,
+              underline: Container(),
+              items: availableMunicipalities.map((String municipality) {
+                return DropdownMenuItem<String>(
+                  value: municipality,
+                  child: Text(municipality),
+                );
+              }).toList(),
+              onChanged: availableMunicipalities.isNotEmpty ? (String? newValue) {
+                setState(() {
+                  selectedMunicipality = newValue;
+                });
+              } : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ OBTENER PRODUCTOS DE AMAZON (API EXTERNA)
+  List<CartItem> _getExternalProducts() {
+    return _cartService.items.where((item) {
+      // Productos de Amazon vienen de la API
+      final vendorId = item.vendorId?.toLowerCase();
+      return vendorId == 'amazon' || 
+             vendorId == 'walmart' || 
+             vendorId == 'homedepot' || 
+             vendorId == 'home_depot' ||
+             vendorId == 'shein';
+    }).toList();
+  }
+
+  // ✅ CALCULAR TIEMPO TOTAL DE ENTREGA (Tienda → Bodega + Bodega → Cuba)
+  int _getTotalDeliveryDays(String? vendorId) {
+    if (vendorId == null) return 0;
+    
+    // Tiempo de tienda a bodega (ZIP 33470)
+    int vendorDays = 0;
+    switch (vendorId.toLowerCase()) {
+      case 'amazon':
+        vendorDays = 2; // Amazon Prime: 1-2 días
+        break;
+      case 'walmart':
+        vendorDays = 2; // Walmart+: 1-2 días
+        break;
+      case 'homedepot':
+      case 'home_depot':
+        vendorDays = 3; // Home Depot: 2-3 días
+        break;
+      case 'shein':
+        vendorDays = 7; // Shein: 5-7 días
+        break;
+    }
+    
+    // Tiempo de bodega a Cuba
+    int shippingDays = _selectedShippingMethod == 'express' ? 3 : 21;
+    
+    return vendorDays + shippingDays;
+  }
+
+  // ✅ MOSTRAR MODAL DE TIEMPO DE ENTREGA
+  Future<bool> _showDeliveryTimeModal(List<CartItem> externalProducts) async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.schedule, color: Colors.orange, size: 28),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Tiempo de Entrega Especial',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF232F3E),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            width: double.maxFinite,
+            constraints: BoxConstraints(maxHeight: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Los siguientes productos requieren tiempo adicional de entrega:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                SizedBox(height: 16),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: externalProducts.length,
+                    itemBuilder: (context, index) {
+                      final item = externalProducts[index];
+                      final totalDays = _getTotalDeliveryDays(item.vendorId);
+                      final vendorName = _getVendorDisplayName(item.vendorId ?? '');
+                      
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 12),
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            // Imagen del producto
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.grey[200],
+                              ),
+                              child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        item.imageUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Icon(Icons.shopping_bag, color: Colors.grey[600]);
+                                        },
+                                      ),
+                                    )
+                                  : Icon(Icons.shopping_bag, color: Colors.grey[600]),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.name,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF232F3E),
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '\$${item.price.toStringAsFixed(2)} • $vendorName',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange[100],
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          '$totalDays días total',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.orange[800],
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      // ✅ DESGLOSE DETALLADO
+                                      Text(
+                                        _getDeliveryBreakdown(item.vendorId),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey[600],
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: 16),
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber[300]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.amber[800], size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Estos productos deben llegar primero a nuestra bodega en Estados Unidos antes de ser enviados a Cuba.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.amber[800],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Entendido, Continuar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+  }
+
+  // ✅ OBTENER NOMBRE DE TIENDA PARA MOSTRAR
+  String _getVendorDisplayName(String vendorId) {
+    switch (vendorId.toLowerCase()) {
+      case 'amazon':
+        return 'Amazon';
+      case 'walmart':
+        return 'Walmart';
+      case 'homedepot':
+      case 'home_depot':
+        return 'Home Depot';
+      case 'shein':
+        return 'Shein';
+      default:
+        return 'Tienda Externa';
+    }
+  }
+
+  // ✅ OBTENER DESGLOSE DETALLADO DEL TIEMPO DE ENTREGA
+  String _getDeliveryBreakdown(String? vendorId) {
+    if (vendorId == null) return '';
+    
+    int vendorDays = 0;
+    String vendorName = '';
+    
+    switch (vendorId.toLowerCase()) {
+      case 'amazon':
+        vendorDays = 2;
+        vendorName = 'Amazon';
+        break;
+      case 'walmart':
+        vendorDays = 2;
+        vendorName = 'Walmart';
+        break;
+      case 'homedepot':
+      case 'home_depot':
+        vendorDays = 3;
+        vendorName = 'Home Depot';
+        break;
+      case 'shein':
+        vendorDays = 7;
+        vendorName = 'Shein';
+        break;
+    }
+    
+    int shippingDays = _selectedShippingMethod == 'express' ? 3 : 21;
+    String shippingType = _selectedShippingMethod == 'express' ? 'Express' : 'Marítimo';
+    
+    return '$vendorDays días ($vendorName → bodega) + $shippingDays días (envío $shippingType)';
   }
 }

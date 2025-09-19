@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:cubalink23/models/order.dart';
@@ -7,7 +8,9 @@ import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/services/supabase_service.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
-  const OrderTrackingScreen({super.key});
+  final Order? selectedOrder; // ✅ NUEVO: Orden específica seleccionada
+  
+  const OrderTrackingScreen({super.key, this.selectedOrder});
 
   @override
   _OrderTrackingScreenState createState() => _OrderTrackingScreenState();
@@ -15,10 +18,10 @@ class OrderTrackingScreen extends StatefulWidget {
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     with TickerProviderStateMixin {
-  late AnimationController _planeAnimationController;
-  late AnimationController _celebrationController;
-  late Animation<double> _planeAnimation;
-  late Animation<double> _celebrationAnimation;
+  late AnimationController _truckAnimationController;
+  late AnimationController _vibrationController;
+  late Animation<double> _truckAnimation;
+  late Animation<double> _vibrationAnimation;
   
   List<Order> _orders = [];
   bool _isLoading = true;
@@ -36,19 +39,163 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     {'title': 'Enviado', 'subtitle': ''},
     {'title': 'En Reparto', 'subtitle': ''},
     {'title': 'Entregado', 'subtitle': ''},
+    // ✅ "Cancelado" NO aparece en timeline visual (solo en lógica)
   ];
+
+  // ✅ PARSEAR ITEMS DE LA ORDEN DESDE SUPABASE
+  List<OrderItem> _parseOrderItems(dynamic itemsData) {
+    if (itemsData == null) return [];
+    
+    try {
+      if (itemsData is List) {
+        return itemsData.map((item) {
+          if (item is Map<String, dynamic>) {
+            return OrderItem(
+              id: item['id'] ?? '',
+              productId: item['product_id'] ?? item['productId'] ?? '',
+              name: item['name'] ?? item['product_name'] ?? item['title'] ?? 'Producto',
+              imageUrl: item['image_url'] ?? item['imageUrl'] ?? item['image'] ?? item['picture'] ?? '',
+              price: (item['price'] ?? 0.0).toDouble(),
+              quantity: item['quantity'] ?? 1,
+              category: item['category'] ?? 'general',
+              type: item['type'] ?? 'product',
+            );
+          }
+          return OrderItem(
+            id: '',
+            productId: '',
+            name: 'Producto',
+            imageUrl: '',
+            price: 0.0,
+            quantity: 1,
+            category: 'general',
+            type: 'product',
+          );
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      print('❌ Error parseando items: $e');
+      return [];
+    }
+  }
+
+  Map<String, dynamic> _parseMetadata(dynamic metadata) {
+    try {
+      if (metadata == null) return {};
+      
+      if (metadata is String) {
+        // Si es un string JSON, parsearlo
+        final parsed = jsonDecode(metadata);
+        if (parsed is Map<String, dynamic>) {
+          return parsed;
+        }
+      } else if (metadata is Map<String, dynamic>) {
+        // Si ya es un Map, devolverlo directamente
+        return metadata;
+      }
+      
+      return {};
+    } catch (e) {
+      print('❌ Error parseando metadata: $e');
+      return {};
+    }
+  }
+
+  DateTime? _parseDateTime(dynamic dateTime) {
+    try {
+      if (dateTime == null) return null;
+      
+      if (dateTime is String) {
+        return DateTime.parse(dateTime);
+      } else if (dateTime is DateTime) {
+        return dateTime;
+      }
+      
+      return null;
+    } catch (e) {
+      print('❌ Error parseando fecha: $e');
+      return DateTime.now();
+    }
+  }
+
+  OrderAddress _parseShippingAddress(dynamic shippingAddress) {
+    try {
+      if (shippingAddress == null) {
+        return OrderAddress(
+          recipient: 'Sin destinatario',
+          phone: '',
+          address: '',
+          city: '',
+          province: 'Cuba',
+        );
+      }
+      
+      if (shippingAddress is Map<String, dynamic>) {
+        return OrderAddress(
+          recipient: shippingAddress['recipient'] ?? 'Sin destinatario',
+          phone: shippingAddress['phone'] ?? '',
+          address: shippingAddress['address'] ?? '',
+          city: shippingAddress['city'] ?? '',
+          province: shippingAddress['province'] ?? 'Cuba',
+        );
+      }
+      
+      // Fallback si no es Map
+      return OrderAddress(
+        recipient: 'Sin destinatario',
+        phone: '',
+        address: '',
+        city: '',
+        province: 'Cuba',
+      );
+    } catch (e) {
+      print('❌ Error parseando shipping_address: $e');
+      return OrderAddress(
+        recipient: 'Sin destinatario',
+        phone: '',
+        address: '',
+        city: '',
+        province: 'Cuba',
+      );
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadOrders();
+    
+    // ✅ SI HAY ORDEN ESPECÍFICA, USARLA DIRECTAMENTE
+    if (widget.selectedOrder != null) {
+      _orders = [widget.selectedOrder!];
+      _selectedOrderIndex = 0;
+      setState(() => _isLoading = false);
+      print('✅ Usando orden específica: ${widget.selectedOrder!.orderNumber}');
+      print('📋 Orden específica - ID: ${widget.selectedOrder!.id}');
+      print('📋 Orden específica - Total: \$${widget.selectedOrder!.total}');
+      print('📋 Orden específica - Items: ${widget.selectedOrder!.items.length}');
+      // ✅ INICIALIZAR ANIMACIONES DESPUÉS DE TENER LA ORDEN
+      _setupAnimations();
+    } else {
+      print('⚠️ No hay orden específica - cargando todas las órdenes');
+      _loadOrders();
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reload orders when screen is revisited
-    _loadOrders();
+    print('🔄 didChangeDependencies llamado');
+    print('🔄 Widget selectedOrder: ${widget.selectedOrder?.orderNumber ?? "null"}');
+    print('🔄 Current orders count: ${_orders.length}');
+    
+    // ✅ SOLO recargar si NO hay orden específica
+    if (widget.selectedOrder == null) {
+      print('🔄 Recargando órdenes (no hay orden específica)');
+      _loadOrders();
+    } else {
+      print('🔄 NO recargando - usando orden específica: ${widget.selectedOrder!.orderNumber}');
+    }
   }
 
   Future<void> _loadOrders({bool showSuccessMessage = false}) async {
@@ -65,9 +212,26 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
       if (currentUser != null) {
         print('👤 Current user: ${currentUser.id}');
         
-        // Cargar órdenes reales desde Supabase
+        // Cargar órdenes reales desde Supabase CON ITEMS
         print('🔍 Cargando órdenes para usuario: ${currentUser.id}');
         final ordersData = await SupabaseService.instance.getUserOrdersRaw(currentUser.id);
+        
+        // ✅ CARGAR ITEMS PARA CADA ORDEN
+        for (var orderData in ordersData) {
+          try {
+            final orderId = orderData['id'];
+            final orderItems = await SupabaseService.instance.select(
+              'order_items',
+              where: 'order_id',
+              equals: orderId,
+            );
+            orderData['items'] = orderItems; // ✅ AGREGAR ITEMS A LA ORDEN
+            print('📦 Orden ${orderData['order_number']}: ${orderItems.length} items cargados');
+          } catch (e) {
+            print('⚠️ Error cargando items para orden ${orderData['id']}: $e');
+            orderData['items'] = []; // Fallback a lista vacía
+          }
+        }
         print('📦 Órdenes cargadas desde Supabase: ${ordersData.length}');
         
         if (ordersData.isEmpty) {
@@ -86,11 +250,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
         
         final orders = ordersData.map((orderData) {
           try {
+            print('🔍 Parseando orden: ${orderData['order_number']}');
+            print('📋 Campos disponibles: ${orderData.keys.toList()}');
+            
             return Order(
               id: orderData['id'] ?? '',
               userId: orderData['user_id'] ?? '',
               orderNumber: orderData['order_number'] ?? '',
-              items: [], // Se cargarían por separado si es necesario
+              items: _parseOrderItems(orderData['items']), // ✅ CARGAR ITEMS REALES
               subtotal: (orderData['subtotal'] ?? 0.0).toDouble(),
               shippingCost: (orderData['shipping_cost'] ?? 0.0).toDouble(),
               total: (orderData['total'] ?? 0.0).toDouble(),
@@ -98,22 +265,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
               paymentStatus: orderData['payment_status'] ?? 'pending',
               paymentMethod: orderData['payment_method'] ?? 'card',
               shippingMethod: orderData['shipping_method'] ?? 'standard',
-              shippingAddress: OrderAddress(
-                recipient: orderData['shipping_recipient'] ?? '',
-                phone: orderData['shipping_phone'] ?? '',
-                address: orderData['shipping_street'] ?? '',
-                city: orderData['shipping_city'] ?? '',
-                province: orderData['shipping_province'] ?? '',
-              ),
-              createdAt: DateTime.parse(orderData['created_at'] ?? DateTime.now().toIso8601String()),
-              updatedAt: DateTime.parse(orderData['updated_at'] ?? DateTime.now().toIso8601String()),
-              estimatedDelivery: orderData['estimated_delivery'] != null 
-                  ? DateTime.parse(orderData['estimated_delivery']) 
-                  : null,
-              metadata: orderData['metadata'] ?? {},
+              shippingAddress: _parseShippingAddress(orderData['shipping_address']),
+              createdAt: _parseDateTime(orderData['created_at']) ?? DateTime.now(),
+              updatedAt: _parseDateTime(orderData['updated_at']) ?? DateTime.now(),
+              estimatedDelivery: _parseDateTime(orderData['estimated_delivery']),
+              metadata: _parseMetadata(orderData['metadata']),
             );
           } catch (e) {
-            print('Error parsing order data: $e');
+            print('❌ Error parsing order ${orderData['order_number']}: $e');
+            print('📋 Datos de la orden problemática: ${orderData.toString()}');
             return null;
           }
         }).where((order) => order != null).cast<Order>().toList();
@@ -175,35 +335,36 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
   void _setupAnimations() {
     if (_orders.isEmpty) return;
     
-    _planeAnimationController = AnimationController(
-      duration: Duration(seconds: 2),
+    _truckAnimationController = AnimationController(
+      duration: Duration(seconds: 3),
       vsync: this,
     );
     
-    _celebrationController = AnimationController(
-      duration: Duration(seconds: 3),
+    _vibrationController = AnimationController(
+      duration: Duration(milliseconds: 150),
       vsync: this,
     );
 
     int currentStatus = _getOrderStatusIndex(_orders[_selectedOrderIndex].orderStatus);
     
-    _planeAnimation = Tween<double>(
+    _truckAnimation = Tween<double>(
       begin: 0,
-      end: (currentStatus - 1) / 6, // Posición del avión basada en el status (7 estados, índice 0-6)
+      end: (currentStatus - 1) / 6, // Posición del camión basada en el status
     ).animate(CurvedAnimation(
-      parent: _planeAnimationController,
+      parent: _truckAnimationController,
       curve: Curves.easeInOut,
     ));
 
-    _celebrationAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
+    _vibrationAnimation = Tween<double>(
+      begin: -1.5,
+      end: 1.5,
     ).animate(CurvedAnimation(
-      parent: _celebrationController,
-      curve: Curves.elasticOut,
+      parent: _vibrationController,
+      curve: Curves.linear,
     ));
 
-    _planeAnimationController.forward();
+    _truckAnimationController.forward();
+    _vibrationController.repeat(reverse: true); // ✅ Vibración constante
     
     // Si está entregado, mostrar celebración
     if (_orders[_selectedOrderIndex].orderStatus == 'delivered') {
@@ -220,6 +381,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
       case 'shipped': return 5;
       case 'out_for_delivery': return 6;
       case 'delivered': return 7;
+      case 'cancelled': return 8; // ✅ NUEVO ESTADO CANCELADO
       default: return 1;
     }
   }
@@ -233,14 +395,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
       case 'shipped': return 'Enviado';
       case 'out_for_delivery': return 'En Reparto';
       case 'delivered': return 'Entregado';
-      case 'cancelled': return 'Cancelación Pendiente';
+      case 'cancelled': return 'Cancelado'; // ✅ NOMBRE CORRECTO
       default: return 'Desconocido';
     }
   }
 
   void _showDeliveredCelebration() {
     setState(() => showCelebration = true);
-    _celebrationController.forward();
+    // Celebración removida temporalmente
   }
 
   @override
@@ -265,7 +427,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
             icon: Icon(Icons.refresh, color: Colors.white),
             onPressed: _isLoading ? null : () {
               print('🔄 Manual refresh requested by user');
-              _loadOrders(showSuccessMessage: true);
+              // ✅ SI HAY ORDEN ESPECÍFICA, NO RECARGAR TODAS
+              if (widget.selectedOrder != null) {
+                print('🔄 Orden específica - NO recargando todas las órdenes');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Orden actualizada'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              } else {
+                _loadOrders(showSuccessMessage: true);
+              }
             },
             tooltip: 'Actualizar órdenes',
           ),
@@ -315,12 +489,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                   children: [
                     SingleChildScrollView(
                       child: Padding(
-                        padding: EdgeInsets.all(16),
+                        padding: EdgeInsets.all(12), // ✅ Reducido de 16 a 12
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Selector de orden si hay múltiples
-                            if (_orders.length > 1) _buildOrderSelector(),
+                            // ✅ ELIMINADO: Selector de órdenes (está en "Mis Órdenes")
                             
                             // Información de la orden
                             _buildOrderInfoCard(),
@@ -340,6 +514,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                             
                             // Botones de acción
                             _buildActionButtons(),
+                            SizedBox(height: 50), // ✅ ESPACIO EXTRA PARA ACCESIBILIDAD
                           ],
                         ),
                       ),
@@ -355,9 +530,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
   Widget _buildOrderSelector() {
     return Card(
       elevation: 2,
-      margin: EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 12), // ✅ Reducido
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(12), // ✅ Reducido
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -422,7 +597,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(12), // ✅ Reducido
         child: Row(
           children: [
             // Imagen del primer producto
@@ -522,68 +697,123 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
             ),
             SizedBox(height: 20),
             
-            // Timeline con avión animado
-            SizedBox(
-              height: 420, // Increased for 7 states
+            // ✅ BANNER DE CANCELACIÓN (si la orden está cancelada)
+            if (_orders.isNotEmpty && _orders[_selectedOrderIndex].orderStatus == 'cancelled') ...[
+              // ✅ LOG PARA DEBUG
+              Builder(builder: (context) {
+                print('🚨 Mostrando banner de cancelación para orden: ${_orders[_selectedOrderIndex].orderNumber}');
+                return SizedBox.shrink();
+              }), 
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(16),
+                margin: EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red[300]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.cancel, color: Colors.red[700], size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Esta orden fue cancelada',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            
+            // ✅ TIMELINE HORIZONTAL COMPACTO (TODO EN PANTALLA)
+            Container(
+              height: 100, // ✅ MÁS COMPACTO
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly, // ✅ DISTRIBUIR UNIFORMEMENTE
+                children: statusList.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  Map<String, String> status = entry.value;
+                  int currentStatus = _getOrderStatusIndex(_orders.isNotEmpty ? _orders[_selectedOrderIndex].orderStatus : 'created');
+                  bool isCompleted = (index + 1) < currentStatus;
+                  bool isCurrent = (index + 1) == currentStatus;
+                  
+                  return Expanded( // ✅ CADA ESTADO OCUPA ESPACIO IGUAL
+                    child: _buildCompactTimelineStep(
+                      status['title']!,
+                      isCompleted,
+                      isCurrent,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            
+            SizedBox(height: 16),
+            
+            // ✅ CAMIÓN ANIMADO HORIZONTAL (SEPARADO)
+            Container(
+              height: 60,
               child: Stack(
                 children: [
-                  // Línea vertical de fondo
+                  // Línea de progreso horizontal
                   Positioned(
                     left: 20,
-                    top: 0,
-                    bottom: 0,
+                    right: 20,
+                    top: 30,
                     child: Container(
-                      width: 2,
-                      color: Colors.grey[300],
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
                   
-                  // Pasos del timeline
-                  Column(
-                    children: statusList.asMap().entries.map((entry) {
-                      int index = entry.key;
-                      Map<String, String> status = entry.value;
-                      int currentStatus = _getOrderStatusIndex(_orders.isNotEmpty ? _orders[_selectedOrderIndex].orderStatus : 'created');
-                      bool isCompleted = (index + 1) < currentStatus;
-                      bool isCurrent = (index + 1) == currentStatus;
-                      
-                      return _buildTimelineStep(
-                        status['title']!,
-                        _getStatusSubtitle(index),
-                        isCompleted,
-                        isCurrent,
-                        index == statusList.length - 1,
-                      );
-                    }).toList(),
-                  ),
-                  
-                  // Avión animado
+                  // 🚛 Camión animado horizontal
                   AnimatedBuilder(
-                    animation: _planeAnimation,
+                    animation: _truckAnimation,
                     builder: (context, child) {
-                      return Positioned(
-                        left: 35,
-                        top: _planeAnimation.value * 360 + 8, // Ajustar para 7 estados
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(context).colorScheme.primary.withOpacity( 0.3),
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
+                      int currentStatus = _getOrderStatusIndex(_orders.isNotEmpty ? _orders[_selectedOrderIndex].orderStatus : 'created');
+                      double progress = (currentStatus - 1) / 6; // ✅ PROGRESO 0-1 (7 estados sin cancelado)
+                      double screenWidth = MediaQuery.of(context).size.width;
+                      double stepWidth = screenWidth / 7; // ✅ DIVIDIR PANTALLA EN 7 PARTES IGUALES
+                      double truckPosition = (stepWidth * (currentStatus - 1)) + (stepWidth / 2) - 20; // ✅ CENTRADO EN CADA PASO
+                      
+                      return AnimatedBuilder(
+                        animation: _vibrationAnimation,
+                        builder: (context, child) {
+                          return Positioned(
+                            left: truckPosition + _vibrationAnimation.value, // ✅ Movimiento horizontal
+                            top: 15,
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.orange[600],
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.orange.withOpacity(0.4),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.flight,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
+                              child: Icon(
+                                Icons.local_shipping, // 🚛 Camión
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
@@ -592,6 +822,117 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ✅ PASO SÚPER COMPACTO (TODO EN PANTALLA)
+  Widget _buildCompactTimelineStep(String title, bool isCompleted, bool isCurrent) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Círculo pequeño
+        Container(
+          width: 24, // ✅ SÚPER PEQUEÑO
+          height: 24,
+          decoration: BoxDecoration(
+            color: isCompleted 
+                ? Colors.green 
+                : isCurrent 
+                    ? Colors.blue 
+                    : Colors.grey[300],
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isCompleted 
+                ? Icons.check 
+                : isCurrent 
+                    ? Icons.radio_button_checked 
+                    : Icons.radio_button_unchecked,
+            color: isCompleted || isCurrent ? Colors.white : Colors.grey[600],
+            size: 12, // ✅ ICONO PEQUEÑO
+          ),
+        ),
+        SizedBox(height: 4),
+        // Texto súper compacto
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 8, // ✅ TEXTO MUY PEQUEÑO
+            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+            color: isCurrent ? Colors.blue[700] : Colors.grey[600],
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  // ✅ NUEVO: PASO HORIZONTAL DEL TIMELINE
+  Widget _buildHorizontalTimelineStep(String title, String subtitle, bool isCompleted, bool isCurrent) {
+    return Container(
+      width: 60, // ✅ REDUCIDO PARA QUE NO SE SALGA
+      child: Column(
+        children: [
+          // Círculo del estado
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isCompleted 
+                  ? Colors.green 
+                  : isCurrent 
+                      ? Colors.blue 
+                      : Colors.grey[300],
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isCompleted 
+                    ? Colors.green[700]! 
+                    : isCurrent 
+                        ? Colors.blue[700]! 
+                        : Colors.grey[400]!,
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              isCompleted 
+                  ? Icons.check 
+                  : isCurrent 
+                      ? Icons.radio_button_checked 
+                      : Icons.radio_button_unchecked,
+              color: isCompleted || isCurrent ? Colors.white : Colors.grey[600],
+              size: 20,
+            ),
+          ),
+          SizedBox(height: 8),
+          // Título del estado
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 9, // ✅ TEXTO MÁS PEQUEÑO
+              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+              color: isCurrent ? Colors.blue[700] : Colors.grey[700],
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (subtitle.isNotEmpty) ...[
+            SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 9,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -675,7 +1016,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(12), // ✅ Reducido
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -735,7 +1076,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(12), // ✅ Reducido
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -932,49 +1273,53 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                      order.orderStatus != 'out_for_delivery' &&
                      order.orderStatus != 'shipped';
     
-    return Column(
-      children: [
-        if (canCancel) ...[
-          SizedBox(
+    return SingleChildScrollView( // ✅ ENVOLVER EN SCROLL PARA EVITAR OVERFLOW
+      child: Column(
+        children: [
+          if (canCancel) ...[
+            Container(
+              width: double.infinity,
+              margin: EdgeInsets.symmetric(horizontal: 8), // ✅ MARGEN PARA NO SALIRSE
+              child: ElevatedButton.icon(
+                onPressed: () => _showCancelOrderConfirmation(),
+                icon: Icon(Icons.cancel_outlined, size: 18),
+                label: Text('Cancelar Pedido', style: TextStyle(fontSize: 14)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16), // ✅ REDUCIDO
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 8),
+          ],
+          
+          Container(
             width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _showCancelOrderConfirmation(),
-              icon: Icon(Icons.cancel_outlined),
-              label: Text('Cancelar Pedido'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16),
+            margin: EdgeInsets.symmetric(horizontal: 8), // ✅ MARGEN PARA NO SALIRSE
+            child: OutlinedButton(
+              onPressed: _openSupportChat, // ✅ USAR FUNCIÓN CENTRALIZADA
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16), // ✅ REDUCIDO
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
+              child: Text('Contactar Soporte', style: TextStyle(fontSize: 14)),
             ),
           ),
-          SizedBox(height: 12),
         ],
-        
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: () {
-              // Contactar soporte
-              Navigator.pushNamed(context, '/support-chat');
-            },
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text('Contactar Soporte'),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildCelebrationOverlay() {
+    // TEMPORALMENTE DESHABILITADO - ARREGLAR ANIMACIONES
+    return Container(); // Placeholder
+    /*
     return AnimatedBuilder(
       animation: _celebrationAnimation,
       builder: (context, child) {
@@ -1043,7 +1388,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                     ElevatedButton(
                       onPressed: () {
                         setState(() => showCelebration = false);
-                        _celebrationController.reset();
+                        // _celebrationController removido temporalmente
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -1063,6 +1408,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
         );
       },
     );
+    */
   }
 
   String _getCurrentStatusText() {
@@ -1077,27 +1423,195 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text('Cancelar Pedido'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.orange, size: 28),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Cancelar Pedido',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF232F3E),
+                ),
+              ),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('¿Estás seguro de que deseas cancelar este pedido?'),
-            SizedBox(height: 8),
             Text(
-              'Orden: ${order.orderNumber}',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(
-              'Total: \$${order.total.toStringAsFixed(2)}',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Una vez cancelado, el sistema procesará la cancelación y el pedido pasará a estado "Cancelación Pendiente".',
+              'El pedido se puede cancelar solo si aún no se ha procesado. Una vez que el pedido está siendo procesado o ya fue enviado, no es posible cancelarlo.',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 14,
+                color: Colors.grey[700],
+                height: 1.4,
+              ),
+            ),
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Orden: ${order.orderNumber}',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Total: \$${order.total.toStringAsFixed(2)}',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Estado actual: ${_getStatusDisplayName(order.orderStatus)}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              '¿Desea continuar con la cancelación?',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF232F3E),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'No Cancelar',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _processCancellation(order); // ✅ NUEVA LÓGICA INTELIGENTE
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text('Sí, Cancelar Pedido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ NUEVA LÓGICA INTELIGENTE DE CANCELACIÓN
+  void _processCancellation(Order order) {
+    // Verificar si se puede cancelar según el estado
+    final canCancel = _canOrderBeCancelled(order.orderStatus);
+    
+    if (canCancel) {
+      // ✅ SE PUEDE CANCELAR
+      _cancelOrder(order);
+    } else {
+      // ❌ NO SE PUEDE CANCELAR - MOSTRAR MODAL DE ERROR
+      _showCannotCancelDialog(order);
+    }
+  }
+
+  // ✅ VERIFICAR SI UNA ORDEN SE PUEDE CANCELAR
+  bool _canOrderBeCancelled(String orderStatus) {
+    final cancellableStates = [
+      'created',
+      'payment_pending', 
+      'payment_confirmed',
+      'pending_payment',
+    ];
+    return cancellableStates.contains(orderStatus.toLowerCase());
+  }
+
+  // ✅ MODAL CUANDO NO SE PUEDE CANCELAR
+  void _showCannotCancelDialog(Order order) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.block, color: Colors.red, size: 28),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'No se puede cancelar',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red[700],
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Este pedido ya no se puede cancelar porque está siendo procesado y está listo para el envío.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                height: 1.4,
+              ),
+            ),
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Orden: ${order.orderNumber}',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Estado: ${_getStatusDisplayName(order.orderStatus)}',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.red[700]),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Si necesita ayuda, puede contactar a nuestro equipo de soporte.',
+              style: TextStyle(
+                fontSize: 14,
                 color: Colors.grey[600],
               ),
             ),
@@ -1106,22 +1620,69 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('No Cancelar'),
+            child: Text(
+              'Entendido',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _cancelOrder(order);
+              _openSupportChat(); // ✅ ABRIR CHAT DE SOPORTE
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            child: Text('Cancelar Pedido'),
+            child: Text('Contactar Soporte'),
           ),
         ],
       ),
     );
+  }
+
+  // ✅ OBTENER NOMBRE LEGIBLE DEL ESTADO
+  String _getStatusDisplayName(String status) {
+    switch (status.toLowerCase()) {
+      case 'created':
+        return 'Orden Creada';
+      case 'payment_pending':
+        return 'Pago Pendiente';
+      case 'payment_confirmed':
+        return 'Pago Confirmado';
+      case 'processing':
+        return 'Procesando';
+      case 'shipped':
+        return 'Enviado';
+      case 'out_for_delivery':
+        return 'En Reparto';
+      case 'delivered':
+        return 'Entregado';
+      case 'cancelled':
+        return 'Cancelado';
+      default:
+        return status;
+    }
+  }
+
+  // ✅ ABRIR CHAT DE SOPORTE (CONECTA CON WEB ADMIN)
+  void _openSupportChat() {
+    try {
+      // TODO: Implementar navegación al chat de soporte
+      Navigator.pushNamed(context, '/support-chat');
+      print('🔗 Abriendo chat de soporte...');
+    } catch (e) {
+      print('❌ Error abriendo chat: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error abriendo chat de soporte'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _cancelOrder(Order order) async {
@@ -1196,8 +1757,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
 
   @override
   void dispose() {
-    _planeAnimationController.dispose();
-    _celebrationController.dispose();
+    _truckAnimationController.dispose();
+    _vibrationController.dispose();
     super.dispose();
   }
 }

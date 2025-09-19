@@ -43,37 +43,41 @@ class _AccountScreenState extends State<AccountScreen> {
     setState(() => isLoading = true);
 
     try {
-      // Cargar datos reales desde Supabase
-      await AuthServiceBypass.instance.loadCurrentUserFromLocal();
+      // ⚡ OPTIMIZACIÓN: Cargar datos del usuario inmediatamente desde memoria
       final user = AuthServiceBypass.instance.getCurrentUser();
 
       if (user != null && mounted) {
+        // Mostrar datos inmediatamente
         setState(() {
           _nameController.text = user.name;
           _emailController.text = user.email;
           _phoneController.text = user.phone;
           currentUser = user;
+          isLoading = false; // ✅ Quitar loading inmediatamente
         });
 
-        // Cargar foto de perfil desde Supabase primero
-        profileImageUrl = await _profileImageService.getProfileImageUrl(user.id);
-
-        // Cargar datos de rol del usuario
-        await _roleService.initialize();
-        await _roleService.getUserByEmail(user.email);
-
-        // Cargar foto de perfil local como fallback si no hay en Supabase
-        if (profileImageUrl == null) {
-          await _loadLocalProfileImage(user.id);
+        // ⚡ Cargar datos adicionales en paralelo (sin bloquear la UI)
+        _loadAdditionalDataInBackground(user);
+      } else {
+        // Solo si no hay usuario en memoria, cargar desde Supabase
+        print('⚠️ No hay usuario en memoria, cargando desde Supabase...');
+        await AuthServiceBypass.instance.loadCurrentUserFromLocal();
+        final freshUser = AuthServiceBypass.instance.getCurrentUser();
+        
+        if (freshUser != null && mounted) {
+          setState(() {
+            _nameController.text = freshUser.name;
+            _emailController.text = freshUser.email;
+            _phoneController.text = freshUser.phone;
+            currentUser = freshUser;
+            isLoading = false;
+          });
+          _loadAdditionalDataInBackground(freshUser);
+        } else if (mounted) {
+          // Si no hay usuario, redirigir al login
+          Navigator.pushReplacementNamed(context, '/login');
+          return;
         }
-
-        if (mounted) {
-          setState(() {}); // Actualizar UI con datos de rol
-        }
-      } else if (mounted) {
-        // Si no hay usuario, redirigir al login
-        Navigator.pushReplacementNamed(context, '/login');
-        return;
       }
     } catch (e) {
       print('Error loading user data: $e');
@@ -86,6 +90,43 @@ class _AccountScreenState extends State<AccountScreen> {
       if (mounted) {
         setState(() => isLoading = false);
       }
+    }
+  }
+
+  // ⚡ Función para cargar datos adicionales sin bloquear la UI
+  void _loadAdditionalDataInBackground(User user) async {
+    try {
+      // Cargar foto de perfil y datos de rol en paralelo
+      final futures = [
+        _profileImageService.getProfileImageUrl(user.id),
+        _loadRoleData(user.email),
+      ];
+      
+      final results = await Future.wait(futures);
+      final imageUrl = results[0] as String?;
+      
+      if (mounted) {
+        setState(() {
+          profileImageUrl = imageUrl;
+        });
+        
+        // Si no hay imagen en Supabase, cargar local
+        if (imageUrl == null) {
+          _loadLocalProfileImage(user.id);
+        }
+      }
+    } catch (e) {
+      print('⚠️ Error cargando datos adicionales: $e');
+    }
+  }
+
+  // ⚡ Función optimizada para cargar datos de rol
+  Future<void> _loadRoleData(String email) async {
+    try {
+      await _roleService.initialize();
+      await _roleService.getUserByEmail(email);
+    } catch (e) {
+      print('⚠️ Error cargando rol: $e');
     }
   }
 

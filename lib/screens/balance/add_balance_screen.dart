@@ -10,7 +10,7 @@ class AddBalanceScreen extends StatefulWidget {
   State<AddBalanceScreen> createState() => _AddBalanceScreenState();
 }
 
-class _AddBalanceScreenState extends State<AddBalanceScreen> {
+class _AddBalanceScreenState extends State<AddBalanceScreen> with WidgetsBindingObserver {
   double _currentBalance = 0.00;
   double? _selectedAmount;
   bool _isLoading = true;
@@ -30,39 +30,52 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserBalance();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _manualAmountController.dispose();
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // La app volvió a primer plano, refrescar saldo
+      print('🔄 App resumed, refrescando saldo...');
+      _loadUserBalance();
+    }
+  }
+
   Future<void> _loadUserBalance() async {
     try {
-      // Verificar autenticación
-      final hasAuth = await AuthGuardService.instance.requireAuth(context, serviceName: 'Agregar Balance');
-      if (!hasAuth) {
-        Navigator.pop(context);
-        return;
-      }
-
-      // Cargar balance del usuario
+      // Cargar balance del usuario inmediatamente (sin verificar auth aquí para ser más rápido)
       final currentUser = SupabaseAuthService.instance.currentUser;
       if (currentUser != null) {
         setState(() {
           _currentBalance = currentUser.balance;
           _isLoading = false;
         });
+        print('✅ Balance cargado rápidamente: \$${_currentBalance.toStringAsFixed(2)}');
       } else {
+        // Solo verificar autenticación si no hay usuario
+        print('⚠️ No hay usuario, verificando autenticación...');
+        final hasAuth = await AuthGuardService.instance.requireAuth(context, serviceName: 'Agregar Balance');
+        if (!hasAuth) {
+          Navigator.pop(context);
+          return;
+        }
         setState(() {
           _currentBalance = 0.00;
           _isLoading = false;
         });
       }
     } catch (e) {
-      print('Error cargando balance: $e');
+      print('❌ Error cargando balance: $e');
       setState(() {
         _currentBalance = 0.00;
         _isLoading = false;
@@ -135,6 +148,7 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
         'amount': _selectedAmount!,
         'fee': _processingFee,
         'total': _totalAmount,
+        'isBalanceRecharge': true, // ✅ RECARGA: SÍ afectar saldo
       },
     );
   }
@@ -197,10 +211,11 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                       ],
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
                           'Balance Actual',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -210,6 +225,7 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                         const SizedBox(height: 8),
                         Text(
                           '\$${_currentBalance.toStringAsFixed(2)}',
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 32,
@@ -219,6 +235,7 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                         const SizedBox(height: 4),
                         const Text(
                           'USD',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
@@ -297,15 +314,15 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                   ),
                   const SizedBox(height: 12),
                   
-                  // Opciones predefinidas
+                  // Opciones predefinidas - BOTONES MÁS PEQUEÑOS
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 2.5,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
+                      crossAxisCount: 3, // 3 columnas en lugar de 2
+                      childAspectRatio: 2.0, // Más compactos
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
                     ),
                     itemCount: _balanceOptions.length,
                     itemBuilder: (context, index) {
@@ -331,19 +348,19 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                             ],
                           ),
                           child: Center(
-                            child: Row(
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
                                   Icons.attach_money,
                                   color: isSelected ? Colors.white : const Color(0xFF1976D2),
-                                  size: 18,
+                                  size: 16,
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(height: 2),
                                 Text(
-                                  amount.toStringAsFixed(0),
+                                  '\$${amount.toStringAsFixed(0)}',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: isSelected ? Colors.white : const Color(0xFF2C2C2C),
                                   ),
@@ -358,12 +375,12 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Opción de monto manual
+                  // Opción de monto manual - MÁS COMPACTO
                   GestureDetector(
                     onTap: _selectManualAmount,
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: _isManualAmount ? const Color(0xFF1976D2) : Colors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -390,7 +407,7 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                           Text(
                             'Monto personalizado',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: _isManualAmount ? Colors.white : const Color(0xFF2C2C2C),
                             ),
@@ -398,8 +415,8 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                           const Spacer(),
                           if (_isManualAmount)
                             SizedBox(
-                              width: 120,
-                              height: 40,
+                              width: 100,
+                              height: 35,
                               child: TextField(
                                 controller: _manualAmountController,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),

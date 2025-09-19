@@ -8,38 +8,24 @@ import 'package:cubalink23/screens/payment/payment_error_screen.dart';
 /// 
 /// Sin tarjetas guardadas, sin complicaciones
 /// Solo: Monto → Pagar con Square → Payment Link
-class PaymentMethodScreen extends StatefulWidget {
+class PaymentSimpleScreen extends StatefulWidget {
   final double amount;
   final double fee;
   final double total;
-  final Map<String, dynamic>? metadata;
-  final bool isBalanceRecharge; // ✅ NUEVO: Identificar si es recarga
 
-  const PaymentMethodScreen({
+  const PaymentSimpleScreen({
     super.key,
     required this.amount,
     required this.fee,
     required this.total,
-    this.metadata,
-    this.isBalanceRecharge = false, // ✅ DEFAULT: NO es recarga
   });
 
   @override
-  State<PaymentMethodScreen> createState() => _PaymentMethodScreenState();
+  State<PaymentSimpleScreen> createState() => _PaymentSimpleScreenState();
 }
 
-class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
+class _PaymentSimpleScreenState extends State<PaymentSimpleScreen> {
   bool isProcessing = false;
-  
-  // ✅ CALCULAR COMISIÓN REAL DE SQUARE: 2.9% + $0.30
-  double get squareFee {
-    final orderAmount = widget.amount + widget.fee; // Monto total de la orden
-    return (orderAmount * 0.029) + 0.30; // 2.9% + $0.30
-  }
-  
-  double get finalTotal {
-    return widget.amount + widget.fee + squareFee; // Monto + Envío + Square Fee
-  }
 
   Future<void> _processPayment() async {
     setState(() => isProcessing = true);
@@ -51,7 +37,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       // 🌐 WEBVIEW MANUAL - COMO FUNCIONABA BIEN
       final result = await SquareWebViewService.openTokenizeSheet(
         context: context,
-        amountCents: (finalTotal * 100).round(), // ✅ TOTAL CON SQUARE FEE
+        amountCents: (widget.total * 100).round(),
         customerId: 'user-${DateTime.now().millisecondsSinceEpoch}',
         currency: 'USD',
         note: 'Recarga Cubalink23',
@@ -60,48 +46,33 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       if (result != null && result['success'] == true) {
         print('✅ Pago procesado: ${result['payment_id']}');
         
-        // ✅ REGRESAR RESULTADO EXITOSO INMEDIATAMENTE
-      if (mounted) {
-          Navigator.pop(context, true); // ✅ REGRESAR TRUE = PAGO EXITOSO
-        }
-        
-        // Luego navegar a pantalla de éxito (opcional)
-        if (mounted) {
-          await Navigator.push(
+        // Navegar a pantalla de éxito
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => PaymentSuccessScreen(
               amount: widget.amount,
               fee: widget.fee,
-                total: finalTotal, // ✅ TOTAL CON SQUARE FEE
-                transactionId: result['payment_id'] ?? 'N/A',
-                isBalanceRecharge: widget.isBalanceRecharge, // ✅ PASAR PARÁMETRO
-              ),
+              total: widget.total,
+              transactionId: result['payment_id'] ?? 'N/A',
             ),
-          );
-        }
+          ),
+        );
       } else if (result != null && result['success'] == false) {
         print('❌ Pago falló: ${result['error']}');
         
-        // ✅ REGRESAR RESULTADO FALLIDO INMEDIATAMENTE
-        if (mounted) {
-          Navigator.pop(context, false); // ❌ REGRESAR FALSE = PAGO FALLIDO
-        }
-        
-        // Luego navegar a pantalla de error (opcional)
-      if (mounted) {
-          await Navigator.push(
+        // Navegar a pantalla de error
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => PaymentErrorScreen(
-                errorMessage: result['error'] ?? 'Pago fallido',
+              errorMessage: result['error'] ?? 'Pago fallido',
               amount: widget.amount,
               fee: widget.fee,
-                total: finalTotal, // ✅ TOTAL CON SQUARE FEE
-              ),
+              total: widget.total,
+            ),
           ),
         );
-        }
       } else {
         print('⚠️ Pago cancelado por usuario');
       }
@@ -123,39 +94,37 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('💳 Procesar Pago'), // ✅ TÍTULO GENÉRICO
+        title: const Text('💳 Pagar con Square'),
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-                    child: Column(
-                      children: [
+        child: Column(
+          children: [
             // Header con resumen del pago
-                        Container(
+            Container(
               width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
                 color: Colors.blue[600],
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
                 ),
-                          ),
-                          child: Column(
-                            children: [
-                  Center( // ✅ CENTRAR TÍTULO
-                    child: const Text(
-                      'Proceso de Pago',
-                                style: TextStyle(
-                                  color: Colors.white,
-                        fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Resumen del Pago',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
@@ -163,7 +132,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                         style: TextStyle(color: Colors.white70),
                       ),
                       Text(
-                        '\$${(widget.amount + widget.fee).toStringAsFixed(2)}', // ✅ MONTO TOTAL DE LA ORDEN
+                        '\$${widget.amount.toStringAsFixed(2)}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -175,11 +144,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Taxes:',  // ✅ SIN MENCIONAR SQUARE
+                        'Comisión:',
                         style: TextStyle(color: Colors.white70),
                       ),
                       Text(
-                        '\$${squareFee.toStringAsFixed(2)}', // ✅ COMISIÓN REAL DE SQUARE
+                        '\$${widget.fee.toStringAsFixed(2)}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -190,28 +159,28 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   const Divider(color: Colors.white30),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
+                    children: [
+                      const Text(
                         'Total:',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                        '\$${finalTotal.toStringAsFixed(2)} USD', // ✅ TOTAL CON SQUARE FEE
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                        style: TextStyle(
+                          color: Colors.white,
                           fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      Text(
+                        '\$${widget.total.toStringAsFixed(2)} USD',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
             
             const SizedBox(height: 32),
 
@@ -229,17 +198,17 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                         color: Colors.green[600],
                       ),
                       const SizedBox(height: 16),
-                        const Text(
+                      const Text(
                         'Pago Seguro con Square',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       const Text(
                         'Square procesará tu pago de forma segura y guardará tu tarjeta para futuros pagos.',
-                                  textAlign: TextAlign.center,
+                        textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(height: 16),
@@ -259,7 +228,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             ],
                           ),
                           Column(
-                                  children: [
+                            children: [
                               Icon(Icons.save, color: Colors.orange),
                               Text('Guarda tarjeta', style: TextStyle(fontSize: 12)),
                             ],
@@ -277,17 +246,17 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             // Botón de pagar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: SizedBox(
-                    width: double.infinity,
+              child: SizedBox(
+                width: double.infinity,
                 height: 60,
-                    child: ElevatedButton(
+                child: ElevatedButton(
                   onPressed: isProcessing ? null : _processPayment,
-                      style: ElevatedButton.styleFrom(
+                  style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green[600],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: isProcessing
                       ? const Row(
@@ -304,24 +273,24 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             SizedBox(width: 12),
                             Text('Creando pago...'),
                           ],
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
                             const Icon(Icons.payment, size: 24),
-                                const SizedBox(width: 8),
-                                Text(
+                            const SizedBox(width: 8),
+                            Text(
                               'PAGAR \$${widget.total.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                    ),
-                  ),
+                          ],
+                        ),
                 ),
+              ),
+            ),
 
             const SizedBox(height: 24),
 

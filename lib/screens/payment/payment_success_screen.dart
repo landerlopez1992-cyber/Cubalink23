@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/services/database_service.dart';
+import 'package:cubalink23/services/supabase_database_service.dart';
 import 'package:cubalink23/models/recharge_history.dart';
 
 class PaymentSuccessScreen extends StatefulWidget {
@@ -8,6 +9,7 @@ class PaymentSuccessScreen extends StatefulWidget {
   final double fee;
   final double total;
   final String transactionId;
+  final bool isBalanceRecharge; // ✅ NUEVO: Identificar si es recarga de saldo
 
   const PaymentSuccessScreen({
     super.key,
@@ -15,6 +17,7 @@ class PaymentSuccessScreen extends StatefulWidget {
     required this.fee,
     required this.total,
     required this.transactionId,
+    this.isBalanceRecharge = false, // ✅ DEFAULT: NO es recarga
   });
 
   @override
@@ -55,7 +58,37 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     );
 
     _animationController.forward();
+    // ✅ ACTUALIZAR SALDO SOLO SI ES RECARGA
+    if (widget.isBalanceRecharge) {
+      _updateUserBalance();
+      print('💰 Recarga de saldo - actualizando billetera');
+    } else {
+      print('💳 Pago de compra exitoso - NO se actualiza saldo de billetera');
+    }
     _loadRecentHistory();
+  }
+
+  Future<void> _updateUserBalance() async {
+    try {
+      final currentUser = SupabaseAuthService.instance.currentUser;
+      if (currentUser != null) {
+        print('💰 Actualizando saldo del usuario...');
+        print('💰 Usuario: ${currentUser.id}');
+        print('💰 Agregando: \$${widget.amount.toStringAsFixed(2)}');
+        
+        // Actualizar saldo en Supabase
+        await SupabaseDatabaseService.instance.addUserBalance(currentUser.id, widget.amount);
+        
+        // Refrescar datos del usuario en memoria
+        await SupabaseAuthService.instance.loadCurrentUserData();
+        
+        // TODO: Crear registro en historial de recargas cuando esté disponible el método
+        
+        print('✅ Saldo actualizado exitosamente');
+      }
+    } catch (e) {
+      print('❌ Error actualizando saldo: $e');
+    }
   }
 
   Future<void> _loadRecentHistory() async {
@@ -154,7 +187,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                           const Divider(),
                           _buildDetailRow('Total Cobrado:', '\$${widget.total.toStringAsFixed(2)}', Colors.black, isBold: true),
                           const SizedBox(height: 10),
-                          _buildDetailRow('ID de Transacción:', widget.transactionId, Colors.grey[700]!),
+                          _buildTransactionIdRow('ID de Transacción:', widget.transactionId),
                         ],
                       ),
                     ),
@@ -192,31 +225,61 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                   const SizedBox(height: 20),
                 ],
                 const SizedBox(height: 20),
-                // Continue Button
-                ElevatedButton(
-                  onPressed: () async {
-                    // Refrescar datos del usuario antes de regresar
-                    try {
-                      await SupabaseAuthService.instance.loadCurrentUserData();
-                      print('✅ Datos del usuario refrescados desde pantalla de éxito');
-                    } catch (e) {
-                      print('❌ Error refrescando datos: $e');
-                    }
-                    
-                    Navigator.of(context).popUntil((route) => route.isFirst); // Go back to the first screen (Welcome)
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF4CAF50),
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                // Continue Button - Fixed size
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      // ✅ MOSTRAR LOADING MIENTRAS SE PROCESA
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => AlertDialog(
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text('Procesando orden...'),
+                            ],
+                          ),
+                        ),
+                      );
+                      
+                      // Refrescar datos del usuario
+                      try {
+                        await SupabaseAuthService.instance.loadCurrentUserData();
+                        print('✅ Datos del usuario refrescados desde pantalla de éxito');
+                      } catch (e) {
+                        print('❌ Error refrescando datos: $e');
+                      }
+                      
+                      // ✅ SIMULAR PROCESAMIENTO (2-3 segundos)
+                      await Future.delayed(Duration(seconds: 2));
+                      
+                      // Cerrar loading
+                      Navigator.pop(context);
+                      
+                      // ✅ MOSTRAR MODAL DE ORDEN CREADA
+                      await _showOrderCreatedModal();
+                      
+                      // Regresar resultado exitoso y luego ir al inicio
+                      Navigator.pop(context, true); // ✅ REGRESAR TRUE = ORDEN DEBE CREARSE
+                      Navigator.of(context).popUntil((route) => route.isFirst); // Go back to the first screen (Welcome)
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF4CAF50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      elevation: 8,
                     ),
-                    elevation: 10,
-                  ),
-                  child: const Text(
-                    'Continuar',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    child: const Text(
+                      'Continuar',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
                 ],
@@ -248,6 +311,43 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
               fontSize: 16,
               color: color,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionIdRow(String label, String transactionId) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: SelectableText(
+              transactionId,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontFamily: 'monospace',
+              ),
             ),
           ),
         ],
@@ -359,6 +459,129 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     } else {
       return '${difference.inDays}d';
     }
+  }
+
+  // ✅ MODAL DE ORDEN CREADA EXITOSAMENTE
+  Future<void> _showOrderCreatedModal() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icono de éxito
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.shopping_bag_outlined,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+              SizedBox(height: 20),
+              
+              // Título
+              Text(
+                '¡Orden Creada\nExitosamente!', // ✅ DIVIDIR EN 2 LÍNEAS
+                style: TextStyle(
+                  fontSize: 18, // ✅ REDUCIR TAMAÑO
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2C2C2C),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 12),
+              
+              // Descripción
+              Text(
+                'Tu pedido ha sido procesado correctamente. Puedes seguir el progreso en "Rastreo de órdenes".', // ✅ TEXTO MÁS CORTO
+                style: TextStyle(
+                  fontSize: 13, // ✅ REDUCIR TAMAÑO
+                  color: Colors.grey[600],
+                  height: 1.3, // ✅ REDUCIR ALTURA LÍNEA
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20),
+              
+              // Información del pago
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green[200]!),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Monto Pagado:', style: TextStyle(fontWeight: FontWeight.w600)),
+                        Text('\$${widget.total.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green[700])),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('ID:', style: TextStyle(fontSize: 12, color: Colors.grey[600])), // ✅ TEXTO MÁS CORTO
+                        Expanded(
+                          child: Text(
+                            widget.transactionId.length > 15 
+                                ? '${widget.transactionId.substring(0, 15)}...' // ✅ TRUNCAR SI ES MUY LARGO
+                                : widget.transactionId,
+                            style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: Colors.grey[600]), // ✅ TEXTO MÁS PEQUEÑO
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 24),
+              
+              // Botón continuar
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Cerrar modal
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: Text(
+                    'Continuar',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

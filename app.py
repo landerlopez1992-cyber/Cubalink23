@@ -58,7 +58,7 @@ def home():
         "version": "SQUARE_ONLY",
         "environment": SQUARE_ENVIRONMENT,
         "endpoints": [
-            "/api/health",
+            "/api/health", 
             "/api/payments/process",
             "/api/payments/cards/save",
             "/api/payments/cards/charge"
@@ -139,8 +139,8 @@ def process_payment():
                 "error": "Error procesando pago",
                 "details": errors,
                 "message": "No se pudo procesar el pago"
-            }), 400
-
+                }), 400
+                
     except Exception as e:
         print(f"💥 Error general: {str(e)}")
         return jsonify({
@@ -220,15 +220,15 @@ def save_card():
                 "details": errors,
                 "message": "No se pudo guardar la tarjeta"
             }), 400
-
+            
     except Exception as e:
         print(f"💥 Error general: {str(e)}")
         return jsonify({
             "success": False,
             "error": f"Error interno: {str(e)}",
             "message": "Error interno del servidor"
-        }), 500
-
+            }), 500
+            
 @app.route('/api/payments/cards/charge', methods=['POST'])
 def charge_saved_card():
     """💳 Cobrar tarjeta guardada"""
@@ -292,7 +292,7 @@ def charge_saved_card():
                 "details": errors,
                 "message": "No se pudo procesar el cobro"
             }), 400
-
+            
     except Exception as e:
         print(f"💥 Error general: {str(e)}")
         return jsonify({
