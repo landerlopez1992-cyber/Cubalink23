@@ -256,6 +256,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
+  String _getPaymentMethodName(String paymentMethod) {
+    switch (paymentMethod.toLowerCase()) {
+      case 'card':
+        return 'Tarjeta';
+      case 'wallet':
+        return 'Billetera';
+      case 'zelle':
+        return 'Zelle';
+      default:
+        return paymentMethod;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -338,28 +351,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               height: 80,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                color: Colors.grey[200],
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               ),
-              child: firstItem != null && firstItem.imageUrl.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        firstItem.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            firstItem.type == 'recharge' ? Icons.phone : Icons.shopping_bag,
-                            color: Colors.grey[400],
-                            size: 32,
-                          );
-                        },
-                      ),
-                    )
-                  : Icon(
-                      Icons.shopping_bag,
-                      color: Colors.grey[400],
-                      size: 32,
-                    ),
+              child: Icon(
+                Icons.shopping_cart,
+                color: Theme.of(context).colorScheme.primary,
+                size: 40,
+              ),
             ),
             SizedBox(width: 16),
             Expanded(
@@ -381,6 +379,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.green[600],
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Método: ${_getPaymentMethodName(order.paymentMethod)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Destino: ${order.shippingAddress.city}, ${order.shippingAddress.province}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
                     ),
                   ),
                 ],
