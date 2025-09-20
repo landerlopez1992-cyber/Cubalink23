@@ -58,72 +58,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       print('📦 orderData result: ${orderData?.toString() ?? 'NULL'}');
 
       if (orderData == null) {
-        print('❌ No se encontró la orden con ID: $orderId - Creando orden de demostración');
-        // Crear una orden de prueba más completa para mostrar la funcionalidad
-        final testOrder = Order(
-          id: orderId,
-          userId: currentUser.id,
-          orderNumber: 'ORD-DEMO-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-          items: [
-            OrderItem(
-              id: '1',
-              productId: '1',
-              name: 'iPhone 15 Pro Max 256GB',
-              imageUrl: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=150',
-              price: 999.0,
-              quantity: 1,
-              category: 'electronics',
-              type: 'product',
-            ),
-            OrderItem(
-              id: '2',
-              productId: '2',
-              name: 'AirPods Pro 2nd Gen',
-              imageUrl: 'https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=150',
-              price: 249.0,
-              quantity: 1,
-              category: 'electronics',
-              type: 'product',
-            ),
-            OrderItem(
-              id: '3',
-              productId: '3',
-              name: 'Recarga Móvil \$50',
-              imageUrl: '',
-              price: 50.0,
-              quantity: 2,
-              category: 'recharge',
-              type: 'recharge',
-            )
-          ],
-          subtotal: 1348.0,
-          shippingCost: 25.0,
-          total: 1373.0,
-          orderStatus: 'processing',
-          paymentStatus: 'confirmed',
-          paymentMethod: 'card',
-          shippingMethod: 'express',
-          shippingAddress: OrderAddress(
-            recipient: '${currentUser.name}',
-            phone: currentUser.phone,
-            address: 'Calle 23 #456, Vedado',
-            city: 'La Habana',
-            province: 'La Habana',
-          ),
-          createdAt: DateTime.now().subtract(Duration(hours: 2)),
-          updatedAt: DateTime.now(),
-          estimatedDelivery: DateTime.now().add(Duration(days: 5)),
-          metadata: {
-            'tracking_number': 'TRK-${DateTime.now().millisecondsSinceEpoch}',
-            'carrier': 'DHL Express',
-            'notes': 'Paquete en tránsito desde Miami'
-          },
-        );
-
-        setState(() {
-          _orders = [testOrder];
-          _isLoading = false;
-        });
+        print('❌ No se encontró la orden con ID: $orderId');
+        setState(() => _isLoading = false);
         return;
       }
 
@@ -164,47 +100,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       });
     } catch (e) {
       print('❌ Error en _loadSpecificOrder: $e');
-      // Crear una orden de prueba en caso de error
-      final testOrder = Order(
-        id: orderId,
-        userId: 'test-user',
-        orderNumber: 'ORD-ERROR-123',
-        items: [
-          OrderItem(
-            id: '1',
-            productId: '1',
-            name: 'Producto (Error de Conexión)',
-            imageUrl: '',
-            price: 10.0,
-            quantity: 1,
-            category: 'general',
-            type: 'product',
-          )
-        ],
-        subtotal: 10.0,
-        shippingCost: 2.0,
-        total: 12.0,
-        orderStatus: 'processing',
-        paymentStatus: 'confirmed',
-        paymentMethod: 'card',
-        shippingMethod: 'express',
-        shippingAddress: OrderAddress(
-          recipient: 'Cliente Prueba',
-          phone: '+1234567890',
-          address: 'Dirección de Error',
-          city: 'La Habana',
-          province: 'La Habana',
-        ),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        estimatedDelivery: DateTime.now().add(Duration(days: 3)),
-        metadata: {},
-      );
-
-      setState(() {
-        _orders = [testOrder];
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 

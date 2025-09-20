@@ -596,19 +596,10 @@ class SupabaseService {
 
       print('✅ Orden encontrada: ${orderResponse['order_number']}');
 
-      // Obtener los items de la orden
+      // Obtener los items de la orden (SIN relación con products para evitar error)
       final itemsResponse = await _client
           .from('order_items')
-          .select('''
-            *,
-            product:products(
-              id,
-              name,
-              price,
-              image_url,
-              category
-            )
-          ''')
+          .select('*')
           .eq('order_id', orderId);
 
       print('📦 Items encontrados: ${itemsResponse.length}');
@@ -616,15 +607,15 @@ class SupabaseService {
       List<Map<String, dynamic>> processedItems = [];
 
       if (itemsResponse.isNotEmpty) {
-        // Si hay items en order_items, usarlos
+        // Si hay items en order_items, usarlos (sin depender de relación con products)
         processedItems = itemsResponse.map((item) => {
-          'id': item['id'],
-          'product_id': item['product_id'],
-          'name': item['product'] != null ? item['product']['name'] : (item['name'] ?? 'Producto no encontrado'),
+          'id': item['id'] ?? '',
+          'product_id': item['product_id'] ?? '',
+          'name': item['name'] ?? 'Producto no encontrado',
           'price': item['unit_price'] ?? item['price'] ?? 0.0,
           'quantity': item['quantity'] ?? 1,
-          'image_url': item['product'] != null ? item['product']['image_url'] : (item['image_url'] ?? ''),
-          'category': item['product'] != null ? item['product']['category'] : (item['category'] ?? 'unknown'),
+          'image_url': item['image_url'] ?? '',
+          'category': item['category'] ?? 'unknown',
           'type': item['product_type'] ?? 'product',
         }).cast<Map<String, dynamic>>().toList();
         print('✅ Usando ${processedItems.length} items de order_items');
