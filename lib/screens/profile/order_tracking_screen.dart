@@ -398,6 +398,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                   SizedBox(height: 4),
                   Text(
+                    'Destinatario: ${order.shippingAddress.recipient}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Teléfono: ${order.shippingAddress.phone}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
                     'Destino: ${order.shippingAddress.city}, ${order.shippingAddress.province}',
                     style: TextStyle(
                       fontSize: 12,
