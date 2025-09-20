@@ -336,6 +336,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             SizedBox(height: 24),
                             _buildOrderStatusTimeline(),
                             SizedBox(height: 24),
+                            _buildCancelButton(),
+                            SizedBox(height: 16),
                             _buildOrderItems(),
                       ],
                     ),
@@ -503,10 +505,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       // Línea horizontal (excepto el último)
                       Row(
                         children: [
-                          // Círculo del estado
+                          // Círculo del estado (más pequeño)
                           Container(
-                            width: 40,
-                            height: 40,
+                            width: 30,
+                            height: 30,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: isActive 
@@ -520,13 +522,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                         ? Colors.red 
                                         : Theme.of(context).colorScheme.primary)
                                     : Colors.transparent,
-                                width: 2,
+                                width: 1.5,
                               ),
                             ),
                             child: Icon(
                               state['icon'],
                               color: isActive ? Colors.white : Colors.grey[600],
-                              size: 20,
+                              size: 14,
                             ),
                           ),
                           
@@ -545,11 +547,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       
                       SizedBox(height: 8),
                       
-                      // Texto del estado
+                      // Texto del estado (más pequeño)
                       Text(
                         state['label'],
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 10,
                           fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                           color: isActive 
                               ? (state['status'] == 'cancelled' 
@@ -558,19 +560,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               : Colors.grey[600],
                         ),
                         textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       
-                      SizedBox(height: 8),
+                      SizedBox(height: 6),
                       
-                      // Camioncito debajo del estado actual
+                      // Camioncito debajo del estado actual (más pequeño)
                       if (isCurrent && state['status'] != 'cancelled')
                         Icon(
                           Icons.local_shipping,
                           color: Theme.of(context).colorScheme.primary,
-                          size: 24,
+                          size: 18,
                         )
                       else
-                        SizedBox(height: 24), // Espacio vacío para mantener alineación
+                        SizedBox(height: 18), // Espacio vacío para mantener alineación
                     ],
                   ),
                 );
@@ -579,6 +583,207 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCancelButton() {
+    final order = _orders.first;
+    
+    // Solo mostrar botón si puede cancelarse
+    bool canCancel = _canCancelOrder(order.orderStatus);
+    
+    if (!canCancel) {
+      return SizedBox.shrink(); // No mostrar botón si no se puede cancelar
+    }
+    
+    return Container(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => _showCancelOrderDialog(),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red[600],
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.cancel, size: 18),
+            SizedBox(width: 8),
+            Text(
+              'Cancelar Pedido',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool _canCancelOrder(String orderStatus) {
+    // Solo se puede cancelar si está en 'created' o 'payment_confirmed'
+    return orderStatus.toLowerCase() == 'created' || 
+           orderStatus.toLowerCase() == 'payment_confirmed';
+  }
+
+  void _showCancelOrderDialog() {
+    final order = _orders.first;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            '¿Cancelar Orden?',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.red[700],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Orden: ${order.orderNumber}',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'El sistema intentará cancelar la orden. Si ya está en preparación, no se podrá cancelar.',
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Salir',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _processCancelOrder();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Cancelar Pedido'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _processCancelOrder() async {
+    final order = _orders.first;
+    
+    try {
+      // Verificar si aún se puede cancelar
+      bool canCancel = _canCancelOrder(order.orderStatus);
+      
+      if (canCancel) {
+        // Intentar cancelar la orden
+        bool success = await SupabaseService.instance.updateOrderStatus(order.id, 'cancelled');
+        
+        if (success) {
+          _showCancelSuccessDialog();
+          // Actualizar estado local
+          setState(() {
+            _orders.first = Order(
+              id: order.id,
+              userId: order.userId,
+              orderNumber: order.orderNumber,
+              items: order.items,
+              subtotal: order.subtotal,
+              shippingCost: order.shippingCost,
+              total: order.total,
+              orderStatus: 'cancelled',
+              paymentStatus: order.paymentStatus,
+              paymentMethod: order.paymentMethod,
+              shippingMethod: order.shippingMethod,
+              shippingAddress: order.shippingAddress,
+              createdAt: order.createdAt,
+              updatedAt: DateTime.now(),
+              estimatedDelivery: order.estimatedDelivery,
+              metadata: order.metadata,
+            );
+          });
+        } else {
+          _showCancelErrorDialog('Error al conectar con el servidor');
+        }
+      } else {
+        _showCancelErrorDialog('No podemos cancelar la orden ya que está en preparación y lista para enviar');
+      }
+    } catch (e) {
+      _showCancelErrorDialog('Error inesperado: \${e.toString()}');
+    }
+  }
+
+  void _showCancelSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            '¡Orden Cancelada!',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.green[700],
+            ),
+          ),
+          content: Text('Orden cancelada exitosamente'),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green[600],
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCancelErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'No se puede cancelar',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.red[700],
+            ),
+          ),
+          content: Text(message),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[600],
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Entendido'),
+            ),
+          ],
+        );
+      },
     );
   }
 
