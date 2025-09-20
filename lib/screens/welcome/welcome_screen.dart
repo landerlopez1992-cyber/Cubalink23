@@ -1151,7 +1151,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               Navigator.pushNamed(context, '/settings');
               break;
             case 3:
-              Navigator.pushNamed(context, '/account');
+              Navigator.pushNamed(context, '/profile');
               break;
           }
         },

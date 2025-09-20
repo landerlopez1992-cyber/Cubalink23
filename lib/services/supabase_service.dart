@@ -1,8 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cubalink23/supabase/supabase_config.dart';
 import 'package:cubalink23/models/user.dart' as UserModel;
 // Models will be handled as raw maps for compatibility
-import 'dart:typed_data';
 
 /// Comprehensive Supabase service for Tu Recarga app operations
 class SupabaseService {
@@ -454,6 +455,17 @@ class SupabaseService {
   /// Create order (raw data) with order_items support
   Future<Map<String, dynamic>?> createOrderRaw(Map<String, dynamic> orderData) async {
     try {
+      // 🟢 LOGS SEGÚN INSTRUCCIONES DEL AMIGO
+      print('🟢 createOrderRaw() START');
+      print('🟢 REQUEST RAW BODY: ${jsonEncode(orderData)}');
+      
+      try {
+        final itemsReceived = orderData['cart_items'] ?? orderData['items'];
+        print('🟢 items raw (antes procesamiento): ${itemsReceived?.runtimeType} - $itemsReceived');
+      } catch (e) {
+        print('🔴 ERROR al imprimir items raw: $e');
+      }
+      
       print('🛒 Creating order with data: ${orderData.keys}');
       
       // Extraer items del carrito para crear order_items separadamente
@@ -534,6 +546,131 @@ class SupabaseService {
     final now = DateTime.now();
     final timestamp = now.millisecondsSinceEpoch;
     return 'ORD-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-$timestamp';
+  }
+
+  /// Get user orders with items using RPC
+  Future<List<Map<String, dynamic>>> getUserOrdersWithItems(String userId) async {
+    try {
+      print('🚀 Calling RPC get_user_orders_with_items for user: $userId');
+      final response = await _client.rpc(
+        'get_user_orders_with_items',
+        params: {'p_user_id': userId},
+      );
+
+      // DEBUG: Imprimir la respuesta cruda de la RPC
+      print('📦 RAW RPC RESPONSE: ${response?.toString()}');
+
+      if (response == null) {
+        print('⚠️ RPC returned null');
+        return [];
+      }
+
+      // The response is a JSONB array, so we need to cast it
+      final List<dynamic> ordersList = response as List<dynamic>;
+      final result = ordersList.map((item) => item as Map<String, dynamic>).toList();
+      
+      print('✅ RPC successful: ${result.length} orders with items found.');
+      return result;
+    } catch (e) {
+      print('❌ Error calling RPC get_user_orders_with_items: $e');
+      return [];
+    }
+  }
+
+  /// Get a single order with its items using direct queries
+  Future<Map<String, dynamic>?> getOrderWithItems(String orderId) async {
+    try {
+      print('🚀 Getting order with items for order: $orderId');
+      
+      // Obtener la orden principal
+      final orderResponse = await _client
+          .from('orders')
+          .select()
+          .eq('id', orderId)
+          .single();
+
+      if (orderResponse == null) {
+        print('❌ No se encontró la orden con ID: $orderId');
+        return null;
+      }
+
+      print('✅ Orden encontrada: ${orderResponse['order_number']}');
+
+      // Obtener los items de la orden
+      final itemsResponse = await _client
+          .from('order_items')
+          .select('''
+            *,
+            product:products(
+              id,
+              name,
+              price,
+              image_url,
+              category
+            )
+          ''')
+          .eq('order_id', orderId);
+
+      print('📦 Items encontrados: ${itemsResponse.length}');
+
+      List<Map<String, dynamic>> processedItems = [];
+
+      if (itemsResponse.isNotEmpty) {
+        // Si hay items en order_items, usarlos
+        processedItems = itemsResponse.map((item) => {
+          'id': item['id'],
+          'product_id': item['product_id'],
+          'name': item['product'] != null ? item['product']['name'] : (item['name'] ?? 'Producto no encontrado'),
+          'price': item['unit_price'] ?? item['price'] ?? 0.0,
+          'quantity': item['quantity'] ?? 1,
+          'image_url': item['product'] != null ? item['product']['image_url'] : (item['image_url'] ?? ''),
+          'category': item['product'] != null ? item['product']['category'] : (item['category'] ?? 'unknown'),
+          'type': item['product_type'] ?? 'product',
+        }).cast<Map<String, dynamic>>().toList();
+        print('✅ Usando ${processedItems.length} items de order_items');
+      } else {
+        // 🔥 FALLBACK: Usar campo items del JSON de la tabla orders si order_items está vacía
+        final existingItems = orderResponse['items'];
+        if (existingItems != null) {
+          print('🔄 FALLBACK: Usando items del campo JSON de orders');
+          if (existingItems is List) {
+            processedItems = existingItems.cast<Map<String, dynamic>>();
+          } else if (existingItems is String) {
+            try {
+              final parsed = jsonDecode(existingItems);
+              if (parsed is List) {
+                processedItems = parsed.cast<Map<String, dynamic>>();
+              }
+            } catch (e) {
+              print('❌ Error parsing JSON items: $e');
+            }
+          }
+          print('✅ FALLBACK: ${processedItems.length} items desde campo JSON');
+        } else {
+          print('⚠️ NO hay items en order_items ni en campo JSON');
+        }
+      }
+
+      // Construir la respuesta en el formato esperado
+      final orderData = {
+        'id': orderResponse['id'],
+        'order_number': orderResponse['order_number'],
+        'user_id': orderResponse['user_id'],
+        'total_amount': orderResponse['total_amount'],
+        'status': orderResponse['status'],
+        'payment_method': orderResponse['payment_method'],
+        'shipping_address': orderResponse['shipping_address'],
+        'created_at': orderResponse['created_at'],
+        'updated_at': orderResponse['updated_at'],
+        'items': processedItems,
+      };
+
+      print('✅ Orden con items construida exitosamente');
+      return orderData;
+    } catch (e) {
+      print('❌ Error getting order with items: $e');
+      return null;
+    }
   }
 
   /// Get user orders (raw data)

@@ -246,7 +246,7 @@ class _AccountScreenState extends State<AccountScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
@@ -604,7 +604,7 @@ class _AccountScreenState extends State<AccountScreen> {
           width: 40, // Reducido de 48 a 40
           height: 40, // Reducido de 48 a 40
           decoration: BoxDecoration(
-            color: (color ?? Theme.of(context).colorScheme.primary).withOpacity(0.1),
+            color: (color ?? Theme.of(context).colorScheme.primary).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10), // Reducido de 12 a 10
           ),
           child: Icon(
@@ -625,20 +625,20 @@ class _AccountScreenState extends State<AccountScreen> {
           subtitle,
           style: TextStyle(
             fontSize: 13, // Reducido de 14 a 13
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
           size: 14, // Reducido de 16 a 14
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4), // Reducido de 6 a 4
         tileColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
         onTap: onTap,
@@ -728,7 +728,7 @@ class _AccountScreenState extends State<AccountScreen> {
         await _roleService.clearUserData();
 
         // Navegar a login y limpiar stack
-        if (context.mounted) {
+        if (mounted) {
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/login',

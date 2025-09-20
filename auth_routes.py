@@ -39,7 +39,7 @@ def require_auth(f):
     """Decorador para requerir autenticación"""
     def decorated_function(*args, **kwargs):
         if not session.get('logged_in'):
-            return jsonify({"error": "No autorizado"}), 401
+            return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function

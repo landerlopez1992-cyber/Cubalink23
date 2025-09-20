@@ -3,9 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cubalink23/supabase/supabase_config.dart';
 import 'package:cubalink23/screens/splash/splash_screen.dart';
 import 'package:cubalink23/screens/home/home_screen.dart';
-import 'package:cubalink23/screens/profile/profile_screen.dart';
 import 'package:cubalink23/screens/profile/account_screen.dart';
-import 'package:cubalink23/screens/settings/settings_screen.dart';
+import 'package:cubalink23/screens/profile/orders_list_screen.dart';
+import 'package:cubalink23/screens/profile/order_tracking_screen.dart';
 import 'package:cubalink23/screens/referral/referral_screen.dart';
 import 'package:cubalink23/screens/shopping/store_screen.dart';
 import 'package:cubalink23/screens/shopping/cart_screen.dart';
@@ -106,9 +106,14 @@ class CubaLink23App extends StatelessWidget {
       home: const SplashScreen(), // Will handle authentication flow
       routes: {
         '/home': (context) => HomeScreen(user: _getDemoUser()),
-        '/profile': (context) => const ProfileScreen(),
-        '/account': (context) => const AccountScreen(),
-        '/settings': (context) => const SettingsScreen(),
+        '/profile': (context) => const AccountScreen(),
+        '/orders': (context) => OrdersListScreen(),
+        '/order-tracking': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          return OrderTrackingScreen(
+            selectedOrder: args?['selectedOrder'],
+          );
+        },
         '/referral': (context) => const ReferralScreen(),
         '/store': (context) => const StoreScreen(),
         '/cart': (context) => const CartScreen(),

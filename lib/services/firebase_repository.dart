@@ -100,25 +100,24 @@ class FirebaseRepository {
       print('💰 Total: ${data['total']}');
       print('🛒 Cart items: ${(data['cart_items'] as List?)?.length ?? 0}');
       
-      // 🎯 USAR SUPABASE DIRECTO PRIMERO (MÁS CONFIABLE)
-      print('🗄️ Intentando Supabase directo primero...');
+      // 🎯 USAR BACKEND SISTEMA PRIMERO (COMPROBADO QUE FUNCIONA CON cURL)
+      print('🗄️ Intentando Backend Sistema primero...');
       print('🛒 Verificando cart_items antes de enviar: ${(data['cart_items'] as List?)?.length ?? 0}');
       
-      final supabaseResult = await _supabaseService.createOrderRaw(data);
-      if (supabaseResult != null) {
-        final orderId = supabaseResult['id']?.toString() ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
-        print('✅ Supabase directo funcionó: $orderId');
+      final result = await SystemApiService.createOrder(data);
+      if (result != null && result['success'] == true) {
+        final orderId = result['order_id']?.toString() ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
+        print('✅ Backend Sistema funcionó: $orderId');
         return orderId;
       }
       
-      print('❌ Supabase directo falló, intentando Backend Sistema...');
+      print('❌ Backend Sistema falló, intentando Supabase directo como fallback...');
       
-      // Fallback a Backend Sistema
-      final result = await SystemApiService.createOrder(data);
-      
-      if (result != null && result['success'] == true) {
-        final orderId = result['order_id']?.toString() ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
-        print('✅ Backend Sistema retornó orden creada: $orderId');
+      // Fallback a Supabase directo
+      final supabaseResult = await _supabaseService.createOrderRaw(data);
+      if (supabaseResult != null) {
+        final orderId = supabaseResult['id']?.toString() ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
+        print('✅ Supabase directo funcionó como fallback: $orderId');
         return orderId;
       }
       

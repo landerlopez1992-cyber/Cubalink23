@@ -1,74 +1,33 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+# -*- coding: utf-8 -*-
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, current_app
 import json
 import os
+import requests
 from datetime import datetime
 import sqlite3
-import base64
-import uuid
-
-# Importar sistema mejorado de upload de imágenes
-try:
-    from improved_image_upload import ImprovedImageUploader
-    IMAGE_UPLOADER = ImprovedImageUploader()
-    IMPROVED_UPLOAD_AVAILABLE = True
-    print("✅ Sistema mejorado de upload de imágenes disponible")
-except ImportError:
-    IMAGE_UPLOADER = None
-    IMPROVED_UPLOAD_AVAILABLE = False
-    print("⚠️ Sistema mejorado de upload no disponible - usando método básico")
-
-# Variable global para modo mantenimiento
-MAINTENANCE_MODE = False
-
-# Variables globales para actualizaciones forzadas
-FORCE_UPDATE_MODE = False
-IOS_APP_URL = ""
-ANDROID_APP_URL = ""
-
-
-def get_admin_user_id():
-    """Obtener ID del usuario admin"""
-    try:
-        import requests
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        headers = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer {}'.format(SUPABASE_KEY),
-            'Content-Type': 'application/json'
-        }
-        
-        # Buscar usuario admin existente
-        response = requests.get(f'{SUPABASE_URL}/rest/v1/users?email=eq.admin@cubalink23.com&select=id', headers=headers)
-        if response.status_code == 200:
-            users = response.json()
-            if users:
-                return users[0]['id']
-        
-        # Si no existe, crear usuario admin
-        admin_user = {
-            'email': 'admin@cubalink23.com',
-            'role': 'admin'
-        }
-        response = requests.post(f'{SUPABASE_URL}/rest/v1/users', headers=headers, json=admin_user)
-        if response.status_code == 201:
-            return response.json()[0]['id']
-        
-        return None
-    except Exception as e:
-        print(f"Error obteniendo admin user: {e}")
-        return None
+from supabase_service import supabase_service
+from supabase_storage_service import storage_service
+from auth_routes import require_auth
+from werkzeug.utils import secure_filename
+from database import local_db
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
+
+# Configuración para subida de archivos
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Configuración del panel
 ADMIN_CONFIG = {
     'app_name': 'Cubalink23',
-    'version': '1.0.0',
-    'admin_email': 'admin@cubalink23.com'
+    'version': '2.0.0',
+    'admin_email': 'landerlopez1992@gmail.com'
 }
 
-# Base de datos simple para estadísticas
+# Base de datos simple para estadísticas (mantener para logs locales)
 def init_db():
     conn = sqlite3.connect('admin_stats.db')
     c = conn.cursor()
@@ -82,18 +41,26 @@ def init_db():
     conn.close()
 
 @admin.route('/')
+@require_auth
 def dashboard():
     """Panel principal de administración"""
     return render_template('admin/dashboard.html', config=ADMIN_CONFIG)
 
 @admin.route('/stats')
+@require_auth
 def get_stats():
-    """Obtener estadísticas en tiempo real"""
+    """Obtener estadísticas en tiempo real desde Supabase"""
     try:
-        # Simular estadísticas (en producción esto vendría de una base de datos real)
+        # Obtener estadísticas reales de Supabase
+        supabase_stats = supabase_service.get_statistics()
+        
+        # Combinar con estadísticas de vuelos
         stats = {
-            'total_searches': 1250,
-            'active_users': 45,
+            'total_searches': 1250,  # Mantener para vuelos
+            'active_users': supabase_stats.get('active_users', 0),
+            'total_users': supabase_stats.get('total_users', 0),
+            'total_products': supabase_stats.get('total_products', 0),
+            'total_orders': supabase_stats.get('total_orders', 0),
             'popular_routes': [
                 {'route': 'MIA-HAV', 'searches': 156},
                 {'route': 'MVD-MIA', 'searches': 89},
@@ -102,1349 +69,1961 @@ def get_stats():
             'system_status': {
                 'backend': 'Online',
                 'cloudflare_tunnel': 'Active',
-                'duffel_api': 'Connected'
+                'duffel_api': 'Connected',
+                'supabase': 'Connected'
             }
         }
         return jsonify(stats)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin.route('/users')
-def users():
-    """Gestión de usuarios"""
-    return render_template('admin/users.html', config=ADMIN_CONFIG)
-
-@admin.route('/flights')
-def flights():
-    """Gestión de vuelos y rutas"""
-    return render_template('admin/flights.html', config=ADMIN_CONFIG)
-
+# ===== GESTIÓN DE PRODUCTOS MEJORADA =====
 @admin.route('/products')
+@require_auth
 def products():
     """Gestión de productos"""
     return render_template('admin/products.html', config=ADMIN_CONFIG)
 
-@admin.route('/system')
-def system():
-    """Configuración del sistema"""
-    return render_template('admin/system.html', config=ADMIN_CONFIG)
+@admin.route('/api/products')
+@require_auth
+def get_products():
+    """Obtener productos desde base de datos local"""
+    try:
+        # Intentar obtener desde Supabase primero
+        try:
+            products = supabase_service.get_products()
+            if products:
+                return jsonify(products)
+        except:
+            pass
+        
+        # Si falla Supabase, usar base de datos local
+        products = local_db.get_products()
+        return jsonify(products)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
+@admin.route('/api/products', methods=['POST'])
+@require_auth
+def add_product():
+    """Agregar nuevo producto con imagen"""
+    try:
+        data = request.form.to_dict()
+        
+        # Manejar subida de imagen
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and allowed_file(file.filename):
+                # Subir imagen a Supabase Storage
+                image_url = storage_service.upload_image(file, bucket_name='product-images', folder='products')
+                if image_url:
+                    data['image_url'] = image_url
+                else:
+                    # Fallback: guardar localmente si falla Supabase
+                    filename = secure_filename(file.filename)
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = "{}_{}".format(timestamp, filename)
+                    
+                    # Crear directorio si no existe
+                    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                    file_path = os.path.join(UPLOAD_FOLDER, filename)
+                    file.save(file_path)
+                    
+                    # URL de la imagen local
+                    data['image_url'] = '/static/uploads/{}'.format(filename)
+        
+        # Validar datos requeridos
+        if not data.get('name') or not data.get('price'):
+            return jsonify({'error': 'Nombre y precio son requeridos'}), 400
+        
+        # Intentar agregar a Supabase primero
+        try:
+            product = supabase_service.add_product(data)
+            return jsonify(product)
+        except:
+            # Si falla Supabase, usar base de datos local
+            product = local_db.add_product(data)
+            return jsonify(product)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/products/<product_id>', methods=['PUT'])
+@require_auth
+def update_product(product_id):
+    """Actualizar producto"""
+    try:
+        data = request.json
+        
+        # Validar datos requeridos
+        if not data.get('name') or not data.get('price'):
+            return jsonify({'error': 'Nombre y precio son requeridos'}), 400
+        
+        # Intentar actualizar en Supabase primero
+        try:
+            product = supabase_service.update_product(product_id, data)
+            return jsonify(product)
+        except:
+            # Si falla Supabase, usar base de datos local
+            product = local_db.update_product(product_id, data)
+            return jsonify(product)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/products/<product_id>', methods=['DELETE'])
+@require_auth
+def delete_product(product_id):
+    """Eliminar producto"""
+    try:
+        # Intentar eliminar en Supabase primero
+        try:
+            supabase_service.delete_product(product_id)
+            return jsonify({'success': True})
+        except:
+            # Si falla Supabase, usar base de datos local
+            success = local_db.delete_product(product_id)
+            if success:
+                return jsonify({'success': True})
+            else:
+                return jsonify({'error': 'Producto no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/categories')
+@require_auth
+def get_categories():
+    """Obtener categorías de productos"""
+    try:
+        categories = local_db.get_categories()
+        return jsonify(categories)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== GESTIÓN DE BANNERS PUBLICITARIOS =====
+@admin.route('/banners')
+@require_auth
+def banners():
+    """Gestión de banners publicitarios"""
+    return render_template('admin/banners.html', config=ADMIN_CONFIG)
+
+@admin.route('/api/banners')
+@require_auth
+def get_banners():
+    """Obtener banners desde base de datos local"""
+    try:
+        # Intentar obtener desde Supabase primero
+        try:
+            banners = supabase_service.get_banners()
+            if banners:
+                return jsonify(banners)
+        except:
+            pass
+        
+        # Si falla Supabase, usar base de datos local
+        banners = local_db.get_banners()
+        return jsonify(banners)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/banners/active')
+def get_active_banners():
+    """Obtener solo banners activos (público)"""
+    try:
+        # Intentar obtener desde Supabase primero
+        try:
+            banners = supabase_service.get_active_banners()
+            if banners:
+                return jsonify(banners)
+        except:
+            pass
+        
+        # Si falla Supabase, usar base de datos local
+        banners = local_db.get_active_banners()
+        return jsonify(banners)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/banners', methods=['POST'])
+@require_auth
+def add_banner():
+    """Agregar nuevo banner con imagen"""
+    try:
+        data = request.form.to_dict()
+        
+        # Manejar subida de imagen
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                filename = "banner_{}_{}".format(timestamp, filename)
+                
+                # Crear directorio si no existe
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                file.save(file_path)
+                
+                # URL de la imagen
+                data['image_url'] = '/static/uploads/{}'.format(filename)
+        
+        # Agregar banner a Supabase
+        banner = supabase_service.add_banner(data)
+        return jsonify(banner)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/banners/<banner_id>', methods=['PUT'])
+@require_auth
+def update_banner(banner_id):
+    """Actualizar banner"""
+    try:
+        data = request.json
+        banner = supabase_service.update_banner(banner_id, data)
+        return jsonify(banner)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/banners/<banner_id>', methods=['DELETE'])
+@require_auth
+def delete_banner(banner_id):
+    """Eliminar banner"""
+    try:
+        supabase_service.delete_banner(banner_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/banners/<banner_id>/toggle', methods=['POST'])
+@require_auth
+def toggle_banner(banner_id):
+    """Activar/desactivar banner"""
+    try:
+        data = request.json
+        active = data.get('active', True)
+        
+        # Actualizar el estado del banner en Supabase
+        result = supabase_service.update_banner(banner_id, {'is_active': active})
+        
+        if result.get('success'):
+            return jsonify({'success': True, 'active': active})
+        else:
+            return jsonify({'error': 'Error al actualizar el banner'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== GESTIÓN DE USUARIOS =====
+@admin.route('/users')
+@require_auth
+def users():
+    """Gestión de usuarios"""
+    return render_template('admin/users.html', config=ADMIN_CONFIG)
+
+@admin.route('/api/users', methods=['GET'])
+@require_auth
+def get_users():
+    """Obtener usuarios desde base de datos local"""
+    try:
+        # Intentar obtener desde Supabase primero
+        try:
+            users = supabase_service.get_users()
+            if users:
+                return jsonify(users)
+        except:
+            pass
+        
+        # Si falla Supabase, usar base de datos local
+        users = local_db.get_users()
+        return jsonify(users)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/users', methods=['POST'])
+@require_auth
+def add_user():
+    """Agregar nuevo usuario"""
+    try:
+        data = request.json
+        
+        # Validar datos requeridos
+        if not data.get('email') or not data.get('name'):
+            return jsonify({'error': 'Email y nombre son requeridos'}), 400
+        
+        # Intentar agregar a Supabase primero
+        try:
+            user = supabase_service.add_user(data)
+            return jsonify(user)
+        except:
+            # Si falla Supabase, usar base de datos local
+            user = local_db.add_user(data)
+            return jsonify(user)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/users/<user_id>', methods=['PUT'])
+@require_auth
+def update_user(user_id):
+    """Actualizar usuario"""
+    try:
+        data = request.json
+        
+        # Validar datos requeridos
+        if not data.get('email') or not data.get('name'):
+            return jsonify({'error': 'Email y nombre son requeridos'}), 400
+        
+        # Intentar actualizar en Supabase primero
+        try:
+            user = supabase_service.update_user(user_id, data)
+            return jsonify(user)
+        except:
+            # Si falla Supabase, usar base de datos local
+            user = local_db.update_user(user_id, data)
+            return jsonify(user)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/users/<user_id>', methods=['DELETE'])
+@require_auth
+def delete_user(user_id):
+    """Eliminar usuario"""
+    try:
+        # Intentar eliminar en Supabase primero
+        try:
+            success = supabase_service.delete_user(user_id)
+            return jsonify({'success': success})
+        except:
+            # Si falla Supabase, usar base de datos local
+            success = local_db.delete_user(user_id)
+            if success:
+                return jsonify({'success': True})
+            else:
+                return jsonify({'error': 'Usuario no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/users/<user_id>/toggle', methods=['POST'])
+@require_auth
+def toggle_user_status(user_id):
+    """Bloquear/desbloquear usuario"""
+    try:
+        data = request.json
+        blocked = data.get('blocked', False)
+        
+        # Intentar actualizar en Supabase primero
+        try:
+            success = supabase_service.update_user_status(user_id, blocked)
+            return jsonify({'success': success})
+        except:
+            # Si falla Supabase, usar base de datos local
+            success = local_db.block_user(user_id, blocked)
+            return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/users/<user_id>/activity', methods=['POST'])
+@require_auth
+def update_user_activity(user_id):
+    """Actualizar actividad del usuario"""
+    try:
+        # Actualizar actividad en base de datos local
+        local_db.update_user_activity(user_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== GESTIÓN DE ÓRDENES =====
 @admin.route('/orders')
+@require_auth
 def orders():
     """Gestión de órdenes"""
     return render_template('admin/orders.html', config=ADMIN_CONFIG)
 
-@admin.route('/banners')
-def banners():
-    """Gestión de banners"""
-    return render_template('admin/banners.html', config=ADMIN_CONFIG)
-
-@admin.route('/api/banners', methods=['GET'])
-def get_banners():
-    """Obtener todos los banners desde Supabase"""
+@admin.route('/api/orders')
+@require_auth
+def get_orders():
+    """Obtener órdenes desde Supabase"""
     try:
-        import requests
+        orders = supabase_service.get_orders()
+        return jsonify(orders)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/orders/<order_id>/status', methods=['PUT'])
+@require_auth
+def update_order_status(order_id):
+    """Actualizar estado de orden"""
+    try:
+        data = request.json
+        status = data.get('status')
+        success = supabase_service.update_order_status(order_id, status)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== CONFIGURACIÓN DEL SISTEMA =====
+@admin.route('/system')
+@require_auth
+def system():
+    """Configuración del sistema"""
+    return render_template('admin/system.html', config=ADMIN_CONFIG)
+
+@admin.route('/api/config')
+@require_auth
+def get_config():
+    """Obtener configuración de la app"""
+    try:
+        config = supabase_service.get_app_config()
+        return jsonify(config)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/config', methods=['PUT'])
+@require_auth
+def update_config():
+    """Actualizar configuración de la app"""
+    try:
+        data = request.json
+        config = supabase_service.update_app_config(data)
+        return jsonify(config)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== GESTIÓN DE VUELOS Y RUTAS =====
+@admin.route('/flights')
+@require_auth
+def flights():
+    """Gestión de vuelos"""
+    return render_template('admin/flights.html', config=ADMIN_CONFIG)
+
+@admin.route('/api/flights')
+@require_auth
+def get_flights():
+    """Obtener vuelos desde Duffel API"""
+    try:
+        # Simular datos de vuelos (en realidad vendrían de Duffel API)
+        flights = [
+            {
+                'id': '1',
+                'origin': 'MIA',
+                'destination': 'HAV',
+                'airline': 'American Airlines',
+                'departure_time': '2024-01-15 10:30:00',
+                'arrival_time': '2024-01-15 11:45:00',
+                'price': 299.99,
+                'status': 'active'
+            },
+            {
+                'id': '2',
+                'origin': 'MVD',
+                'destination': 'MIA',
+                'airline': 'LATAM',
+                'departure_time': '2024-01-16 14:20:00',
+                'arrival_time': '2024-01-16 18:30:00',
+                'price': 450.00,
+                'status': 'active'
+            }
+        ]
+        return jsonify(flights)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== ENDPOINTS PARA APP FLUTTER =====
+
+@admin.route('/api/flights/search', methods=['POST'])
+def search_flights():
+    """🔍 Búsqueda de vuelos - Endpoint para app Flutter (SOLO DUFFEL)"""
+    try:
+        data = request.get_json()
         
-        # Configuración de Supabase
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
+        # Extraer parámetros
+        origin = data.get('origin')
+        destination = data.get('destination') 
+        departure_date = data.get('departure_date')
+        passengers = data.get('passengers', 1)
+        airline_type = data.get('airline_type', 'comerciales')
         
-        headers = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer {}'.format(SUPABASE_KEY),
-            'Content-Type': 'application/json'
-        }
+        print(f"🔍 Búsqueda DUFFEL: {origin} → {destination} | Tipo: {airline_type}")
         
-        response = requests.get(
-            '{}/rest/v1/banners?select=*&order=display_order.asc'.format(SUPABASE_URL),
-            headers=headers
-        )
+        flights = []
         
-        if response.status_code == 200:
-            banners_data = response.json()
-            return jsonify({
-                'success': True,
-                'banners': banners_data,
-                'total': len(banners_data)
-            })
-        else:
+        # API KEY REAL de Duffel desde variables de entorno
+        api_token = os.environ.get('DUFFEL_API_KEY')
+        if not api_token:
             return jsonify({
                 'success': False,
-                'error': 'Error obteniendo banners: {}'.format(response.status_code),
-                'banners': []
+                'error': 'DUFFEL_API_KEY no configurada en variables de entorno',
+                'data': []
             }), 500
+        
+        # SOLO usar Duffel API (evitar charter que necesita bs4)
+        if airline_type in ['comerciales', 'ambos']:
+            # Búsqueda directa con Duffel API
+            headers = {
+                'Accept': 'application/json',
+                'Authorization': f'Bearer {api_token}',
+                'Duffel-Version': 'v2',
+                'Content-Type': 'application/json'
+            }
             
+            # Crear request de ofertas
+            offer_request_data = {
+                'data': {
+                    'slices': [{
+                        'origin': origin,
+                        'destination': destination,
+                        'departure_date': departure_date
+                    }],
+                    'passengers': [{'type': 'adult'}] * passengers,
+                    'cabin_class': 'economy'
+                }
+            }
+            
+            # Crear offer request
+            response = requests.post(
+                'https://api.duffel.com/air/offer_requests',
+                headers=headers,
+                json=offer_request_data
+            )
+            
+            if response.status_code == 201:
+                offer_request = response.json()['data']
+                
+                # Obtener ofertas
+                offers_response = requests.get(
+                    f"https://api.duffel.com/air/offers?offer_request_id={offer_request['id']}&limit=20",
+                    headers=headers
+                )
+                
+                if offers_response.status_code == 200:
+                    offers_data = offers_response.json()
+                    offers = offers_data.get('data', [])
+                    
+                    # Transformar a formato Flutter
+                    for offer in offers:
+                        if offer.get('slices') and len(offer['slices']) > 0:
+                            slice_data = offer['slices'][0]
+                            if slice_data.get('segments') and len(slice_data['segments']) > 0:
+                                first_segment = slice_data['segments'][0]
+                                
+                                # Obtener información de aerolínea
+                                airline_name = 'Aerolínea'
+                                airline_code = ''
+                                airline_logo = ''
+                                
+                                if first_segment.get('marketing_carrier'):
+                                    carrier = first_segment['marketing_carrier']
+                                    airline_name = carrier.get('name', 'Aerolínea')
+                                    airline_code = carrier.get('iata_code', '')
+                                    if carrier.get('logo_symbol_url'):
+                                        # Convertir SVG a PNG para compatibilidad con Android
+                                        svg_url = carrier['logo_symbol_url']
+                                        airline_logo = svg_url.replace('.svg', '.png')
+                                
+                                flight_data = {
+                                    'id': offer['id'],
+                                    'airline': airline_name,
+                                    'airline_code': airline_code,
+                                    'airline_logo': airline_logo,
+                                    'departureTime': first_segment.get('departing_at', ''),
+                                    'arrivalTime': first_segment.get('arriving_at', ''),
+                                    'duration': slice_data.get('duration', ''),
+                                    'stops': len(slice_data['segments']) - 1,
+                                    'price': float(offer.get('total_amount', '0')),
+                                    'currency': offer.get('total_currency', 'USD'),
+                                    'origin_airport': first_segment.get('origin', {}).get('iata_code', origin),
+                                    'destination_airport': first_segment.get('destination', {}).get('iata_code', destination)
+                                }
+                                flights.append(flight_data)
+            
+            print(f"✈️ Vuelos Duffel encontrados: {len(flights)}")
+        
+        # TODO: Charter flights require bs4 - disabled until dependency fixed
+        if airline_type == 'charter':
+            print("⚠️ Vuelos charter temporalmente deshabilitados")
+        
+        print(f"🎯 Total vuelos encontrados: {len(flights)}")
+        
+        return jsonify({
+            'success': True,
+            'data': flights,
+            'total': len(flights)
+        })
+        
     except Exception as e:
+        print(f"❌ Error en búsqueda de vuelos: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
-            'banners': []
+            'data': []
         }), 500
 
-@admin.route('/api/banners', methods=['POST'])
-def create_banner():
-    """Crear nuevo banner en Supabase"""
+@admin.route('/api/flights/airports')
+def search_airports():
+    print("🔍 DEBUG: FUNCIÓN INICIADA")
+    print("🔍 DEBUG: FUNCIÓN EJECUTÁNDOSE")
+    """🏢 Búsqueda de aeropuertos - Endpoint para app Flutter"""
     try:
-        import requests
-        import base64
-        import uuid
+        query = request.args.get('q', '')
+        print("🔍 DEBUG: QUERY OBTENIDA"); print(f"Query: {query}")
         
-        # Verificar que tenemos datos JSON válidos
-        if not request.is_json:
-            return jsonify({
-                'success': False,
-                'error': 'Content-Type debe ser application/json'
-            }), 400
-            
-        data = request.get_json()
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'No se recibieron datos JSON'
-            }), 400
+        if not query:
+            return jsonify([])
         
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
+        # API KEY REAL de Duffel desde variables de entorno
+        api_token = os.environ.get('DUFFEL_API_KEY')
+        if not api_token:
+            print("❌ DUFFEL_API_KEY no configurada")
+            return jsonify([])
         
+        # Búsqueda directa con Duffel API
         headers = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer {}'.format(SUPABASE_KEY),
-            'Content-Type': 'application/json'
+            'Accept': 'application/json',
+            'Authorization': f'Bearer {api_token}',
+            'Duffel-Version': 'v2'
         }
         
-        # Manejar imagen del banner
-        image_url = data.get('image_url', '')
-        if data.get('image_base64'):
-            try:
-                # Si hay imagen en base64, subirla a Supabase Storage
-                image_url = upload_banner_image_to_supabase(data.get('image_base64'), data.get('title', 'banner'))
-                if not image_url:
-                    print("⚠️ Upload de imagen falló, usando imagen de Unsplash")
-                    image_url = f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop&crop=center'
-            except Exception as e:
-                print(f"❌ Error en upload de imagen: {e}")
-                image_url = f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop&crop=center'
+        # Usar Place Suggestion API según documentación oficial
+        url = f'https://api.duffel.com/air/airports?search={query}&limit=20'
+        print(f"🔍 URL Duffel Place Suggestion API: {url}")
         
-        # Preparar datos del banner
-        banner_data = {
-            'title': data.get('title'),
-            'description': data.get('description', ''),
-            'banner_type': data.get('banner_type'),
-            'image_url': image_url,
-            'display_order': int(data.get('display_order', 0)),
-            'is_active': bool(data.get('is_active', True)),
-            'auto_rotate': bool(data.get('auto_rotate', True)),
-            'rotation_speed': int(data.get('rotation_speed', 5000))
-        }
+        response = requests.get(url, headers=headers)
         
-        # Validar datos requeridos
-        if not banner_data['title'] or not banner_data['banner_type']:
-            return jsonify({
-                'success': False,
-                'error': 'Título y tipo de banner son requeridos'
-            }), 400
-        
-        response = requests.post(
-            f'{SUPABASE_URL}/rest/v1/banners',
-            headers=headers,
-            json=banner_data
-        )
-        
-        print(f"🔍 Supabase Response Status: {response.status_code}")
-        print(f"🔍 Supabase Response Text: {response.text}")
-        
-        if response.status_code == 201:
-            try:
-                banner_response = response.json()
-                return jsonify({
-                    'success': True,
-                    'message': 'Banner creado exitosamente',
-                    'banner': banner_response
-                })
-            except Exception as e:
-                return jsonify({
-                    'success': True,
-                    'message': 'Banner creado exitosamente',
-                    'banner': {'id': 'created'}
-                })
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'Error creando banner: {response.status_code} - {response.text}'
-            }), 500
+        if response.status_code == 200:
+            data = response.json()
+            airports = data.get('data', [])
+            print(f"🔍 Total aeropuertos obtenidos: {len(airports)}")
             
+            # FILTRADO MANUAL: Solo aeropuertos que coincidan con búsqueda
+            filtered_airports = []
+            query_lower = query.lower()
+            
+            for airport in airports:
+                # Verificar si coincide con IATA, nombre, ciudad
+                iata_code = airport.get('iata_code', '').lower()
+                name = airport.get('name', '').lower()
+                city = airport.get('city_name', '').lower()
+                
+                if (query_lower in iata_code or 
+                    query_lower in name or 
+                    query_lower in city or
+                    iata_code.startswith(query_lower)):
+                    filtered_airports.append(airport)
+            
+            print(f"🔍 Filtrados {len(filtered_airports)} de {len(airports)} aeropuertos")
+            
+            # Transformar a formato Flutter
+            formatted_airports = []
+            for airport in filtered_airports:
+                formatted_airports.append({
+                    'iata_code': airport.get('iata_code', ''),
+                    'name': airport.get('name', ''),
+                    'city': airport.get('city_name', ''),
+                    'country': airport.get('iata_country_code', ''),
+                    'time_zone': airport.get('time_zone', '')
+                })
+            
+            print(f"✈️ Aeropuertos encontrados: {len(formatted_airports)}")
+            return jsonify(formatted_airports)
+        else:
+            print("❌ No se encontraron aeropuertos en Duffel API")
+            return jsonify([])
+        
     except Exception as e:
+        print(f"❌ Error en búsqueda de aeropuertos: {str(e)}")
+        return jsonify([])
+
+@admin.route('/api/flights/airlines')
+def get_airlines():
+    """🏢 Obtener aerolíneas disponibles - Endpoint para app Flutter"""
+    try:
+        # Aerolíneas populares disponibles
+        airlines = [
+            {'code': 'AA', 'name': 'American Airlines'},
+            {'code': 'LA', 'name': 'LATAM Airlines'},
+            {'code': 'CM', 'name': 'Copa Airlines'},
+            {'code': 'DL', 'name': 'Delta Air Lines'},
+            {'code': 'UA', 'name': 'United Airlines'},
+            {'code': 'AC', 'name': 'Air Canada'},
+            {'code': 'CU', 'name': 'Cubana de Aviación'}
+        ]
+        
+        return jsonify(airlines)
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo aerolíneas: {str(e)}")
+        return jsonify([])
+
+
+
+@admin.route('/api/routes')
+@require_auth
+def get_routes():
+    """Obtener rutas populares"""
+    try:
+        routes = [
+            {'route': 'MIA-HAV', 'searches': 156, 'bookings': 23},
+            {'route': 'MVD-MIA', 'searches': 89, 'bookings': 12},
+            {'route': 'LAX-HAV', 'searches': 67, 'bookings': 8},
+            {'route': 'MIA-MVD', 'searches': 45, 'bookings': 6}
+        ]
+        return jsonify(routes)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== HISTORIAL DE RECARGAS =====
+@admin.route('/api/recharges')
+@require_auth
+def get_recharges():
+    """Obtener historial de recargas"""
+    try:
+        recharges = supabase_service.get_recharge_history()
+        return jsonify(recharges)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== TRANSFERENCIAS =====
+@admin.route('/api/transfers')
+@require_auth
+def get_transfers():
+    """Obtener transferencias"""
+    try:
+        transfers = supabase_service.get_transfers()
+        return jsonify(transfers)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== CATEGORÍAS =====
+
+@admin.route('/api/categories', methods=['POST'])
+@require_auth
+def add_category():
+    """Agregar categoría"""
+    try:
+        data = request.json
+        category = supabase_service.add_category(data)
+        return jsonify(category)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== ACTIVIDADES =====
+@admin.route('/api/activities')
+@require_auth
+def get_activities():
+    """Obtener actividades de usuarios"""
+    try:
+        activities = supabase_service.get_activities()
+        return jsonify(activities)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== NOTIFICACIONES =====
+@admin.route('/api/notifications')
+@require_auth
+def get_notifications():
+    """Obtener notificaciones"""
+    try:
+        notifications = supabase_service.get_notifications()
+        return jsonify(notifications)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/notifications', methods=['POST'])
+@require_auth
+def send_notification():
+    """Enviar notificación push"""
+    try:
+        data = request.json
+        notification = supabase_service.send_notification(data)
+        return jsonify(notification)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== MODO MANTENIMIENTO =====
+@admin.route('/api/maintenance', methods=['POST'])
+@require_auth
+def toggle_maintenance():
+    """Activar/desactivar modo mantenimiento"""
+    try:
+        data = request.json
+        enabled = data.get('enabled', False)
+        message = data.get('message', 'La aplicación está en mantenimiento')
+        
+        # Actualizar configuración de mantenimiento
+        config_data = {
+            'maintenance_mode': enabled,
+            'maintenance_message': message
+        }
+        
+        success = supabase_service.update_app_config(config_data)
+        return jsonify({'success': success, 'maintenance_mode': enabled})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== ANALYTICS Y REPORTES =====
+@admin.route('/api/analytics/sales')
+@require_auth
+def get_sales_analytics():
+    """Obtener analytics de ventas"""
+    try:
+        analytics = {
+            'total_sales': 12500.00,
+            'monthly_sales': [
+                {'month': 'Enero', 'amount': 3200.00},
+                {'month': 'Febrero', 'amount': 2800.00},
+                {'month': 'Marzo', 'amount': 3500.00},
+                {'month': 'Abril', 'amount': 3000.00}
+            ],
+            'top_products': [
+                {'name': 'Producto A', 'sales': 45},
+                {'name': 'Producto B', 'sales': 32},
+                {'name': 'Producto C', 'sales': 28}
+            ],
+            'sales_by_category': [
+                {'category': 'Electrónicos', 'amount': 4500.00},
+                {'category': 'Ropa', 'amount': 3800.00},
+                {'category': 'Hogar', 'amount': 4200.00}
+            ]
+        }
+        return jsonify(analytics)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/analytics/users')
+@require_auth
+def get_user_analytics():
+    """Obtener analytics de usuarios"""
+    try:
+        analytics = {
+            'total_users': 1250,
+            'new_users_this_month': 89,
+            'active_users': 856,
+            'user_growth': [
+                {'month': 'Enero', 'users': 1200},
+                {'month': 'Febrero', 'users': 1250},
+                {'month': 'Marzo', 'users': 1300},
+                {'month': 'Abril', 'users': 1350}
+            ],
+            'user_activity': [
+                {'day': 'Lunes', 'active': 156},
+                {'day': 'Martes', 'active': 142},
+                {'day': 'Miércoles', 'active': 178},
+                {'day': 'Jueves', 'active': 165},
+                {'day': 'Viernes', 'active': 189},
+                {'day': 'Sábado', 'active': 201},
+                {'day': 'Domingo', 'active': 167}
+            ]
+        }
+        return jsonify(analytics)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== PROMOCIONES =====
+@admin.route('/api/promotions')
+@require_auth
+def get_promotions():
+    """Obtener promociones"""
+    try:
+        promotions = [
+            {
+                'id': '1',
+                'title': 'Descuento 20% en vuelos',
+                'description': 'Descuento especial en vuelos a Cuba',
+                'discount': 20,
+                'code': 'CUBA20',
+                'valid_from': '2024-01-01',
+                'valid_until': '2024-12-31',
+                'active': True
+            },
+            {
+                'id': '2',
+                'title': 'Envío gratis',
+                'description': 'Envío gratis en compras superiores a $50',
+                'discount': 0,
+                'code': 'FREESHIP',
+                'valid_from': '2024-01-01',
+                'valid_until': '2024-06-30',
+                'active': True
+            }
+        ]
+        return jsonify(promotions)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/promotions', methods=['POST'])
+@require_auth
+def add_promotion():
+    """Agregar promoción"""
+    try:
+        data = request.json
+        # Aquí se guardaría en Supabase
+        return jsonify({'success': True, 'promotion': data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== CONFIGURACIÓN AVANZADA =====
+@admin.route('/api/config/advanced')
+@require_auth
+def get_advanced_config():
+    """Obtener configuración avanzada"""
+    try:
+        config = {
+            'app_name': 'Cubalink23',
+            'version': '2.0.0',
+            'api_url': 'https://cubalink23-backend.onrender.com/api/duffel',
+            'duffel_api_status': 'Connected',
+            'supabase_status': 'Connected',
+            'maintenance_mode': False,
+            'maintenance_message': '',
+            'features': {
+                'flight_search': True,
+                'product_store': True,
+                'user_registration': True,
+                'payment_processing': True,
+                'push_notifications': True
+            }
+        }
+        return jsonify(config)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/config/advanced', methods=['PUT'])
+@require_auth
+def update_advanced_config():
+    """Actualizar configuración avanzada"""
+    try:
+        data = request.json
+        success = supabase_service.update_app_config(data)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/payroll/process', methods=['POST'])
+@require_auth
+def process_payroll():
+    """Procesar nómina"""
+    try:
+        data = request.json
+        success = supabase_service.process_payroll(data)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== SISTEMA DE VERIFICACIÓN MANUAL DE RENTA CAR =====
+
+@admin.route('/rental-verifications')
+@require_auth
+def rental_verifications():
+    """Panel de verificaciones manuales de renta de autos - Redirigir al dashboard"""
+    return redirect('/admin/')
+
+@admin.route('/rental-verifications/pending')
+@require_auth
+def pending_rental_verifications():
+    """Verificaciones pendientes - Redirigir al dashboard"""
+    return redirect('/admin/')
+
+@admin.route('/api/rental-verifications')
+@require_auth
+def get_rental_verifications():
+    """Obtener todas las verificaciones de renta"""
+    try:
+        verifications = supabase_service.get_rental_verifications()
+        return jsonify(verifications)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/rental-verifications/pending')
+@require_auth
+def get_pending_rental_verifications():
+    """Obtener verificaciones pendientes"""
+    try:
+        pending = supabase_service.get_pending_rental_verifications()
+        return jsonify(pending)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/rental-verifications/request', methods=['POST'])
+@require_auth
+def request_rental_verification():
+    """Solicitar verificación manual de disponibilidad"""
+    try:
+        data = request.json
+        verification_data = {
+            'car_model': data.get('car_model'),
+            'start_date': data.get('start_date'),
+            'end_date': data.get('end_date'),
+            'province': data.get('province'),
+            'user_id': data.get('user_id'),
+            'user_name': data.get('user_name'),
+            'user_phone': data.get('user_phone'),
+            'user_email': data.get('user_email'),
+            'status': 'pending',
+            'priority': data.get('priority', 'normal'),  # low, normal, high, urgent
+            'notes': data.get('notes', ''),
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Guardar verificación en Supabase
+        verification = supabase_service.create_rental_verification(verification_data)
+        
+        # Enviar notificación al admin
+        send_verification_notification(verification)
+        
         return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+            'success': True,
+            'verification_id': verification.get('id'),
+            'message': 'Verificación solicitada. El administrador la revisará pronto.',
+            'estimated_time': '2-4 horas'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/rental-verifications/<verification_id>/update', methods=['POST'])
+@require_auth
+def update_rental_verification(verification_id):
+    """Actualizar resultado de verificación manual"""
+    try:
+        data = request.json
+        update_data = {
+            'status': data.get('status'),  # pending, available, not_available, completed
+            'daily_price': data.get('daily_price'),
+            'total_price': data.get('total_price'),
+            'currency': data.get('currency', 'USD'),
+            'availability_notes': data.get('availability_notes'),
+            'admin_notes': data.get('admin_notes'),
+            'checked_at': datetime.now().isoformat(),
+            'checked_by': data.get('admin_id'),
+            'rentcarcuba_url': data.get('rentcarcuba_url'),
+            'commission_amount': data.get('commission_amount', 50.00)  # $50 comisión por alquiler
+        }
+        
+        # Actualizar verificación en Supabase
+        updated_verification = supabase_service.update_rental_verification(verification_id, update_data)
+        
+        # Notificar al usuario del resultado
+        if updated_verification:
+            notify_user_verification_result(verification_id, update_data)
+        
+        return jsonify({
+            'success': True,
+            'verification_id': verification_id,
+            'message': 'Verificación actualizada exitosamente'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/rental-verifications/<verification_id>/complete', methods=['POST'])
+@require_auth
+def complete_rental_verification(verification_id):
+    """Marcar verificación como completada y procesar alquiler"""
+    try:
+        data = request.json
+        completion_data = {
+            'status': 'completed',
+            'rental_confirmed': data.get('rental_confirmed', False),
+            'rental_id': data.get('rental_id'),
+            'payment_status': data.get('payment_status', 'pending'),
+            'commission_paid': data.get('commission_paid', False),
+            'completed_at': datetime.now().isoformat(),
+            'completion_notes': data.get('completion_notes')
+        }
+        
+        # Actualizar verificación
+        updated_verification = supabase_service.update_rental_verification(verification_id, completion_data)
+        
+        # Si se confirmó el alquiler, crear registro de alquiler
+        if data.get('rental_confirmed'):
+            rental_data = {
+                'verification_id': verification_id,
+                'user_id': updated_verification.get('user_id'),
+                'car_model': updated_verification.get('car_model'),
+                'start_date': updated_verification.get('start_date'),
+                'end_date': updated_verification.get('end_date'),
+                'province': updated_verification.get('province'),
+                'daily_price': updated_verification.get('daily_price'),
+                'total_price': updated_verification.get('total_price'),
+                'commission_amount': updated_verification.get('commission_amount'),
+                'status': 'confirmed',
+                'created_at': datetime.now().isoformat()
+            }
+            
+            rental = supabase_service.create_rental(rental_data)
+        
+        return jsonify({
+            'success': True,
+            'verification_id': verification_id,
+            'message': 'Verificación completada exitosamente'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/rental-verifications/<verification_id>/cancel', methods=['POST'])
+@require_auth
+def cancel_rental_verification(verification_id):
+    """Cancelar verificación de renta"""
+    try:
+        data = request.json
+        cancel_data = {
+            'status': 'cancelled',
+            'cancellation_reason': data.get('cancellation_reason'),
+            'cancelled_at': datetime.now().isoformat(),
+            'cancelled_by': data.get('admin_id')
+        }
+        
+        # Actualizar verificación
+        updated_verification = supabase_service.update_rental_verification(verification_id, cancel_data)
+        
+        # Notificar al usuario
+        notify_user_verification_cancelled(verification_id, cancel_data)
+        
+        return jsonify({
+            'success': True,
+            'verification_id': verification_id,
+            'message': 'Verificación cancelada exitosamente'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin.route('/api/rental-verifications/stats')
+@require_auth
+def get_rental_verification_stats():
+    """Obtener estadísticas de verificaciones"""
+    try:
+        stats = supabase_service.get_rental_verification_stats()
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== FUNCIONES AUXILIARES PARA NOTIFICACIONES =====
+
+def send_verification_notification(verification):
+    """Enviar notificación al admin sobre nueva verificación"""
+    try:
+        # Aquí iría la lógica para enviar email/SMS al admin
+        # Por ahora simulamos la notificación
+        
+        notification_data = {
+            'type': 'rental_verification_request',
+            'title': 'Nueva Verificación de Renta de Auto',
+            'message': "Verificación solicitada: {} en {}".format(verification.get('car_model'), verification.get('province')),
+            'verification_id': verification.get('id'),
+            'priority': verification.get('priority'),
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Guardar notificación en base de datos
+        supabase_service.create_notification(notification_data)
+        
+        # Enviar email al admin (implementar después)
+        # send_admin_email(notification_data)
+        
+        return True
+    except Exception as e:
+        print("Error enviando notificación: {}".format(e))
+        return False
+
+def notify_user_verification_result(verification_id, result_data):
+    """Notificar al usuario del resultado de la verificación"""
+    try:
+        # Obtener datos de la verificación
+        verification = supabase_service.get_rental_verification_detail(verification_id)
+        
+        if not verification:
+            return False
+        
+        # Preparar mensaje según el resultado
+        if result_data.get('status') == 'available':
+            message = "✅ Disponible: {} en {}\n".format(verification.get('car_model'), verification.get('province'))
+            message += "💰 Precio por día: ${}\n".format(result_data.get('daily_price'))
+            message += "💵 Total: ${}\n".format(result_data.get('total_price'))
+            message += "📝 Notas: {}".format(result_data.get('availability_notes', 'Sin notas adicionales'))
+        else:
+            message = "❌ No disponible: {} en {}\n".format(verification.get('car_model'), verification.get('province'))
+            message += "📝 Notas: {}".format(result_data.get('availability_notes', 'Sin notas adicionales'))
+        
+        # Enviar notificación al usuario
+        user_notification = {
+            'user_id': verification.get('user_id'),
+            'type': 'rental_verification_result',
+            'title': 'Resultado de Verificación de Renta',
+            'message': message,
+            'verification_id': verification_id,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        supabase_service.create_user_notification(user_notification)
+        
+        return True
+    except Exception as e:
+        print("Error notificando usuario: {}".format(e))
+        return False
+
+def notify_user_verification_cancelled(verification_id, cancel_data):
+    """Notificar al usuario que la verificación fue cancelada"""
+    try:
+        verification = supabase_service.get_rental_verification_detail(verification_id)
+        
+        if not verification:
+            return False
+        
+        message = "❌ Verificación cancelada: {} en {}\n".format(verification.get('car_model'), verification.get('province'))
+        message += "📝 Razón: {}".format(cancel_data.get('cancellation_reason', 'Sin especificar'))
+        
+        user_notification = {
+            'user_id': verification.get('user_id'),
+            'type': 'rental_verification_cancelled',
+            'title': 'Verificación Cancelada',
+            'message': message,
+            'verification_id': verification_id,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        supabase_service.create_user_notification(user_notification)
+        
+        return True
+    except Exception as e:
+        print("Error notificando cancelación: {}".format(e))
+        return False
+
+# ===== RUTAS FALTANTES PARA BOTONES NUEVOS =====
 
 @admin.route('/vendors')
+@require_auth
 def vendors():
     """Gestión de vendedores"""
     return render_template('admin/vendors.html', config=ADMIN_CONFIG)
 
 @admin.route('/drivers')
+@require_auth
 def drivers():
     """Gestión de repartidores"""
     return render_template('admin/drivers.html', config=ADMIN_CONFIG)
 
 @admin.route('/vehicles')
+@require_auth
 def vehicles():
-    """Gestión de vehículos"""
+    """Gestión de renta car"""
     return render_template('admin/vehicles.html', config=ADMIN_CONFIG)
 
 @admin.route('/support-chat')
+@require_auth
 def support_chat():
     """Chat de soporte"""
     return render_template('admin/support_chat.html', config=ADMIN_CONFIG)
 
 @admin.route('/alerts')
+@require_auth
 def alerts():
     """Gestión de alertas"""
     return render_template('admin/alerts.html', config=ADMIN_CONFIG)
 
 @admin.route('/wallet')
+@require_auth
 def wallet():
     """Gestión de billetera"""
     return render_template('admin/wallet.html', config=ADMIN_CONFIG)
 
 @admin.route('/payment-methods')
+@require_auth
 def payment_methods():
-    """Métodos de pago"""
+    """Gestión de métodos de pago"""
     return render_template('admin/payment_methods.html', config=ADMIN_CONFIG)
 
 @admin.route('/payroll')
+@require_auth
 def payroll():
     """Gestión de nómina"""
     return render_template('admin/payroll.html', config=ADMIN_CONFIG)
 
 @admin.route('/system-rules')
+@require_auth
 def system_rules():
     """Reglas del sistema"""
     return render_template('admin/system_rules.html', config=ADMIN_CONFIG)
 
-@admin.route('/api/config', methods=['GET', 'POST'])
-def api_config():
-    """API para configurar la app Flutter"""
+@admin.route('/api/contact-info', methods=['GET', 'POST'])
+@require_auth
+def contact_info():
+    """API para gestionar información de contacto de la empresa"""
     if request.method == 'POST':
-        data = request.json
-        # Guardar configuración que afectará la app
-        config_file = 'app_config.json'
-        with open(config_file, 'w') as f:
-            json.dump(data, f)
-        return jsonify({'success': True, 'message': 'Configuración actualizada'})
-    else:
-        # Leer configuración actual
-        config_file = 'app_config.json'
-        if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                return jsonify(json.load(f))
-        return jsonify({'app_name': 'Cubalink23', 'maintenance_mode': False})
-
-@admin.route('/api/notifications', methods=['POST', 'GET'])
-def handle_notifications():
-    """Manejar notificaciones - POST para enviar, GET para obtener"""
-    if request.method == 'POST':
-        # Enviar notificación
-        data = request.json
-        title = data.get('title', 'Sin título')
-        message = data.get('message', 'Sin mensaje')
-        
-        # Agregar a la cola de notificaciones (importar desde app.py)
-        from app import notification_queue, notification_counter
-        import time
-        from datetime import datetime, timedelta
-        
-        notification = {
-            "id": notification_counter,
-            "title": title,
-            "message": message,
-            "timestamp": time.time(),
-            "user_id": "admin"
-        }
-        
-        # Agregar a la cola para notificación inmediata
-        notification_queue.append(notification)
-        notification_counter += 1
-        
-        # Guardar en Supabase para historial
-        try:
-            import requests
-            
-            # Usar requests directo para Supabase
-            supabase_url = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-            supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-            
-            headers = {
-                'apikey': supabase_key,
-                'Authorization': f'Bearer {supabase_key}',
-                'Content-Type': 'application/json'
-            }
-            
-            supabase_notification = {
-                "title": title,
-                "message": message,
-                "user_id": "admin",  # String simple para compatibilidad
-                "read": False
-            }
-            
-            # CREAR nueva tabla con nombre diferente y TEXT para user_id
-            create_table_sql = '''
-            CREATE TABLE IF NOT EXISTS notifications_v2 (
-                id SERIAL PRIMARY KEY,
-                title TEXT NOT NULL,
-                message TEXT NOT NULL,
-                user_id TEXT NOT NULL DEFAULT 'admin',
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                read BOOLEAN DEFAULT FALSE
-            );
-            ALTER TABLE notifications_v2 ENABLE ROW LEVEL SECURITY;
-            DROP POLICY IF EXISTS "Allow all access" ON notifications_v2;
-            CREATE POLICY "Allow all access" ON notifications_v2 FOR ALL USING (true);
-            '''
-            
-            # Intentar crear la tabla (si ya existe, no hace nada)
-            try:
-                sql_response = requests.post(
-                    f"{supabase_url}/rest/v1/rpc/exec_sql",
-                    headers=headers,
-                    json={"sql": create_table_sql}
-                )
-            except:
-                pass  # Ignorar errores de creación de tabla
-            
-            # Insertar la notificación
-            response = requests.post(
-                f"{supabase_url}/rest/v1/notifications_v2",
-                headers=headers,
-                json=supabase_notification
-            )
-            
-            print(f"🔍 Status code al guardar: {response.status_code}")
-            print(f"🔍 Response al guardar: {response.text[:200]}...")
-            
-            if response.status_code == 201:
-                print(f"💾 Notificación guardada en Supabase para historial: {title}")
-            else:
-                print(f"⚠️ Error guardando en Supabase: {response.status_code} - {response.text}")
-                
-        except Exception as e:
-            print(f"⚠️ Error guardando en Supabase: {e}")
-        
-        print(f"🔔 Notificación agregada desde admin_routes: {title}")
-        
-        return jsonify({'success': True, 'message': 'Notificación enviada'})
-    
-    elif request.method == 'GET':
-        # Obtener notificaciones para la app (solo para clientes móviles)
-        from app import notification_queue
-        
-        # Verificar si es la app móvil (User-Agent contiene "Dart")
-        user_agent = request.headers.get('User-Agent', '')
-        is_mobile_app = 'Dart' in user_agent
-        
-        try:
-            if is_mobile_app and notification_queue:
-                notification = notification_queue.popleft()
-                print(f"📱 Notificación enviada a la APP MÓVIL: {notification['title']}")
-                
-                return jsonify({
-                    "success": True,
-                    "notifications": [notification]
-                })
-            elif is_mobile_app:
-                print("📱 App móvil consultó, pero no hay notificaciones")
-                return jsonify({
-                    "success": True,
-                    "notifications": []
-                })
-            else:
-                # Para navegadores web, no dar notificaciones
-                print(f"🌐 Navegador web consultó (User-Agent: {user_agent[:50]}...), ignorando")
-                return jsonify({
-                    "success": True,
-                    "notifications": []
-                })
-                
-        except Exception as e:
-            print(f"❌ Error obteniendo notificaciones: {e}")
-            return jsonify({
-                "success": False,
-                "message": f"Error: {str(e)}"
-            }), 500
-
-@admin.route('/api/notifications/history', methods=['GET'])
-def get_notification_history():
-    """Obtener historial de notificaciones para la campanita"""
-    try:
-        import requests
-        from datetime import datetime
-        
-        # Usar requests directo para Supabase
-        supabase_url = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        
-        headers = {
-            'apikey': supabase_key,
-            'Authorization': f'Bearer {supabase_key}',
-            'Content-Type': 'application/json'
-        }
-        
-        # Obtener todas las notificaciones (tabla notifications_v2)
-        url = f"{supabase_url}/rest/v1/notifications_v2?user_id=eq.admin&order=created_at.desc"
-        
-        print(f"🔍 URL de consulta: {url}")
-        response = requests.get(url, headers=headers)
-        print(f"🔍 Status code: {response.status_code}")
-        print(f"🔍 Response: {response.text[:200]}...")
-        
-        if response.status_code == 200:
-            notifications = response.json()
-            print(f"📋 Historial de notificaciones obtenido: {len(notifications)} notificaciones")
-            
-            return jsonify({
-                "success": True,
-                "notifications": notifications
-            })
-        else:
-            print(f"❌ Error obteniendo historial: {response.status_code} - {response.text}")
-            return jsonify({
-                "success": False,
-                "message": f"Error: {response.status_code} - {response.text}"
-            }), 500
-        
-    except Exception as e:
-        print(f"❌ Error obteniendo historial: {e}")
-        return jsonify({
-            "success": False,
-            "message": f"Error: {str(e)}"
-        }), 500
-
-@admin.route('/api/notifications/cleanup', methods=['POST'])
-def cleanup_expired_notifications():
-    """Limpiar notificaciones expiradas (se ejecuta automáticamente)"""
-    try:
-        import requests
-        from datetime import datetime
-        
-        # Usar requests directo para Supabase
-        supabase_url = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        
-        headers = {
-            'apikey': supabase_key,
-            'Authorization': f'Bearer {supabase_key}',
-            'Content-Type': 'application/json'
-        }
-        
-        # Eliminar notificaciones antiguas (más de 30 días)
-        thirty_days_ago = (datetime.now() - timedelta(days=30)).isoformat()
-        url = f"{supabase_url}/rest/v1/notifications?created_at=lt.{thirty_days_ago}"
-        
-        response = requests.delete(url, headers=headers)
-        
-        if response.status_code == 204:
-            print(f"🧹 Notificaciones expiradas eliminadas exitosamente")
-            
-            return jsonify({
-                "success": True,
-                "deleted_count": 1  # Supabase no devuelve count exacto
-            })
-        else:
-            print(f"❌ Error limpiando notificaciones: {response.status_code} - {response.text}")
-            return jsonify({
-                "success": False,
-                "message": f"Error: {response.status_code}"
-            }), 500
-        
-    except Exception as e:
-        print(f"❌ Error limpiando notificaciones: {e}")
-        return jsonify({
-            "success": False,
-            "message": f"Error: {str(e)}"
-        }), 500
-
-@admin.route('/api/maintenance', methods=['POST'])
-def toggle_maintenance():
-    """Activar/desactivar modo mantenimiento"""
-    data = request.json
-    maintenance_mode = data.get('maintenance_mode', False)
-    
-    # Actualizar configuración que la app Flutter leerá
-    config = {'maintenance_mode': maintenance_mode}
-    with open('app_config.json', 'w') as f:
-        json.dump(config, f)
-    
-    return jsonify({'success': True, 'maintenance_mode': maintenance_mode})
-
-# ==================== PRODUCTOS API ====================
-
-@admin.route('/api/products', methods=['GET'])
-def get_products():
-    """Obtener todos los productos desde Supabase"""
-    try:
-        import requests
-        
-        # Configuración de Supabase
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        
-        headers = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer {}'.format(SUPABASE_KEY),
-            'Content-Type': 'application/json'
-        }
-        
-        response = requests.get(
-            f'{SUPABASE_URL}/rest/v1/store_products?select=*&order=created_at.desc',
-            headers=headers
-        )
-        
-        if response.status_code == 200:
-            products = response.json()
-            return jsonify({
-                'success': True,
-                'products': products,
-                'total': len(products)
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'Error de Supabase: {response.status_code}',
-                'products': []
-            }), 500
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'products': []
-        }), 500
-
-@admin.route('/api/products', methods=['POST'])
-def create_product():
-    """Crear nuevo producto en Supabase"""
-    try:
-        import requests
-        
-        # Verificar que tenemos datos JSON válidos
-        if not request.is_json:
-            return jsonify({
-                'success': False,
-                'error': 'Content-Type debe ser application/json'
-            }), 400
-            
         data = request.get_json()
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'No se recibieron datos JSON'
-            }), 400
         
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        
-        headers = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer {}'.format(SUPABASE_KEY),
-            'Content-Type': 'application/json'
+        # Aquí se guardaría en la base de datos
+        contact_info = {
+            'phone': data.get('phone'),
+            'email': data.get('email'),
+            'whatsapp': data.get('whatsapp'),
+            'address': data.get('address'),
+            'facebook': data.get('facebook'),
+            'instagram': data.get('instagram'),
+            'twitter': data.get('twitter'),
+            'business_hours': data.get('businessHours'),
+            'terms_conditions': data.get('termsConditions'),
+            'privacy_policy': data.get('privacyPolicy'),
+            'updated_at': datetime.now().isoformat()
         }
         
-        # Manejar imagen del producto
-        image_url = data.get('image_url', '')
-        if data.get('image_base64'):
-            try:
-                # Si hay imagen en base64, subirla a Supabase Storage
-                image_url = upload_image_to_supabase(data.get('image_base64'), data.get('name', 'product'))
-                if not image_url:
-                    print("⚠️ Upload de imagen falló, usando imagen de Unsplash")
-                    image_url = f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center'
-            except Exception as e:
-                print(f"❌ Error en upload de imagen: {e}")
-                image_url = f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center'
-        
-        # Preparar datos del producto - SOLO campos que existen en Supabase
-        product_data = {
-            'name': data.get('name'),
-            'description': data.get('description', ''),
-            'price': float(data.get('price', 0)),
-            'category': data.get('category'),
-            'stock': int(data.get('stock', 0)),
-            'image_url': image_url
-        }
-        
-        # Agregar campos opcionales solo si existen en la tabla
-        if data.get('subcategory'):
-            product_data['subcategory'] = data.get('subcategory')
-        if data.get('weight'):
-            product_data['weight'] = data.get('weight')
-        if data.get('shipping_cost'):
-            product_data['shipping_cost'] = float(data.get('shipping_cost', 0))
-        # Manejar vendor_id - debe ser UUID válido o usar admin por defecto
-        vendor_id = data.get('vendor_id')
-        if vendor_id and vendor_id != 'test-vendor':
-            # Solo agregar si es un UUID válido
-            try:
-                import uuid
-                uuid.UUID(vendor_id)  # Validar que sea UUID
-                product_data['vendor_id'] = vendor_id
-            except ValueError:
-                # Si no es UUID válido, usar admin por defecto
-                admin_id = get_admin_user_id()
-                if admin_id:
-                    product_data['vendor_id'] = admin_id
-        else:
-            # Usar admin por defecto si no se especifica o es un valor de prueba
-            admin_id = get_admin_user_id()
-            if admin_id:
-                product_data['vendor_id'] = admin_id
-        if data.get('shipping_methods'):
-            product_data['shipping_methods'] = data.get('shipping_methods', [])
-        if data.get('tags'):
-            product_data['tags'] = data.get('tags', [])
-        
-        # Siempre agregar is_active si la columna existe
-        product_data['is_active'] = True
-        
-        # Validar datos requeridos
-        if not product_data['name'] or not product_data['category']:
-            return jsonify({
-                'success': False,
-                'error': 'Nombre y categoría son requeridos'
-            }), 400
-        
-        response = requests.post(
-            f'{SUPABASE_URL}/rest/v1/store_products',
-            headers=headers,
-            json=product_data
-        )
-        
-        print(f"🔍 Supabase Response Status: {response.status_code}")
-        print(f"🔍 Supabase Response Text: {response.text}")
-        
-        if response.status_code == 201:
-            try:
-                product_response = response.json()
-                return jsonify({
-                    'success': True,
-                    'message': 'Producto creado exitosamente',
-                    'product': product_response
-                })
-            except Exception as e:
-                return jsonify({
-                    'success': True,
-                    'message': 'Producto creado exitosamente',
-                    'product': {'id': 'created'}
-                })
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'Error de Supabase: {response.status_code} - {response.text}'
-            }), 500
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Error interno: {str(e)}'
-        }), 500
-
-def upload_image_to_supabase(image_base64, product_name):
-    """Subir imagen a Supabase Storage - VERSIÓN MEJORADA"""
+        # Por ahora retornamos éxito
+        return jsonify({'success': True, 'message': 'Información de contacto actualizada'})
     
-    # Usar sistema mejorado si está disponible
-    if IMPROVED_UPLOAD_AVAILABLE and IMAGE_UPLOADER:
-        try:
-            print("📸 Usando sistema mejorado de upload...")
-            return IMAGE_UPLOADER.upload_image_to_supabase(image_base64, product_name)
-        except Exception as e:
-            print(f"⚠️ Error en sistema mejorado, usando método mejorado: {e}")
+    # GET - Retornar información actual
+    contact_info = {
+        'phone': '+1 (555) 123-4567',
+        'email': 'contacto@cubalink.com',
+        'whatsapp': '+1 (555) 987-6543',
+        'address': '123 Calle Principal, La Habana, Cuba',
+        'facebook': 'https://facebook.com/cubalink',
+        'instagram': 'https://instagram.com/cubalink',
+        'twitter': 'https://twitter.com/cubalink',
+        'business_hours': 'Lunes a Viernes: 9:00 AM - 6:00 PM',
+        'terms_conditions': 'Términos y condiciones de la empresa...',
+        'privacy_policy': 'Política de privacidad de la empresa...'
+    }
     
-    # Método mejorado con Service Key
-    print("📸 Usando método mejorado de upload...")
+    return jsonify(contact_info)
+
+@admin.route('/api/upload-logo', methods=['POST'])
+@require_auth
+def upload_logo():
+    """API para subir y actualizar el logo de la empresa"""
     try:
-        import requests
-        import base64
-        import uuid
+        if 'logo' not in request.files:
+            return jsonify({'success': False, 'message': 'No se seleccionó ningún archivo'})
         
-        # Configuración de Supabase con Service Key
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTc5Mjc5OCwiZXhwIjoyMDcxMzY4Nzk4fQ.kUgRPYHRuWJVPfD8iVA7GDuOlj9Xwp6eQ2gH7FJqJ9s'
+        file = request.files['logo']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No se seleccionó ningún archivo'})
         
-        # Generar nombre único para la imagen
-        image_id = str(uuid.uuid4())
-        filename = f"{product_name.replace(' ', '_')}_{image_id}.jpg"
+        # Validar tipo de archivo
+        allowed_extensions = {'svg', 'png', 'jpg', 'jpeg'}
+        if not file.filename.lower().endswith(tuple('.' + ext for ext in allowed_extensions)):
+            return jsonify({'success': False, 'message': 'Formato de archivo no soportado'})
         
-        # Decodificar imagen base64
-        image_data = base64.b64decode(image_base64.split(',')[1])
+        # Validar tamaño (2MB máximo)
+        if len(file.read()) > 2 * 1024 * 1024:
+            file.seek(0)  # Reset file pointer
+            return jsonify({'success': False, 'message': 'El archivo es demasiado grande'})
         
-        # Determinar el tipo MIME correcto
-        mime_type = 'image/jpeg'  # Por defecto
-        if 'data:image/png' in image_base64:
-            mime_type = 'image/png'
-            filename = filename.replace('.jpg', '.png')
-        elif 'data:image/gif' in image_base64:
-            mime_type = 'image/gif'
-            filename = filename.replace('.jpg', '.gif')
-        elif 'data:image/webp' in image_base64:
-            mime_type = 'image/webp'
-            filename = filename.replace('.jpg', '.webp')
+        file.seek(0)  # Reset file pointer
         
-        # Headers para upload con Service Key
-        upload_headers = {
-            'apikey': SERVICE_KEY,
-            'Authorization': f'Bearer {SERVICE_KEY}',
-        }
+        # Guardar el archivo
+        filename = 'company-logo' + os.path.splitext(file.filename)[1]
+        filepath = os.path.join('static', 'img', filename)
         
-        # Subir archivo usando multipart/form-data
-        files = {
-            'file': (filename, image_data, mime_type)
-        }
+        # Asegurar que el directorio existe
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         
-        print(f"🔍 Subiendo imagen: {filename}")
-        print(f"📸 MIME Type: {mime_type}")
+        file.save(filepath)
         
-        response = requests.post(
-            f'{SUPABASE_URL}/storage/v1/object/product-images/{filename}',
-            headers=upload_headers,
-            files=files
-        )
-        
-        print(f"📡 Response Status: {response.status_code}")
-        print(f"📊 Response Text: {response.text}")
-        
-        if response.status_code == 200:
-            # Retornar URL pública de la imagen
-            public_url = f'{SUPABASE_URL}/storage/v1/object/public/product-images/{filename}'
-            print(f"✅ Imagen subida exitosamente: {public_url}")
-            return public_url
-        else:
-            print(f"❌ Error subiendo imagen: {response.status_code} - {response.text}")
-            # Usar imagen de Unsplash como fallback
-            return f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center'
-            
-    except Exception as e:
-        print(f"Error en upload_image_to_supabase: {e}")
-        # Usar placeholder como fallback
-        return f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center'
-@admin.route('/api/products/<product_id>', methods=['PUT'])
-def update_product(product_id):
-    """Actualizar producto en Supabase"""
-    try:
-        import requests
-        
-        data = request.json
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        
-        headers = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer {}'.format(SUPABASE_KEY),
-            'Content-Type': 'application/json'
-        }
-        
-        # Manejar imagen del producto
-        if data.get('image_base64'):
-            # Si hay imagen en base64, subirla a Supabase Storage
-            image_url = upload_image_to_supabase(data.get('image_base64'), data.get('name', 'product'))
-            if image_url:
-                data['image_url'] = image_url
-        
-        # Preparar datos actualizados con nuevas funcionalidades
-        update_data = {}
-        if 'name' in data:
-            update_data['name'] = data['name']
-        if 'description' in data:
-            update_data['description'] = data['description']
-        if 'price' in data:
-            update_data['price'] = float(data['price'])
-        if 'category' in data:
-            update_data['category'] = data['category']
-        if 'subcategory' in data:
-            update_data['subcategory'] = data['subcategory']
-        if 'stock' in data:
-            update_data['stock'] = int(data['stock'])
-        if 'weight' in data:
-            update_data['weight'] = data['weight']
-        if 'shipping_cost' in data:
-            update_data['shipping_cost'] = float(data['shipping_cost']) if data['shipping_cost'] else 0
-        if 'vendor_id' in data:
-            update_data['vendor_id'] = data['vendor_id']
-        if 'shipping_methods' in data:
-            update_data['shipping_methods'] = data['shipping_methods']
-        if 'tags' in data:
-            update_data['tags'] = data['tags']
-        if 'is_active' in data:
-            update_data['is_active'] = data['is_active']
-        if 'image_url' in data:
-            update_data['image_url'] = data['image_url']
-        
-        response = requests.patch(
-            f'{SUPABASE_URL}/rest/v1/store_products?id=eq.{product_id}',
-            headers=headers,
-            json=update_data
-        )
-        
-        print(f"🔍 Update Response Status: {response.status_code}")
-        print(f"🔍 Update Response Text: {response.text}")
-        
-        # Supabase devuelve 204 para actualizaciones exitosas
-        if response.status_code in [200, 204]:
-            return jsonify({
-                'success': True,
-                'message': 'Producto actualizado exitosamente'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'Error de Supabase: {response.status_code} - {response.text}'
-            }), 500
-            
-    except Exception as e:
         return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@admin.route('/api/products/<product_id>', methods=['DELETE'])
-def delete_product(product_id):
-    """Eliminar producto de Supabase y su imagen del Storage"""
-    try:
-        import requests
-        import os
+            'success': True, 
+            'message': 'Logo actualizado correctamente',
+            'filename': filename
+        })
         
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTc5Mjc5OCwiZXhwIjoyMDcxMzY4Nzk4fQ.kUgRPYHRuWJVPfD8iVA7GDuOlj9Xwp6eQ2gH7FJqJ9s'
-        
-        headers = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer {}'.format(SUPABASE_KEY),
-            'Content-Type': 'application/json'
-        }
-        
-        # Primero obtener el producto para obtener la URL de la imagen
-        get_response = requests.get(
-            f'{SUPABASE_URL}/rest/v1/store_products?id=eq.{product_id}&select=image_url',
-            headers=headers
-        )
-        
-        if get_response.status_code == 200:
-            products = get_response.json()
-            if products and len(products) > 0:
-                product = products[0]
-                image_url = product.get('image_url', '')
-                
-                # Si la imagen está en Supabase Storage, eliminarla
-                if image_url and 'storage/v1/object/public/product-images/' in image_url:
-                    try:
-                        # Extraer el nombre del archivo de la URL
-                        filename = os.path.basename(image_url)
-                        
-                        # Eliminar la imagen del Storage usando Service Key
-                        storage_headers = {
-                            'apikey': SERVICE_KEY,
-                            'Authorization': f'Bearer {SERVICE_KEY}'
-                        }
-                        
-                        delete_image_response = requests.delete(
-                            f'{SUPABASE_URL}/storage/v1/object/product-images/{filename}',
-                            headers=storage_headers
-                        )
-                        
-                        if delete_image_response.status_code == 200:
-                            print(f"✅ Imagen eliminada del Storage: {filename}")
-                        else:
-                            print(f"⚠️ No se pudo eliminar la imagen del Storage: {delete_image_response.status_code}")
-                            
-                    except Exception as e:
-                        print(f"⚠️ Error eliminando imagen del Storage: {e}")
-        
-        # Eliminar el producto de la base de datos
-        response = requests.delete(
-            f'{SUPABASE_URL}/rest/v1/store_products?id=eq.{product_id}',
-            headers=headers
-        )
-        
-        if response.status_code == 204:
-            return jsonify({
-                'success': True,
-                'message': 'Producto eliminado exitosamente'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'Error de Supabase: {response.status_code} - {response.text}'
-            }), 500
-            
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-def upload_banner_image_to_supabase(image_base64, banner_title):
-    """Subir imagen de banner a Supabase Storage"""
-    print("�� Subiendo imagen de banner...")
-    try:
-        import requests
-        import base64
-        import uuid
-        
-        # Configuración de Supabase con Anon Key (para Storage)
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        
-        # Generar nombre único para la imagen
-        image_id = str(uuid.uuid4())
-        filename = f"{banner_title.replace(' ', '_')}_{image_id}.jpg"
-        
-        # Decodificar imagen base64
-        image_data = base64.b64decode(image_base64.split(',')[1])
-        
-        # Determinar el tipo MIME correcto
-        mime_type = 'image/jpeg'  # Por defecto
-        if 'data:image/png' in image_base64:
-            mime_type = 'image/png'
-            filename = filename.replace('.jpg', '.png')
-        elif 'data:image/gif' in image_base64:
-            mime_type = 'image/gif'
-            filename = filename.replace('.jpg', '.gif')
-        elif 'data:image/webp' in image_base64:
-            mime_type = 'image/webp'
-            filename = filename.replace('.jpg', '.webp')
-        
-        # Headers para upload con Anon Key
-        upload_headers = {
-            'apikey': ANON_KEY,
-            'Authorization': f'Bearer {ANON_KEY}',
-            'Content-Type': mime_type,
-        }
-        
-        print(f"🔍 Subiendo banner: {filename}")
-        print(f"📸 MIME Type: {mime_type}")
-        
-        response = requests.post(
-            f'{SUPABASE_URL}/storage/v1/object/banners/{filename}',
-            headers=upload_headers,
-            data=image_data
-        )
-        
-        print(f"📡 Response Status: {response.status_code}")
-        print(f"📊 Response Text: {response.text}")
-        
-        if response.status_code == 200:
-            # Retornar URL pública de la imagen
-            public_url = f'{SUPABASE_URL}/storage/v1/object/public/banners/{filename}'
-            print(f"✅ Banner subido exitosamente: {public_url}")
-            return public_url
-        else:
-            print(f"❌ Error subiendo banner: {response.status_code} - {response.text}")
-            # Usar imagen de Unsplash como fallback
-            return f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop&crop=center'
-            
-    except Exception as e:
-        print(f"Error en upload_banner_image_to_supabase: {e}")
-        # Usar imagen de Unsplash como fallback
-        return f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop&crop=center'
-
-@admin.route('/api/banners/<banner_id>', methods=['PUT'])
-def update_banner(banner_id):
-    """Actualizar banner en Supabase"""
-    try:
-        import requests
-        
-        data = request.json
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        
-        headers = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer {}'.format(SUPABASE_KEY),
-            'Content-Type': 'application/json'
-        }
-        
-        # Manejar imagen del banner si se proporciona
-        if data.get('image_base64'):
-            try:
-                image_url = upload_banner_image_to_supabase(data.get('image_base64'), data.get('title', 'banner'))
-                data['image_url'] = image_url
-            except Exception as e:
-                print(f"❌ Error en upload de imagen: {e}")
-        
-        # Preparar datos del banner
-        banner_data = {
-            'title': data.get('title'),
-            'description': data.get('description', ''),
-            'banner_type': data.get('banner_type'),
-            'display_order': int(data.get('display_order', 0)),
-            'is_active': bool(data.get('is_active', True)),
-            'auto_rotate': bool(data.get('auto_rotate', True)),
-            'rotation_speed': int(data.get('rotation_speed', 5000))
-        }
-        
-        # Agregar image_url si se actualizó
-        if 'image_url' in data:
-            banner_data['image_url'] = data['image_url']
-        
-        response = requests.patch(
-            f'{SUPABASE_URL}/rest/v1/banners?id=eq.{banner_id}',
-            headers=headers,
-            json=banner_data
-        )
-        
-        if response.status_code == 204:
-            return jsonify({
-                'success': True,
-                'message': 'Banner actualizado exitosamente'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'Error actualizando banner: {response.status_code} - {response.text}'
-            }), 500
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@admin.route('/api/banners/<banner_id>', methods=['DELETE'])
-def delete_banner(banner_id):
-    """Eliminar banner de Supabase y su imagen del Storage"""
-    try:
-        import requests
-        import os
-        
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTc5Mjc5OCwiZXhwIjoyMDcxMzY4Nzk4fQ.kUgRPYHRuWJVPfD8iVA7GDuOlj9Xwp6eQ2gH7FJqJ9s'
-        
-        headers = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer {}'.format(SUPABASE_KEY),
-            'Content-Type': 'application/json'
-        }
-        
-        # Primero obtener el banner para obtener la URL de la imagen
-        get_response = requests.get(
-            f'{SUPABASE_URL}/rest/v1/banners?id=eq.{banner_id}&select=image_url',
-            headers=headers
-        )
-        
-        if get_response.status_code == 200:
-            banners = get_response.json()
-            if banners and len(banners) > 0:
-                banner = banners[0]
-                image_url = banner.get('image_url', '')
-                
-                # Si la imagen está en Supabase Storage, eliminarla
-                if image_url and 'storage/v1/object/public/banners/' in image_url:
-                    try:
-                        # Extraer el nombre del archivo de la URL
-                        filename = os.path.basename(image_url)
-                        
-                        # Eliminar la imagen del Storage usando Service Key
-                        storage_headers = {
-                            'apikey': SERVICE_KEY,
-                            'Authorization': f'Bearer {SERVICE_KEY}'
-                        }
-                        
-                        delete_image_response = requests.delete(
-                            f'{SUPABASE_URL}/storage/v1/object/banners/{filename}',
-                            headers=storage_headers
-                        )
-                        
-                        if delete_image_response.status_code == 200:
-                            print(f"✅ Imagen de banner eliminada del Storage: {filename}")
-                        else:
-                            print(f"⚠️ No se pudo eliminar la imagen del Storage: {delete_image_response.status_code}")
-                            
-                    except Exception as e:
-                        print(f"⚠️ Error eliminando imagen del Storage: {e}")
-        
-        # Eliminar el banner de la base de datos
-        response = requests.delete(
-            f'{SUPABASE_URL}/rest/v1/banners?id=eq.{banner_id}',
-            headers=headers
-        )
-        
-        if response.status_code == 204:
-            return jsonify({
-                'success': True,
-                'message': 'Banner eliminado exitosamente'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'Error eliminando banner: {response.status_code} - {response.text}'
-            }), 500
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'message': f'Error al subir el logo: {str(e)}'})
 
 @admin.route('/api/upload-banners', methods=['POST'])
+@require_auth
 def upload_banners():
-    """Subir banners desde el sistema actual (compatible con la interfaz existente)"""
+    """API para subir banners de la app"""
     try:
-        import requests
-        import base64
-        import uuid
+        banners_uploaded = []
         
-        SUPABASE_URL = 'https://zgqrhzuhrwudckwesybg.supabase.co'
-        SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpncXJoenVocnd1ZGNrd2VzeWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTI3OTgsImV4cCI6MjA3MTM2ODc5OH0.lUVK99zmOYD7bNTxilJZWHTmYPfZF5YeMJDVUaJ-FsQ'
-        
-        headers = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer {}'.format(SUPABASE_KEY),
-            'Content-Type': 'application/json'
-        }
-        
-        uploaded_banners = []
-        
-        # Procesar Banner Principal (Home)
+        # Procesar banner principal
         if 'main_banner' in request.files:
-            main_banner = request.files['main_banner']
-            if main_banner and main_banner.filename:
-                try:
-                    # Convertir a base64
-                    image_data = main_banner.read()
-                    image_base64 = base64.b64encode(image_data).decode('utf-8')
-                    image_base64 = f'data:image/jpeg;base64,{image_base64}'
-                    
-                    # Subir a Supabase Storage
-                    image_url = upload_banner_image_to_supabase(image_base64, 'Banner Principal')
-                    
-                    # Crear banner en la base de datos
-                    banner_data = {
-                        'title': 'Banner Principal (Home)',
-                        'description': 'Banner principal de la aplicación',
-                        'banner_type': 'banner1',
-                        'image_url': image_url,
-                        'display_order': 1,
-                        'is_active': True,
-                        'auto_rotate': True,
-                        'rotation_speed': 5000
-                    }
-                    
-                    response = requests.post(
-                        f'{SUPABASE_URL}/rest/v1/banners',
-                        headers=headers,
-                        json=banner_data
-                    )
-                    
-                    if response.status_code == 201:
-                        uploaded_banners.append('Banner Principal')
-                    
-                except Exception as e:
-                    print(f"Error procesando banner principal: {e}")
+            file = request.files['main_banner']
+            if file.filename != '':
+                filename = 'main-banner' + os.path.splitext(file.filename)[1]
+                filepath = os.path.join('static', 'img', 'banners', filename)
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                file.save(filepath)
+                banners_uploaded.append('Banner Principal')
         
-        # Procesar Banner Secundario
+        # Procesar banner secundario
         if 'secondary_banner' in request.files:
-            secondary_banner = request.files['secondary_banner']
-            if secondary_banner and secondary_banner.filename:
-                try:
-                    # Convertir a base64
-                    image_data = secondary_banner.read()
-                    image_base64 = base64.b64encode(image_data).decode('utf-8')
-                    image_base64 = f'data:image/jpeg;base64,{image_base64}'
-                    
-                    # Subir a Supabase Storage
-                    image_url = upload_banner_image_to_supabase(image_base64, 'Banner Secundario')
-                    
-                    # Crear banner en la base de datos
-                    banner_data = {
-                        'title': 'Banner Secundario',
-                        'description': 'Banner secundario de la aplicación',
-                        'banner_type': 'banner2',
-                        'image_url': image_url,
-                        'display_order': 2,
-                        'is_active': True,
-                        'auto_rotate': True,
-                        'rotation_speed': 5000
-                    }
-                    
-                    response = requests.post(
-                        f'{SUPABASE_URL}/rest/v1/banners',
-                        headers=headers,
-                        json=banner_data
-                    )
-                    
-                    if response.status_code == 201:
-                        uploaded_banners.append('Banner Secundario')
-                    
-                except Exception as e:
-                    print(f"Error procesando banner secundario: {e}")
+            file = request.files['secondary_banner']
+            if file.filename != '':
+                filename = 'secondary-banner' + os.path.splitext(file.filename)[1]
+                filepath = os.path.join('static', 'img', 'banners', filename)
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                file.save(filepath)
+                banners_uploaded.append('Banner Secundario')
         
-        # Procesar Banner de Promociones
+        # Procesar banner de promociones
         if 'promo_banner' in request.files:
-            promo_banner = request.files['promo_banner']
-            if promo_banner and promo_banner.filename:
-                try:
-                    # Convertir a base64
-                    image_data = promo_banner.read()
-                    image_base64 = base64.b64encode(image_data).decode('utf-8')
-                    image_base64 = f'data:image/jpeg;base64,{image_base64}'
-                    
-                    # Subir a Supabase Storage
-                    image_url = upload_banner_image_to_supabase(image_base64, 'Banner de Promociones')
-                    
-                    # Crear banner en la base de datos
-                    banner_data = {
-                        'title': 'Banner de Promociones',
-                        'description': 'Banner de promociones de la aplicación',
-                        'banner_type': 'banner1',  # Agregar como banner1 adicional
-                        'image_url': image_url,
-                        'display_order': 3,
-                        'is_active': True,
-                        'auto_rotate': True,
-                        'rotation_speed': 5000
-                    }
-                    
-                    response = requests.post(
-                        f'{SUPABASE_URL}/rest/v1/banners',
-                        headers=headers,
-                        json=banner_data
-                    )
-                    
-                    if response.status_code == 201:
-                        uploaded_banners.append('Banner de Promociones')
-                    
-                except Exception as e:
-                    print(f"Error procesando banner de promociones: {e}")
+            file = request.files['promo_banner']
+            if file.filename != '':
+                filename = 'promo-banner' + os.path.splitext(file.filename)[1]
+                filepath = os.path.join('static', 'img', 'banners', filename)
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                file.save(filepath)
+                banners_uploaded.append('Banner de Promociones')
         
-        if uploaded_banners:
+        if banners_uploaded:
             return jsonify({
                 'success': True,
-                'message': f'Banners subidos exitosamente: {", ".join(uploaded_banners)}',
-                'uploaded': uploaded_banners
+                'message': f'Banners actualizados: {", ".join(banners_uploaded)}'
+            })
+        else:
+            return jsonify({'success': False, 'message': 'No se seleccionaron archivos'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error al subir banners: {str(e)}'})
+
+@admin.route('/api/send-push-notification', methods=['POST'])
+@require_auth
+def send_push_notification():
+    """API para enviar notificaciones push"""
+    try:
+        data = request.get_json()
+        
+        # Aquí se integraría con Firebase Cloud Messaging o similar
+        notification_data = {
+            'title': data.get('title'),
+            'message': data.get('message'),
+            'type': data.get('type', 'all'),
+            'urgent': data.get('urgent', False),
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Guardar en base de datos
+        # save_notification_to_db(notification_data)
+        
+        # Enviar notificación push real
+        # send_push_to_devices(notification_data)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notificación enviada correctamente'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error al enviar notificación: {str(e)}'})
+
+@admin.route('/api/notification-history')
+@require_auth
+def notification_history():
+    """API para obtener historial de notificaciones"""
+    try:
+        # Aquí se obtendría de la base de datos
+        notifications = [
+            {
+                'date': '2024-01-15 10:30:00',
+                'title': 'Nueva Promoción',
+                'message': '¡Descuento del 20% en todos los productos!',
+                'type': 'all',
+                'status': 'Enviada'
+            },
+            {
+                'date': '2024-01-14 15:45:00',
+                'title': 'Mantenimiento Programado',
+                'message': 'El sistema estará en mantenimiento mañana de 2:00 AM a 4:00 AM',
+                'type': 'all',
+                'status': 'Enviada'
+            }
+        ]
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error al cargar historial: {str(e)}'})
+
+# ===== GESTIÓN DE AEROLÍNEAS CHARTER =====
+
+@admin.route('/api/charter-airlines', methods=['GET'])
+@require_auth
+def get_charter_airlines():
+    """Obtener lista de aerolíneas charter"""
+    try:
+        from charter_routes import CHARTER_AIRLINES
+        
+        airlines = []
+        for key, airline in CHARTER_AIRLINES.items():
+            airlines.append({
+                'id': key,
+                'name': airline['name'],
+                'url': airline['url'],
+                'markup': airline['markup'],
+                'active': airline['active'],
+                'routes': airline['routes'],
+                'check_frequency': airline['check_frequency']
+            })
+        
+        return jsonify({
+            'success': True,
+            'airlines': airlines
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+@admin.route('/api/charter-airlines', methods=['POST'])
+@require_auth
+def save_charter_airline():
+    """Guardar o actualizar aerolínea charter"""
+    try:
+        data = request.get_json()
+        from charter_routes import CHARTER_AIRLINES
+        
+        # En producción, esto se guardaría en la base de datos
+        # Por ahora, actualizamos la configuración en memoria
+        airline_id = data.get('id')
+        if airline_id and airline_id in CHARTER_AIRLINES:
+            CHARTER_AIRLINES[airline_id].update({
+                'name': data.get('name'),
+                'url': data.get('url'),
+                'markup': float(data.get('markup', 0)),
+                'active': data.get('status') == 'active',
+                'routes': data.get('routes', '').split(','),
+                'check_frequency': int(data.get('check_frequency', 30))
+            })
+        
+        return jsonify({
+            'success': True,
+            'message': 'Aerolínea guardada correctamente'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error al guardar: {str(e)}'
+        }), 500
+
+@admin.route('/api/charter-airlines/<airline_id>/toggle', methods=['POST'])
+@require_auth
+def toggle_charter_airline(airline_id):
+    """Activar/desactivar aerolínea charter"""
+    try:
+        from charter_routes import CHARTER_AIRLINES
+        
+        if airline_id in CHARTER_AIRLINES:
+            CHARTER_AIRLINES[airline_id]['active'] = not CHARTER_AIRLINES[airline_id]['active']
+            
+            return jsonify({
+                'success': True,
+                'message': f"Aerolínea {'activada' if CHARTER_AIRLINES[airline_id]['active'] else 'desactivada'} correctamente"
             })
         else:
             return jsonify({
                 'success': False,
-                'message': 'No se pudieron subir los banners'
-            }), 400
+                'message': 'Aerolínea no encontrada'
+            }), 404
             
     except Exception as e:
         return jsonify({
             'success': False,
-            'error': str(e)
+            'message': f'Error: {str(e)}'
         }), 500
 
+@admin.route('/api/charter-airlines/<airline_id>/test', methods=['POST'])
+@require_auth
+def test_charter_airline(airline_id):
+    """Probar conexión con aerolínea charter"""
+    try:
+        from charter_routes import CHARTER_AIRLINES, charter_scraper
+        from datetime import datetime, timedelta
         
-        response = requests.post(
-            f'{SUPABASE_URL}/storage/v1/object/product-images/{filename}',
-            headers=upload_headers,
-            files=files
-        )
+        if airline_id not in CHARTER_AIRLINES:
+            return jsonify({
+                'success': False,
+                'message': 'Aerolínea no encontrada'
+            }), 404
         
-        print(f"📡 Response Status: {response.status_code}")
-        print(f"📊 Response Text: {response.text}")
+        airline = CHARTER_AIRLINES[airline_id]
         
-        if response.status_code == 200:
-            # Retornar URL pública de la imagen
-            public_url = f'{SUPABASE_URL}/storage/v1/object/public/product-images/{filename}'
-            print(f"✅ Imagen subida exitosamente: {public_url}")
-            return public_url
+        # Simular prueba de conexión
+        test_data = {
+            'origin': 'Miami',
+            'destination': 'Havana',
+            'departure_date': (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+        }
+        
+        if airline_id == 'xael':
+            flights = charter_scraper.scrape_xael_charter(test_data)
+        elif airline_id == 'cubazul':
+            flights = charter_scraper.scrape_cubazul_charter(test_data)
+        elif airline_id == 'havana_air':
+            flights = charter_scraper.scrape_havana_air_charter(test_data)
         else:
-            print(f"❌ Error subiendo imagen: {response.status_code} - {response.text}")
-            # Usar imagen de Unsplash como fallback
-            return f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center'
+            flights = []
+        
+        if flights:
+            return jsonify({
+                'success': True,
+                'message': f'Conexión exitosa. Se encontraron {len(flights)} vuelos de prueba.',
+                'test_flights': flights
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'No se pudieron obtener vuelos de prueba'
+            })
             
     except Exception as e:
-        print(f"Error en upload_image_to_supabase: {e}")
-        # Usar placeholder como fallback
-        return f'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center'
+        return jsonify({
+            'success': False,
+            'message': f'Error en prueba: {str(e)}'
+        }), 500
 
-
-# ===== ENDPOINTS DE MODO MANTENIMIENTO =====
-
-@admin.route('/api/maintenance/status', methods=['GET'])
-def get_maintenance_status():
-    """Obtener estado del modo mantenimiento"""
-    global MAINTENANCE_MODE
-    return jsonify({
-        'maintenance_mode': MAINTENANCE_MODE,
-        'message': 'Modo mantenimiento activo' if MAINTENANCE_MODE else 'Sistema operativo'
-    })
-
-@admin.route('/api/maintenance/toggle', methods=['POST'])
-def toggle_maintenance_mode():
-    """Activar/desactivar modo mantenimiento"""
-    global MAINTENANCE_MODE
-    
+@admin.route('/api/charter-bookings')
+@require_auth
+def get_charter_bookings():
+    """Obtener reservas charter"""
     try:
-        data = request.get_json() or {}
-        new_status = data.get('enabled', not MAINTENANCE_MODE)
-        
-        MAINTENANCE_MODE = new_status
-        
-        status_text = "ACTIVADO" if MAINTENANCE_MODE else "DESACTIVADO"
-        print(f"🔧 Modo mantenimiento {status_text}")
+        # En producción, obtener de base de datos
+        bookings = [
+            {
+                'id': 'CH001',
+                'passenger_name': 'Juan Pérez',
+                'origin': 'Miami',
+                'destination': 'Havana',
+                'departure_date': '2024-01-20',
+                'airline': 'Xael Charter',
+                'status': 'PENDIENTE',
+                'total_price': 300,
+                'created_at': '2024-01-15 10:30:00',
+                'can_modify': True,
+                'can_cancel': True
+            },
+            {
+                'id': 'CH002',
+                'passenger_name': 'María García',
+                'origin': 'Miami',
+                'destination': 'Havana',
+                'departure_date': '2024-01-22',
+                'airline': 'Cubazul Air Charter',
+                'status': 'CONFIRMADO',
+                'total_price': 285,
+                'created_at': '2024-01-14 15:45:00',
+                'can_modify': False,
+                'can_cancel': False
+            }
+        ]
         
         return jsonify({
             'success': True,
-            'maintenance_mode': MAINTENANCE_MODE,
-            'message': f'Modo mantenimiento {status_text.lower()}'
+            'bookings': bookings
         })
         
     except Exception as e:
-        print(f"❌ Error toggling maintenance mode: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error al cargar reservas: {str(e)}'
+        }), 500
+
+@admin.route('/api/charter-bookings/<booking_id>/confirm', methods=['POST'])
+@require_auth
+def confirm_charter_booking(booking_id):
+    """Confirmar reserva charter"""
+    try:
+        # En producción, actualizar en base de datos
+        # update_booking_status(booking_id, 'CONFIRMADO')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Reserva confirmada. Tiquete emitido. No se permiten más cambios.'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error al confirmar reserva: {str(e)}'
+        }), 500
+
+# ==================== AUTOMATIZACIÓN CUBA TRANSTUR ====================
+
+@admin.route('/cuba-transtur')
+@require_auth
+def cuba_transtur_dashboard():
+    """Panel de automatización de Cuba Transtur"""
+    return render_template('admin/cuba_transtur.html', config=ADMIN_CONFIG)
+
+@admin.route('/api/cuba-transtur/bookings')
+@require_auth
+def get_cuba_transtur_bookings():
+    """Obtener historial de reservas automatizadas"""
+    try:
+        from cuba_transtur_automation import get_booking_history
+        bookings = get_booking_history()
+        return jsonify({
+            'success': True,
+            'bookings': bookings
+        })
+    except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
 
-
-# ===== ENDPOINTS DE ACTUALIZACIONES FORZADAS =====
-
-@admin.route('/api/force-update/status', methods=['GET'])
-def get_force_update_status():
-    """Obtener estado del modo actualización forzada"""
-    global FORCE_UPDATE_MODE, IOS_APP_URL, ANDROID_APP_URL
-    return jsonify({
-        'force_update_mode': FORCE_UPDATE_MODE,
-        'ios_app_url': IOS_APP_URL,
-        'android_app_url': ANDROID_APP_URL,
-        'message': 'Actualización forzada activa' if FORCE_UPDATE_MODE else 'Sistema operativo'
-    })
-
-@admin.route('/api/force-update/toggle', methods=['POST'])
-def toggle_force_update_mode():
-    """Activar/desactivar modo actualización forzada"""
-    global FORCE_UPDATE_MODE, IOS_APP_URL, ANDROID_APP_URL
-    
+@admin.route('/api/cuba-transtur/bookings', methods=['POST'])
+@require_auth
+def create_cuba_transtur_booking():
+    """Crear reserva automatizada en Cuba Transtur"""
     try:
-        data = request.get_json() or {}
-        new_status = data.get('enabled', not FORCE_UPDATE_MODE)
-        ios_url = data.get('ios_url', IOS_APP_URL)
-        android_url = data.get('android_url', ANDROID_APP_URL)
+        data = request.get_json()
         
-        FORCE_UPDATE_MODE = new_status
-        IOS_APP_URL = ios_url
-        ANDROID_APP_URL = android_url
+        # Validaciones básicas
+        required_fields = ['name', 'phone', 'pickup_date', 'return_date', 
+                          'pickup_location', 'vehicle_type']
         
-        status_text = "ACTIVADO" if FORCE_UPDATE_MODE else "DESACTIVADO"
-        print(f"🔄 Modo actualización forzada {status_text}")
-        print(f"📱 iOS URL: {IOS_APP_URL}")
-        print(f"🤖 Android URL: {ANDROID_APP_URL}")
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    'success': False,
+                    'error': f'Campo requerido: {field}'
+                }), 400
         
-        return jsonify({
-            'success': True,
-            'force_update_mode': FORCE_UPDATE_MODE,
-            'ios_app_url': IOS_APP_URL,
-            'android_app_url': ANDROID_APP_URL,
-            'message': f'Modo actualización forzada {status_text.lower()}'
-        })
+        # Importar función de automatización
+        from cuba_transtur_automation import create_automated_booking
         
+        # Crear reserva automatizada
+        result = create_automated_booking(data)
+        
+        if result.get('automation_success'):
+            return jsonify({
+                'success': True,
+                'booking': result,
+                'message': 'Reserva automatizada creada exitosamente'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('message', 'Error en automatización')
+            }), 500
+            
     except Exception as e:
-        print(f"❌ Error toggling force update mode: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+
+@admin.route('/api/cuba-transtur/bookings/<reservation_id>')
+@require_auth
+def get_cuba_transtur_booking_status(reservation_id):
+    """Obtener estado de una reserva específica"""
+    try:
+        from cuba_transtur_automation import check_booking_status
+        booking = check_booking_status(reservation_id)
+        
+        if booking:
+            return jsonify({
+                'success': True,
+                'booking': booking
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Reserva no encontrada'
+            }), 404
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@admin.route('/api/cuba-transtur/test-connection')
+@require_auth
+def test_cuba_transtur_connection():
+    """Probar conexión con Cuba Transtur"""
+    try:
+        from cuba_transtur_automation import CubaTransturAutomation
+        
+        # Crear instancia de prueba
+        automation = CubaTransturAutomation()
+        
+        # Probar navegación
+        success = automation.navigate_to_booking_page()
+        
+        # Cerrar navegador
+        automation.close_driver()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Conexión exitosa con Cuba Transtur'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No se pudo conectar con Cuba Transtur'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@admin.route('/api/cuba-transtur/statistics')
+@require_auth
+def get_cuba_transtur_statistics():
+    """Obtener estadísticas de reservas automatizadas"""
+    try:
+        from cuba_transtur_automation import get_booking_history
+        bookings = get_booking_history()
+        
+        # Calcular estadísticas
+        total_bookings = len(bookings)
+        confirmed_bookings = len([b for b in bookings if b.get('status') == 'confirmed'])
+        pending_bookings = len([b for b in bookings if b.get('status') == 'pending'])
+        error_bookings = len([b for b in bookings if b.get('status') == 'error'])
+        
+        # Ingresos estimados (ejemplo)
+        total_income = sum(b.get('estimated_cost', 0) for b in bookings if b.get('status') == 'confirmed')
+        
+        stats = {
+            'total_bookings': total_bookings,
+            'confirmed_bookings': confirmed_bookings,
+            'pending_bookings': pending_bookings,
+            'error_bookings': error_bookings,
+            'success_rate': (confirmed_bookings / total_bookings * 100) if total_bookings > 0 else 0,
+            'total_income': total_income,
+            'average_booking_value': total_income / confirmed_bookings if confirmed_bookings > 0 else 0
+        }
+        
+        return jsonify({
+            'success': True,
+            'statistics': stats
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ===== FUNCIONES BÁSICAS DE VEHÍCULOS =====
+
+@admin.route('/api/vehicles/add', methods=['POST'])
+@require_auth
+def add_vehicle():
+    """Agregar nuevo vehículo con fotos"""
+    try:
+        # Verificar si hay archivos
+        if 'photos' not in request.files:
+            return jsonify({'success': False, 'error': 'No se seleccionaron fotos'}), 400
+        
+        files = request.files.getlist('photos')
+        if not files or files[0].filename == '':
+            return jsonify({'success': False, 'error': 'No se seleccionaron fotos válidas'}), 400
+        
+        # Obtener datos del formulario
+        daily_price_str = request.form.get('daily_price', '0')
+        passenger_capacity_str = request.form.get('passenger_capacity', '0')
+        
+        # Validar y convertir valores numéricos
+        try:
+            daily_price = float(daily_price_str) if daily_price_str else 0
+        except ValueError:
+            daily_price = 0
+            
+        try:
+            passenger_capacity = int(passenger_capacity_str) if passenger_capacity_str else 0
+        except ValueError:
+            passenger_capacity = 0
+        
+        vehicle_data = {
+            'name': request.form.get('name'),
+            'category': request.form.get('category'),
+            'daily_price': daily_price,
+            'transmission': request.form.get('transmission'),
+            'passenger_capacity': passenger_capacity,
+            'air_conditioning': request.form.get('air_conditioning'),
+            'description': request.form.get('description'),
+            'features': json.loads(request.form.get('features', '[]')),
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Validar datos requeridos
+        if not vehicle_data['name'] or not vehicle_data['category'] or vehicle_data['daily_price'] <= 0:
+            return jsonify({'success': False, 'error': 'Datos incompletos o inválidos'}), 400
+        
+        # Crear directorio para fotos si no existe
+        vehicle_photos_dir = os.path.join(current_app.static_folder, 'uploads', 'vehicles')
+        os.makedirs(vehicle_photos_dir, exist_ok=True)
+        
+        # Guardar fotos
+        photo_paths = []
+        for i, file in enumerate(files):
+            if file and allowed_file(file.filename):
+                filename = secure_filename(vehicle_data['name'] + "_" + str(i) + "_" + datetime.now().strftime('%Y%m%d_%H%M%S') + ".jpg")
+                filepath = os.path.join(vehicle_photos_dir, filename)
+                file.save(filepath)
+                photo_paths.append("/static/uploads/vehicles/" + filename)
+        
+        if not photo_paths:
+            return jsonify({'success': False, 'error': 'No se pudieron guardar las fotos'}), 400
+        
+        # Agregar rutas de fotos a los datos del vehículo
+        vehicle_data['photos'] = photo_paths
+        
+        # Guardar en base de datos
+        try:
+            # Intentar guardar en Supabase primero
+            vehicle_id = supabase_service.add_vehicle(vehicle_data)
+        except:
+            # Si falla Supabase, usar base de datos local
+            vehicle_id = local_db.add_vehicle(vehicle_data)
+        
+        return jsonify({
+            'success': True,
+            'vehicle_id': vehicle_id,
+            'message': 'Vehículo agregado exitosamente'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin.route('/api/vehicles')
+@require_auth
+def get_vehicles():
+    """Obtener lista de vehículos"""
+    try:
+        # Intentar obtener desde Supabase primero
+        try:
+            vehicles = supabase_service.get_vehicles()
+            if vehicles:
+                return jsonify(vehicles)
+        except:
+            pass
+        
+        # Si falla Supabase, usar base de datos local
+        vehicles = local_db.get_vehicles()
+        return jsonify(vehicles)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin.route('/api/vehicles/<int:vehicle_id>', methods=['DELETE'])
+@require_auth
+def delete_vehicle(vehicle_id):
+    """Eliminar vehículo"""
+    try:
+        # Intentar eliminar desde Supabase primero
+        try:
+            success = supabase_service.delete_vehicle(vehicle_id)
+            if success:
+                return jsonify({'success': True, 'message': 'Vehículo eliminado exitosamente'})
+        except:
+            pass
+        
+        # Si falla Supabase, usar base de datos local
+        success = local_db.delete_vehicle(vehicle_id)
+        if success:
+            return jsonify({'success': True, 'message': 'Vehículo eliminado exitosamente'})
+        else:
+            return jsonify({'success': False, 'error': 'Vehículo no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+

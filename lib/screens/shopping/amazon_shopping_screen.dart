@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cubalink23/models/amazon_product.dart';
+import 'package:cubalink23/models/walmart_product.dart';
 import 'package:cubalink23/services/amazon_api_service.dart';
+import 'package:cubalink23/services/walmart_api_service.dart';
 import 'package:cubalink23/services/cart_service.dart';
 import 'package:cubalink23/screens/shopping/cart_screen.dart';
 import 'package:cubalink23/services/auth_guard_service.dart';
@@ -15,6 +17,7 @@ class AmazonShoppingScreen extends StatefulWidget {
 class _AmazonShoppingScreenState extends State<AmazonShoppingScreen> {
   final TextEditingController _searchController = TextEditingController();
   final AmazonApiService _apiService = AmazonApiService();
+  final WalmartApiService _walmartApiService = WalmartApiService();
   final CartService _cartService = CartService();
   List<AmazonProduct> _searchResults = [];
   bool _isLoading = false;
@@ -1776,38 +1779,48 @@ class _AmazonShoppingScreenState extends State<AmazonShoppingScreen> {
   }
   
   Future<List<AmazonProduct>> _getWalmartProducts(String query) async {
-    await Future.delayed(Duration(seconds: 1));
+    print('🛒 Buscando productos en Walmart API: $query');
     
-    // Productos simulados para Walmart (variedad general)
-    return [
-      AmazonProduct(
-        asin: 'walmart_001',
-        title: 'Great Value Cereales Integrales - Caja de 18 oz',
-        price: 3.98,
-        images: ['https://i5.walmartimages.com/asr/cereal_great_value.jpg'],
-        description: 'Cereales integrales nutritivos y deliciosos para un desayuno saludable.',
-        rating: 4.1,
-        reviewCount: 892,
-        weight: '0.51 kg',
-        weightKg: 0.51,
-        brand: 'Great Value',
-        features: ['18 oz', 'Granos integrales', 'Rico en fibra', 'Sin colorantes artificiales'],
-      ),
-      AmazonProduct(
-        asin: 'walmart_002',
-        title: 'Equate Analgésico Extra Fuerte - 100 Tabletas',
-        price: 4.97,
-        originalPrice: 6.97,
-        images: ['https://i5.walmartimages.com/asr/equate_pain_relief.jpg'],
-        description: 'Analgésico de acción rápida para el alivio efectivo del dolor.',
-        rating: 4.6,
-        reviewCount: 1234,
-        weight: '0.15 kg',
-        weightKg: 0.15,
-        brand: 'Equate',
-        features: ['100 tabletas', 'Extra fuerte', 'Alivio rápido', 'Fórmula probada'],
-      ),
-    ];
+    try {
+      // Usar la API real de Walmart
+      List<WalmartProduct> walmartProducts = await _walmartApiService.searchProducts(
+        query: query,
+        page: 1,
+        country: 'US',
+      );
+      
+      print('✅ Productos Walmart encontrados: ${walmartProducts.length}');
+      
+      // Convertir WalmartProduct a AmazonProduct para compatibilidad con la UI
+      List<AmazonProduct> convertedProducts = walmartProducts.map((walmartProduct) {
+        return AmazonProduct(
+          asin: walmartProduct.productId,
+          title: walmartProduct.title,
+          description: walmartProduct.description,
+          price: walmartProduct.price,
+          originalPrice: walmartProduct.originalPrice,
+          currency: walmartProduct.currency,
+          rating: walmartProduct.rating,
+          reviewCount: walmartProduct.reviewCount,
+          images: walmartProduct.images,
+          weight: walmartProduct.weight,
+          weightKg: walmartProduct.weightKg,
+          dimensions: walmartProduct.dimensions,
+          category: walmartProduct.category,
+          isAvailable: walmartProduct.isAvailable,
+          brand: walmartProduct.brand,
+          features: walmartProduct.features,
+          color: walmartProduct.color,
+          size: walmartProduct.size,
+        );
+      }).toList();
+      
+      return convertedProducts;
+      
+    } catch (e) {
+      print('❌ Error buscando productos en Walmart: $e');
+      return [];
+    }
   }
 
   @override

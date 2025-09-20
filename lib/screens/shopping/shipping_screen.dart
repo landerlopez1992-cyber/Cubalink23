@@ -7,6 +7,7 @@ import 'package:cubalink23/services/firebase_repository.dart';
 import 'package:cubalink23/services/auth_service.dart';
 import 'package:cubalink23/services/supabase_auth_service.dart';
 import 'package:cubalink23/services/supabase_service.dart';
+import 'package:cubalink23/services/system_api_service.dart';
 import 'package:cubalink23/widgets/zelle_payment_dialog.dart';
 import 'package:cubalink23/screens/payment/payment_method_screen.dart';
 import 'package:cubalink23/data/cuba_locations.dart'; // ✅ IMPORT SELECTORES
@@ -1774,7 +1775,17 @@ margin: const EdgeInsets.only(bottom: 12),
           orderData['order_status'] = 'payment_confirmed';
           orderData['payment_method'] = 'card';
 
-          String orderId = await _repository.createOrder(orderData);
+          // 🔥 USAR BACKEND SISTEMA DIRECTAMENTE (COMPROBADO QUE FUNCIONA)
+          print('🎯 Usando Backend Sistema directamente...');
+          final result = await SystemApiService.createOrder(orderData);
+          String orderId;
+          if (result != null && result['success'] == true) {
+            orderId = result['order_id']?.toString() ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
+            print('✅ Backend Sistema funcionó directamente: $orderId');
+          } else {
+            print('❌ Backend Sistema falló, usando fallback...');
+            orderId = await _repository.createOrder(orderData);
+          }
           createdOrderIds.add(orderId);
           print('✅ Orden ${i + 1}/${allOrders.length} creada: $orderId (${orderToCreate.orderNumber})');
         }
@@ -1859,9 +1870,18 @@ margin: const EdgeInsets.only(bottom: 12),
           'estimated_delivery': order.estimatedDelivery?.toIso8601String(),
         };
 
-        // Crear orden directamente usando el repository
-        String orderId = await _repository.createOrder(orderData);
-        print('✅ Orden creada en Supabase: $orderId');
+        // 🔥 USAR BACKEND SISTEMA DIRECTAMENTE (COMPROBADO QUE FUNCIONA)
+        print('🎯 Usando Backend Sistema directamente para billetera...');
+        final result = await SystemApiService.createOrder(orderData);
+        String orderId;
+        if (result != null && result['success'] == true) {
+          orderId = result['order_id']?.toString() ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
+          print('✅ Backend Sistema funcionó directamente: $orderId');
+        } else {
+          print('❌ Backend Sistema falló, usando fallback...');
+          orderId = await _repository.createOrder(orderData);
+        }
+        print('✅ Orden creada: $orderId');
 
         // Descontar del saldo del usuario DESPUÉS de crear la orden
         print('💰 Descontando saldo: \$${order.total.toStringAsFixed(2)}');

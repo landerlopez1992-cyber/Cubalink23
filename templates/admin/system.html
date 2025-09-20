@@ -6,7 +6,99 @@
     <title>{{ config.app_name }} - Configuración del Sistema</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/admin-common.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+        }
+        .sidebar {
+            min-height: 100vh;
+            background-color: #16213e;
+            color: #e0e0e0;
+        }
+        .card-stats {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #0f3460;
+            color: #e0e0e0;
+        }
+        .nav-link {
+            color: #e0e0e0;
+            border-radius: 10px;
+            margin: 5px 0;
+        }
+        .nav-link:hover, .nav-link.active {
+            background-color: #0f3460;
+            color: white;
+        }
+        .table {
+            color: #e0e0e0;
+        }
+        .table th {
+            background-color: #16213e;
+            border-color: #1a1a2e;
+        }
+        .table td {
+            background-color: #0f3460;
+            border-color: #1a1a2e;
+        }
+        .btn-primary {
+            background-color: #e94560;
+            border-color: #e94560;
+        }
+        .btn-primary:hover {
+            background-color: #b83f54;
+            border-color: #b83f54;
+        }
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        .btn-outline-primary {
+            color: #e94560;
+            border-color: #e94560;
+        }
+        .btn-outline-primary:hover {
+            background-color: #e94560;
+            border-color: #e94560;
+        }
+        .form-control {
+            background-color: #1a1a2e;
+            border-color: #16213e;
+            color: #e0e0e0;
+        }
+        .form-control:focus {
+            background-color: #1a1a2e;
+            border-color: #e94560;
+            color: #e0e0e0;
+            box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.25);
+        }
+        .form-select {
+            background-color: #1a1a2e;
+            border-color: #16213e;
+            color: #e0e0e0;
+        }
+        .nav-tabs .nav-link {
+            color: #e0e0e0;
+            background-color: #0f3460;
+            border-color: #1a1a2e;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #e94560;
+            border-color: #e94560;
+            color: white;
+        }
+        .tab-content {
+            background-color: #0f3460;
+            border: 1px solid #1a1a2e;
+        }
+        textarea.form-control {
+            background-color: #1a1a2e;
+            border-color: #16213e;
+            color: #e0e0e0;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -204,54 +296,10 @@
                                         <div class="mb-3">
                                             <label class="form-label">Modo de Mantenimiento</label>
                                             <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="maintenance-mode" onchange="toggleMaintenanceMode()">
+                                                <input class="form-check-input" type="checkbox" id="maintenance-mode">
                                                 <label class="form-check-label" for="maintenance-mode">
                                                     Activar modo mantenimiento
                                                 </label>
-                                            </div>
-                                        </div>
-
-                                        <!-- Sección de Actualizaciones Forzadas -->
-                                        <div class="mb-4 p-3 border rounded" style="background-color: #f8f9fa;">
-                                            <h6 class="text-primary mb-3">
-                                                <i class="fas fa-mobile-alt me-2"></i>Actualizaciones iOS/Android
-                                            </h6>
-                                            
-                                            <div class="mb-3">
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="force-update-mode" onchange="toggleForceUpdateMode()">
-                                                    <label class="form-check-label" for="force-update-mode">
-                                                        <strong>Forzar actualización de app</strong>
-                                                    </label>
-                                                </div>
-                                            </div>
-
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">
-                                                            <i class="fab fa-apple me-1"></i>URL App Store (iOS)
-                                                        </label>
-                                                        <input type="url" class="form-control" id="ios-app-url" 
-                                                               placeholder="https://apps.apple.com/app/...">
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">
-                                                            <i class="fab fa-google-play me-1"></i>URL Google Play (Android)
-                                                        </label>
-                                                        <input type="url" class="form-control" id="android-app-url" 
-                                                               placeholder="https://play.google.com/store/apps/...">
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="alert alert-info mb-0">
-                                                <small>
-                                                    <i class="fas fa-info-circle me-1"></i>
-                                                    <strong>Nota:</strong> Al activar, los usuarios serán obligados a actualizar la app antes de poder usarla.
-                                                </small>
                                             </div>
                                         </div>
                                     </div>
@@ -483,6 +531,20 @@
                                                 <h5 class="text-white"><i class="fas fa-image text-white"></i> Gestión de Banners de la App</h5>
                                             </div>
                                             <div class="card-body">
+                                                <!-- Banners Existentes -->
+                                                <div class="mb-4">
+                                                    <h6 class="text-white"><i class="fas fa-images"></i> Banners Actuales</h6>
+                                                    <div id="currentBanners" class="row">
+                                                        <div class="col-12 text-center text-white-50">
+                                                            <i class="fas fa-spinner fa-spin"></i> Cargando banners...
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <hr class="text-white-50">
+                                                
+                                                <!-- Subir Nuevos Banners -->
+                                                <h6 class="text-white"><i class="fas fa-upload"></i> Subir Nuevos Banners</h6>
                                                 <div class="mb-3">
                                                     <label class="form-label text-white">Banner Principal (Home)</label>
                                                     <input type="file" class="form-control" id="mainBanner" accept="image/*">
@@ -500,9 +562,6 @@
                                                 </div>
                                                 <button class="btn btn-success" onclick="uploadBanners()">
                                                     <i class="fas fa-upload"></i> Actualizar Banners
-                                                </button>
-                                                <button class="btn btn-primary ms-2" onclick="openBannerManagement()">
-                                                    <i class="fas fa-cogs"></i> Administrar Banners
                                                 </button>
                                             </div>
                                         </div>
@@ -696,9 +755,7 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
         // Cargar datos al iniciar
         document.addEventListener('DOMContentLoaded', function() {
             loadSystemData();
-            loadNotificationHistory();
-            loadMaintenanceStatus();
-            loadForceUpdateStatus();
+            loadCurrentBanners();
         });
 
         function loadSystemData() {
@@ -713,119 +770,6 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
             loadSystemData();
             alert('Sistema actualizado');
         }
-
-        // Funciones para modo mantenimiento
-        function loadMaintenanceStatus() {
-            fetch('/admin/api/maintenance/status')
-                .then(response => response.json())
-                .then(data => {
-                    const checkbox = document.getElementById('maintenance-mode');
-                    if (checkbox) {
-                        checkbox.checked = data.maintenance_mode;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error cargando estado de mantenimiento:', error);
-                });
-        }
-
-        function toggleMaintenanceMode() {
-            const checkbox = document.getElementById('maintenance-mode');
-            const newStatus = checkbox.checked;
-            
-            fetch('/admin/api/maintenance/toggle', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ enabled: newStatus })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const status = data.maintenance_mode ? 'ACTIVADO' : 'DESACTIVADO';
-                    alert(`Modo mantenimiento ${status}`);
-                } else {
-                    alert('Error al cambiar modo mantenimiento: ' + data.error);
-                    // Revertir checkbox si hay error
-                    checkbox.checked = !newStatus;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al cambiar modo mantenimiento');
-                // Revertir checkbox si hay error
-                checkbox.checked = !newStatus;
-            });
-        }
-
-        // Funciones para actualizaciones forzadas
-        function loadForceUpdateStatus() {
-            fetch('/admin/api/force-update/status')
-                .then(response => response.json())
-                .then(data => {
-                    const checkbox = document.getElementById('force-update-mode');
-                    const iosUrlInput = document.getElementById('ios-app-url');
-                    const androidUrlInput = document.getElementById('android-app-url');
-                    
-                    if (checkbox) {
-                        checkbox.checked = data.force_update_mode;
-                    }
-                    if (iosUrlInput) {
-                        iosUrlInput.value = data.ios_app_url || '';
-                    }
-                    if (androidUrlInput) {
-                        androidUrlInput.value = data.android_app_url || '';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error cargando estado de actualizaciones forzadas:', error);
-                });
-        }
-
-        function toggleForceUpdateMode() {
-            const checkbox = document.getElementById('force-update-mode');
-            const iosUrl = document.getElementById('ios-app-url').value;
-            const androidUrl = document.getElementById('android-app-url').value;
-            const newStatus = checkbox.checked;
-            
-            // Validar URLs si se está activando
-            if (newStatus && (!iosUrl && !androidUrl)) {
-                alert('Por favor, ingresa al menos una URL de tienda (iOS o Android)');
-                checkbox.checked = false;
-                return;
-            }
-            
-            fetch('/admin/api/force-update/toggle', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    enabled: newStatus,
-                    ios_url: iosUrl,
-                    android_url: androidUrl
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const status = data.force_update_mode ? 'ACTIVADO' : 'DESACTIVADO';
-                    alert(`Modo actualización forzada ${status}`);
-                } else {
-                    alert('Error al cambiar modo actualización forzada: ' + data.error);
-                    // Revertir checkbox si hay error
-                    checkbox.checked = !newStatus;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al cambiar modo actualización forzada');
-                // Revertir checkbox si hay error
-                checkbox.checked = !newStatus;
-            });
-        }
-
 
         function saveAllSettings() {
             // Recopilar información de contacto
@@ -949,6 +893,8 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
                     document.getElementById('mainBanner').value = '';
                     document.getElementById('secondaryBanner').value = '';
                     document.getElementById('promoBanner').value = '';
+                    // Recargar la lista de banners
+                    loadCurrentBanners();
                 } else {
                     alert('Error al actualizar banners: ' + data.message);
                 }
@@ -974,10 +920,10 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
                 title: title,
                 message: message,
                 type: type,
-                is_urgent: urgent
+                urgent: urgent
             };
             
-            fetch('/admin/api/notifications', {
+            fetch('/admin/api/send-push-notification', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -995,7 +941,7 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
                     // Actualizar historial
                     loadNotificationHistory();
                 } else {
-                    alert('Error al enviar notificación: ' + data.error);
+                    alert('Error al enviar notificación: ' + data.message);
                 }
             })
             .catch(error => {
@@ -1005,22 +951,19 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
         }
 
         function loadNotificationHistory() {
-            fetch('/admin/api/notifications')
+            fetch('/admin/api/notification-history')
             .then(response => response.json())
             .then(data => {
                 const tbody = document.getElementById('notificationHistory');
-                if (data.success && data.notifications && data.notifications.length > 0) {
+                if (data.notifications && data.notifications.length > 0) {
                     tbody.innerHTML = data.notifications.map(notification => `
                         <tr>
-                            <td class="text-white">${new Date(notification.sent_at).toLocaleString()}</td>
+                            <td class="text-white">${notification.date}</td>
                             <td class="text-white">${notification.title}</td>
                             <td class="text-white">${notification.message}</td>
                             <td class="text-white">${notification.type}</td>
                             <td class="text-white">
                                 <span class="badge bg-success">Enviada</span>
-                                <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteNotification('${notification.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
                             </td>
                         </tr>
                     `).join('');
@@ -1031,27 +974,6 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
             .catch(error => {
                 console.error('Error cargando historial:', error);
             });
-        }
-
-        function deleteNotification(notificationId) {
-            if (confirm('¿Estás seguro de que quieres eliminar esta notificación?')) {
-                fetch(`/admin/api/notifications/${notificationId}`, {
-                    method: 'DELETE'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Notificación eliminada exitosamente');
-                        loadNotificationHistory();
-                    } else {
-                        alert('Error al eliminar notificación: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error al eliminar notificación');
-                });
-            }
         }
 
         // Funciones para gestión del logo
@@ -1143,396 +1065,88 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
             };
             reader.readAsDataURL(file);
         }
-    </script>
 
-    <!-- Modal para Administrar Banners -->
-    <div class="modal fade" id="bannerManagementModal" tabindex="-1" aria-labelledby="bannerManagementModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="bannerManagementModalLabel">
-                        <i class="fas fa-images me-2"></i>Administrar Banners Activos
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Banner 1 - Pantalla de Bienvenida -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0"><i class="fas fa-home me-2"></i>Banner 1 - Pantalla de Bienvenida</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row" id="banner1Container">
-                                <div class="col-12 text-center">
-                                    <p class="text-muted">Cargando banners...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Banner 2 - Pantalla de Vuelos -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0"><i class="fas fa-plane me-2"></i>Banner 2 - Pantalla de Vuelos</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row" id="banner2Container">
-                                <div class="col-12 text-center">
-                                    <p class="text-muted">Cargando banners...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tabla de todos los banners -->
-                    <div class="card">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Todos los Banners</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Imagen</th>
-                                            <th>Título</th>
-                                            <th>Tipo</th>
-                                            <th>Orden</th>
-                                            <th>Velocidad</th>
-                                            <th>Estado</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="bannersTable">
-                                        <tr>
-                                            <td colspan="7" class="text-center">Cargando banners...</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-primary" onclick="addNewBanner()">
-                        <i class="fas fa-plus me-2"></i>Agregar Nuevo Banner
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para agregar/editar banner -->
-    <div class="modal fade" id="addBannerModal" tabindex="-1" aria-labelledby="addBannerModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addBannerModalLabel">Agregar Nuevo Banner</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="bannerForm" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="bannerTitle" class="form-label">Título del Banner</label>
-                            <input type="text" class="form-control" id="bannerTitle" name="title" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="bannerDescription" class="form-label">Descripción</label>
-                            <textarea class="form-control" id="bannerDescription" name="description" rows="3"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="bannerType" class="form-label">Tipo de Banner</label>
-                            <select class="form-select" id="bannerType" name="banner_type" required>
-                                <option value="banner1">Banner 1 - Pantalla de Bienvenida</option>
-                                <option value="banner2">Banner 2 - Pantalla de Vuelos</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="bannerOrder" class="form-label">Orden de Visualización</label>
-                            <input type="number" class="form-control" id="bannerOrder" name="order" value="0" min="0">
-                        </div>
-                        <div class="mb-3">
-                            <label for="rotationSpeed" class="form-label">Velocidad de Rotación (ms)</label>
-                            <input type="number" class="form-control" id="rotationSpeed" name="rotation_speed" value="3000" min="1000" max="10000">
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="bannerActive" name="active" checked>
-                                <label class="form-check-label" for="bannerActive">
-                                    Banner Activo
-                                </label>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="bannerImage" class="form-label">Imagen del Banner</label>
-                            <input type="file" class="form-control" id="bannerImage" name="image" accept="image/*" required>
-                            <div id="imagePreview" class="mt-2"></div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="saveBannerBtn">Guardar Banner</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let banners = [];
-        let editingBannerId = null;
-
-        // Función para abrir el modal de gestión de banners
-        function openBannerManagement() {
-            const modal = new bootstrap.Modal(document.getElementById('bannerManagementModal'));
-            modal.show();
-            loadBanners();
-        }
-
-        // Cargar banners desde la API
-        function loadBanners() {
+        // Funciones para gestión de banners existentes
+        function loadCurrentBanners() {
             fetch('/admin/api/banners')
-                .then(response => response.json())
-                .then(data => {
-                    banners = data.banners || [];
-                    displayBanners();
-                })
-                .catch(error => {
-                    console.error('Error loading banners:', error);
-                    showAlert('Error al cargar los banners', 'danger');
-                });
-        }
-
-        // Mostrar banners en la interfaz
-        function displayBanners() {
-            const tbody = document.getElementById('bannersTable');
-            
-            // Mostrar banners en contenedores específicos
-            displayBannerContainer('banner1');
-            displayBannerContainer('banner2');
-            
-            // Mostrar todos los banners en la tabla
-            if (banners.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay banners disponibles</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = banners.map(banner => `
-                <tr>
-                    <td>
-                        <img src="${banner.image_url}" alt="${banner.title}" class="banner-image" style="width: 60px; height: 40px; object-fit: cover;">
-                    </td>
-                    <td>${banner.title}</td>
-                    <td>
-                        <span class="badge ${banner.banner_type === 'banner1' ? 'bg-success' : 'bg-info'}">
-                            ${banner.banner_type === 'banner1' ? 'Banner 1' : 'Banner 2'}
-                        </span>
-                    </td>
-                    <td>${banner.display_order}</td>
-                    <td>${banner.rotation_speed}ms</td>
-                    <td>
-                        <span class="badge ${banner.is_active ? 'bg-success' : 'bg-danger'}">
-                            ${banner.is_active ? 'Activo' : 'Inactivo'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editBanner('${banner.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteBanner('${banner.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // Mostrar banners en contenedores específicos
-        function displayBannerContainer(bannerType) {
-            const container = document.getElementById(`${bannerType}Container`);
-            if (!container) return;
-            
-            const bannerTypeBanners = banners.filter(banner => banner.banner_type === bannerType && banner.is_active);
-            
-            if (bannerTypeBanners.length === 0) {
-                container.innerHTML = `
-                    <div class="col-12 text-center">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <p>No hay fotos para este banner. Haz clic en "Agregar Nuevo Banner" para comenzar.</p>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = bannerTypeBanners.map((banner, index) => `
-                <div class="col-md-4 mb-3">
-                    <div class="card">
-                        <img src="${banner.image_url}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="${banner.title}">
-                        <div class="card-body">
-                            <h6 class="card-title mb-1">${banner.title}</h6>
-                            <small class="text-muted">Orden: ${banner.display_order}</small>
-                            
-                            <!-- Control de tiempo de rotación -->
-                            <div class="mt-2 mb-2">
-                                <label class="form-label small">Tiempo de rotación (segundos):</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" 
-                                           class="form-control" 
-                                           id="rotationTime_${banner.id}" 
-                                           value="${Math.round(banner.rotation_speed / 1000)}" 
-                                           min="1" 
-                                           max="30"
-                                           onchange="updateBannerRotationTime('${banner.id}', this.value)">
-                                    <span class="input-group-text">seg</span>
-                                </div>
-                            </div>
-                            
-                            <div class="mt-2">
-                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editBanner('${banner.id}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteBanner('${banner.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Agregar nuevo banner
-        function addNewBanner() {
-            editingBannerId = null;
-            document.getElementById('bannerForm').reset();
-            document.getElementById('addBannerModalLabel').textContent = 'Agregar Nuevo Banner';
-            document.getElementById('bannerImage').required = true;
-            document.getElementById('imagePreview').innerHTML = '';
-            
-            const modal = new bootstrap.Modal(document.getElementById('addBannerModal'));
-            modal.show();
-        }
-
-        // Editar banner
-        function editBanner(bannerId) {
-            const banner = banners.find(b => b.id === bannerId);
-            if (banner) {
-                editingBannerId = bannerId;
-                document.getElementById('addBannerModalLabel').textContent = 'Editar Banner';
-                document.getElementById('bannerTitle').value = banner.title;
-                document.getElementById('bannerDescription').value = banner.description || '';
-                document.getElementById('bannerType').value = banner.banner_type;
-                document.getElementById('bannerOrder').value = banner.display_order;
-                document.getElementById('rotationSpeed').value = banner.rotation_speed;
-                document.getElementById('bannerActive').checked = banner.is_active;
-                
-                // Mostrar imagen actual
-                const preview = document.getElementById('imagePreview');
-                preview.innerHTML = `<img src="${banner.image_url}" class="img-fluid" style="max-height: 150px;">`;
-                
-                // Hacer la imagen opcional para edición
-                document.getElementById('bannerImage').required = false;
-                
-                const modal = new bootstrap.Modal(document.getElementById('addBannerModal'));
-                modal.show();
-            }
-        }
-
-        // Eliminar banner
-        function deleteBanner(bannerId) {
-            if (confirm('¿Estás seguro de que quieres eliminar este banner?')) {
-                fetch(`/admin/api/banners/${bannerId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
-                        loadBanners();
-                        showAlert('Banner eliminado exitosamente', 'success');
-                    } else {
-                        showAlert('Error al eliminar el banner', 'danger');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error deleting banner:', error);
-                    showAlert('Error al eliminar el banner', 'danger');
-                });
-            }
-        }
-
-        // Guardar banner
-        document.getElementById('saveBannerBtn').addEventListener('click', function() {
-            const form = document.getElementById('bannerForm');
-            const formData = new FormData(form);
-            formData.append('is_active', document.getElementById('bannerActive').checked);
-            
-            const url = editingBannerId ? `/admin/api/banners/${editingBannerId}` : '/admin/api/banners';
-            const method = editingBannerId ? 'PUT' : 'POST';
-            
-            // Si hay imagen, convertir a base64
-            const imageFile = document.getElementById('bannerImage').files[0];
-            if (imageFile) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const jsonData = {
-                        title: formData.get('title'),
-                        description: formData.get('description'),
-                        banner_type: formData.get('banner_type'),
-                        display_order: parseInt(formData.get('order')),
-                        rotation_speed: parseInt(formData.get('rotation_speed')),
-                        is_active: formData.get('is_active') === 'on',
-                        image_base64: e.target.result.split(',')[1]
-                    };
-                    sendBannerData(url, method, jsonData);
-                };
-                reader.readAsDataURL(imageFile);
-            } else {
-                const jsonData = {
-                    title: formData.get('title'),
-                    description: formData.get('description'),
-                    banner_type: formData.get('banner_type'),
-                    display_order: parseInt(formData.get('order')),
-                    rotation_speed: parseInt(formData.get('rotation_speed')),
-                    is_active: formData.get('is_active') === 'on'
-                };
-                sendBannerData(url, method, jsonData);
-            }
-        });
-
-        // Enviar datos del banner
-        function sendBannerData(url, method, data) {
-            fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            })
             .then(response => response.json())
             .then(data => {
-                if (data.message) {
-                    loadBanners();
-                    showAlert('Banner guardado exitosamente', 'success');
-                    bootstrap.Modal.getInstance(document.getElementById('addBannerModal')).hide();
+                const container = document.getElementById('currentBanners');
+                
+                if (data && data.length > 0) {
+                    container.innerHTML = data.map(banner => `
+                        <div class="col-md-6 mb-3">
+                            <div class="card" style="background-color: #1a1a2e; border: 1px solid #16213e;">
+                                <div class="card-body p-2">
+                                    <div class="text-center">
+                                        <img src="${banner.image_url}" 
+                                             alt="${banner.title}" 
+                                             style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;"
+                                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlbiBubyBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg=='">
+                                        <h6 class="text-white mt-2 mb-1">${banner.title}</h6>
+                                        <small class="text-white-50 d-block mb-2">${banner.banner_type || 'Sin tipo'}</small>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary btn-sm" onclick="toggleBannerStatus('${banner.id}', ${banner.is_active})">
+                                                <i class="fas fa-${banner.is_active ? 'eye-slash' : 'eye'}"></i>
+                                                ${banner.is_active ? 'Ocultar' : 'Mostrar'}
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" onclick="deleteBanner('${banner.id}')">
+                                                <i class="fas fa-trash"></i> Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
                 } else {
-                    showAlert('Error al guardar el banner: ' + (data.error || 'Error desconocido'), 'danger');
+                    container.innerHTML = `
+                        <div class="col-12 text-center text-white-50">
+                            <i class="fas fa-image"></i>
+                            <p class="mt-2">No hay banners disponibles</p>
+                        </div>
+                    `;
                 }
             })
             .catch(error => {
-                console.error('Error saving banner:', error);
-                showAlert('Error al guardar el banner', 'danger');
+                console.error('Error cargando banners:', error);
+                document.getElementById('currentBanners').innerHTML = `
+                    <div class="col-12 text-center text-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p class="mt-2">Error al cargar banners</p>
+                    </div>
+                `;
             });
         }
 
-        // Actualizar tiempo de rotación de un banner
-        function updateBannerRotationTime(bannerId, seconds) {
-            const milliseconds = parseInt(seconds) * 1000;
+        function deleteBanner(bannerId) {
+            if (!confirm('¿Está seguro de que desea eliminar este banner? Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            fetch(`/admin/api/banners/${bannerId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success !== false) {
+                    alert('Banner eliminado correctamente');
+                    loadCurrentBanners(); // Recargar la lista
+                } else {
+                    alert('Error al eliminar el banner: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el banner');
+            });
+        }
+
+        function toggleBannerStatus(bannerId, currentStatus) {
+            const newStatus = !currentStatus;
             
             fetch(`/admin/api/banners/${bannerId}`, {
                 method: 'PUT',
@@ -1540,59 +1154,26 @@ Para preguntas sobre privacidad, contáctenos.</textarea>
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    rotation_speed: milliseconds
+                    is_active: newStatus
                 })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.message) {
-                    // Actualizar el banner en la lista local
-                    const banner = banners.find(b => b.id === bannerId);
-                    if (banner) {
-                        banner.rotation_speed = milliseconds;
-                    }
-                    showAlert(`Tiempo de rotación actualizado a ${seconds} segundos`, 'success');
+                if (data.success !== false) {
+                    alert(`Banner ${newStatus ? 'activado' : 'desactivado'} correctamente`);
+                    loadCurrentBanners(); // Recargar la lista
                 } else {
-                    showAlert('Error al actualizar el tiempo de rotación', 'danger');
+                    alert('Error al cambiar el estado del banner: ' + (data.error || 'Error desconocido'));
                 }
             })
             .catch(error => {
-                console.error('Error updating rotation time:', error);
-                showAlert('Error al actualizar el tiempo de rotación', 'danger');
+                console.error('Error:', error);
+                alert('Error al cambiar el estado del banner');
             });
         }
-
-        // Mostrar alertas
-        function showAlert(message, type) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            const container = document.querySelector('.modal-body') || document.body;
-            container.insertBefore(alertDiv, container.firstChild);
-            
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
-
-        // Vista previa de imagen
-        document.getElementById('bannerImage').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('imagePreview');
-                    preview.innerHTML = `<img src="${e.target.result}" class="img-fluid" style="max-height: 150px;">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
     </script>
 </body>
 </html>
+<!-- Deploy test -->
+<!-- DEPLOY TEST -->
+<!-- DEPLOY FORCE -->

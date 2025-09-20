@@ -1,267 +1,246 @@
 class WalmartProduct {
-  final String id;
+  final String productId;
   final String title;
-  final String description;
+  final String? description;
   final double price;
   final double? originalPrice;
-  final String? imageUrl;
+  final String? currency;
+  final double? rating;
+  final int? reviewCount;
   final List<String> images;
-  final double rating;
-  final int reviewsCount;
-  final String brand;
-  final String category;
-  final bool inStock;
-  final String url;
-  final String itemId;
-  final String usItemId;
   final String? weight;
-  final Map<String, dynamic> additionalInfo;
-  final DateTime? lastUpdated;
+  final double? weightKg; // Peso numérico en kilogramos
+  final Map<String, dynamic>? dimensions;
+  final String? category;
+  final bool isAvailable;
+  final String? brand;
+  final List<String>? features;
+  final String? color;
+  final String? size;
+  final String vendor; // Siempre será "Walmart"
+  final String vendorLogo;
 
   WalmartProduct({
-    required this.id,
+    required this.productId,
     required this.title,
-    required this.description,
+    this.description,
     required this.price,
     this.originalPrice,
-    this.imageUrl,
-    this.images = const [],
-    this.rating = 0.0,
-    this.reviewsCount = 0,
-    required this.brand,
-    required this.category,
-    this.inStock = true,
-    required this.url,
-    required this.itemId,
-    required this.usItemId,
+    this.currency = 'USD',
+    this.rating,
+    this.reviewCount,
+    required this.images,
     this.weight,
-    this.additionalInfo = const {},
-    this.lastUpdated,
+    this.weightKg,
+    this.dimensions,
+    this.category,
+    this.isAvailable = true,
+    this.brand,
+    this.features,
+    this.color,
+    this.size,
+    this.vendor = 'Walmart',
+    this.vendorLogo = 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Walmart_logo.svg/200px-Walmart_logo.svg.png',
   });
 
   factory WalmartProduct.fromJson(Map<String, dynamic> json) {
-    // Handle different response formats from Walmart API
-    return WalmartProduct(
-      id: json['id']?.toString() ?? json['itemId']?.toString() ?? json['usItemId']?.toString() ?? '',
-      title: json['title'] ?? json['name'] ?? json['productTitle'] ?? '',
-      description: json['description'] ?? json['shortDescription'] ?? json['longDescription'] ?? '',
-      price: _parsePrice(json['price']) ?? _parsePrice(json['currentPrice']) ?? _parsePrice(json['salePrice']) ?? 0.0,
-      originalPrice: _parsePrice(json['originalPrice']) ?? _parsePrice(json['listPrice']),
-      imageUrl: _getMainImage(json),
-      images: _parseImages(json),
-      rating: _parseDouble(json['rating']) ?? _parseDouble(json['averageRating']) ?? 0.0,
-      reviewsCount: _parseInt(json['reviewsCount']) ?? _parseInt(json['numReviews']) ?? 0,
-      brand: json['brand'] ?? json['brandName'] ?? json['manufacturer'] ?? 'Unknown',
-      category: json['category'] ?? json['categoryPath'] ?? json['categoryTree'] ?? 'General',
-      inStock: json['inStock'] ?? json['availabilityStatus'] == 'IN_STOCK' ?? json['stock'] == 'IN_STOCK' ?? true,
-      url: json['url'] ?? json['productUrl'] ?? json['canonicalUrl'] ?? '',
-      itemId: json['itemId']?.toString() ?? json['id']?.toString() ?? '',
-      usItemId: json['usItemId']?.toString() ?? json['upc']?.toString() ?? '',
-      weight: json['weight']?.toString() ?? json['shippingWeight']?.toString() ?? _extractWeight(json),
-      additionalInfo: _parseAdditionalInfo(json),
-      lastUpdated: DateTime.now(),
-    );
-  }
-
-  static double? _parsePrice(dynamic price) {
-    if (price == null) return null;
-    if (price is num) return price.toDouble();
-    if (price is String) {
-      // Remove currency symbols and parse
-      final cleanPrice = price.replaceAll(RegExp(r'[^\d.]'), '');
-      return double.tryParse(cleanPrice);
-    }
-    if (price is Map) {
-      // Handle price objects like {"amount": 29.99, "currency": "USD"}
-      final amount = price['amount'] ?? price['value'] ?? price['price'];
-      if (amount is num) return amount.toDouble();
-      if (amount is String) {
-        final cleanPrice = amount.replaceAll(RegExp(r'[^\d.]'), '');
-        return double.tryParse(cleanPrice);
+    // Manejo seguro de precios
+    double parsePrice(dynamic priceValue) {
+      if (priceValue == null) return 0.0;
+      if (priceValue is double) return priceValue;
+      if (priceValue is int) return priceValue.toDouble();
+      if (priceValue is String) {
+        // Remover símbolos de moneda y parsear
+        String cleanPrice = priceValue.replaceAll(RegExp(r'[^\d.]'), '');
+        return double.tryParse(cleanPrice) ?? 0.0;
       }
+      return 0.0;
     }
-    return null;
-  }
 
-  static double? _parseDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value);
-    return null;
-  }
+    // Manejo seguro de imágenes
+    List<String> parseImages(dynamic imageValue) {
+      if (imageValue == null) return [];
+      if (imageValue is List) {
+        return imageValue.map((img) => img.toString()).toList();
+      }
+      if (imageValue is String) {
+        return [imageValue];
+      }
+      return [];
+    }
 
-  static int? _parseInt(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value);
-    return null;
-  }
+    // Manejo seguro de features/características
+    List<String> parseFeatures(dynamic featuresValue) {
+      if (featuresValue == null) return [];
+      if (featuresValue is List) {
+        return featuresValue.map((feature) => feature.toString()).toList();
+      }
+      return [];
+    }
 
-  static String? _getMainImage(Map<String, dynamic> json) {
-    // Try different image field names
-    if (json['imageUrl'] != null) return json['imageUrl'];
-    if (json['image'] != null) return json['image'];
-    if (json['thumbnailImage'] != null) return json['thumbnailImage'];
-    if (json['primaryImage'] != null) return json['primaryImage'];
+    // Manejo seguro de dimensiones y peso
+    Map<String, dynamic>? parseDimensions(dynamic dimValue) {
+      if (dimValue is Map<String, dynamic>) return dimValue;
+      return null;
+    }
     
-    // Try images arrays
-    final images = _parseImages(json);
-    if (images.isNotEmpty) return images.first;
-    
-    return null;
-  }
-
-  static List<String> _parseImages(Map<String, dynamic> json) {
-    final List<String> imageUrls = [];
-    
-    // Try different image field names and structures
-    final imageFields = ['images', 'imageUrls', 'productImages', 'thumbnails'];
-    
-    for (final field in imageFields) {
-      final imageData = json[field];
-      if (imageData is List) {
-        for (final item in imageData) {
-          if (item is String) {
-            imageUrls.add(item);
-          } else if (item is Map) {
-            // Handle image objects
-            final url = item['url'] ?? item['src'] ?? item['link'] ?? item['large'] ?? item['medium'];
-            if (url is String) imageUrls.add(url);
+    // Manejo seguro de peso numérico
+    double? parseWeightKg(dynamic weightValue) {
+      if (weightValue == null) return null;
+      if (weightValue is double) return weightValue;
+      if (weightValue is int) return weightValue.toDouble();
+      if (weightValue is String) {
+        // Extraer número del peso (ej: "1.5 kg" -> 1.5)
+        String cleanWeight = weightValue.toLowerCase()
+            .replaceAll('kg', '')
+            .replaceAll('g', '')
+            .replaceAll(',', '.')
+            .trim();
+        double? weight = double.tryParse(cleanWeight);
+        if (weight != null) {
+          // Si el peso original contenía "g" (gramos), convertir a kg
+          if (weightValue.toLowerCase().contains('g') && !weightValue.toLowerCase().contains('kg')) {
+            return weight / 1000; // Convertir gramos a kilogramos
           }
+          return weight;
         }
       }
+      return null;
     }
-    
-    // Also check single image fields
-    final singleImageFields = ['imageUrl', 'image', 'thumbnailImage', 'primaryImage'];
-    for (final field in singleImageFields) {
-      final imageUrl = json[field];
-      if (imageUrl is String && !imageUrls.contains(imageUrl)) {
-        imageUrls.add(imageUrl);
-      }
-    }
-    
-    return imageUrls;
-  }
 
-  static String? _extractWeight(Map<String, dynamic> json) {
-    // Try to extract weight from different fields
-    final weightFields = ['weight', 'shippingWeight', 'itemWeight', 'packageWeight', 'dimensions'];
-    
-    for (final field in weightFields) {
-      final value = json[field];
-      if (value != null) {
-        if (value is String) return value;
-        if (value is Map) {
-          final weight = value['weight'] ?? value['value'] ?? value['amount'];
-          if (weight != null) return weight.toString();
-        }
-      }
-    }
-    
-    // Try to extract from description or title
-    final text = '${json['title'] ?? ''} ${json['description'] ?? ''}';
-    final weightRegex = RegExp(r'(\d+(?:\.\d+)?)\s*(lb|lbs|kg|g|oz|ounce|pound)', caseSensitive: false);
-    final match = weightRegex.firstMatch(text);
-    if (match != null) {
-      return '${match.group(1)} ${match.group(2)}';
-    }
-    
-    return null;
-  }
-
-  static Map<String, dynamic> _parseAdditionalInfo(Map<String, dynamic> json) {
-    final Map<String, dynamic> additionalInfo = {};
-    
-    // Add relevant fields that might be useful
-    final relevantFields = [
-      'upc', 'isbn', 'ean', 'gtin', 'modelNumber', 'manufacturerPartNumber',
-      'dimensions', 'size', 'color', 'style', 'material', 'features',
-      'specifications', 'warranty', 'seller', 'marketplace', 'fulfillment'
-    ];
-    
-    for (final field in relevantFields) {
-      if (json[field] != null) {
-        additionalInfo[field] = json[field];
-      }
-    }
-    
-    return additionalInfo;
+    return WalmartProduct(
+      productId: json['product_id']?.toString() ?? json['id']?.toString() ?? '',
+      title: json['product_title']?.toString() ?? json['title']?.toString() ?? 'Producto sin título',
+      description: json['product_description']?.toString() ?? json['description']?.toString(),
+      price: parsePrice(json['product_price'] ?? json['price']),
+      originalPrice: parsePrice(json['product_original_price'] ?? json['original_price']),
+      currency: json['currency']?.toString() ?? 'USD',
+      rating: json['product_star_rating'] != null ? double.tryParse(json['product_star_rating'].toString()) : 
+              json['rating'] != null ? double.tryParse(json['rating'].toString()) : null,
+      reviewCount: json['product_num_ratings'] != null ? int.tryParse(json['product_num_ratings'].toString()) : 
+                   json['review_count'] != null ? int.tryParse(json['review_count'].toString()) : null,
+      images: parseImages(json['product_photo'] ?? json['images'] ?? json['image']),
+      weight: json['weight']?.toString(),
+      weightKg: parseWeightKg(json['weight']),
+      dimensions: parseDimensions(json['dimensions']),
+      category: json['category']?.toString() ?? json['product_category']?.toString(),
+      isAvailable: json['is_available'] ?? json['in_stock'] ?? true,
+      brand: json['brand']?.toString() ?? json['product_brand']?.toString(),
+      features: parseFeatures(json['features']),
+      color: json['color']?.toString(),
+      size: json['size']?.toString(),
+    );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'product_id': productId,
       'title': title,
       'description': description,
       'price': price,
-      'originalPrice': originalPrice,
-      'imageUrl': imageUrl,
-      'images': images,
+      'original_price': originalPrice,
+      'currency': currency,
       'rating': rating,
-      'reviewsCount': reviewsCount,
-      'brand': brand,
-      'category': category,
-      'inStock': inStock,
-      'url': url,
-      'itemId': itemId,
-      'usItemId': usItemId,
+      'review_count': reviewCount,
+      'images': images,
       'weight': weight,
-      'additionalInfo': additionalInfo,
-      'lastUpdated': lastUpdated?.toIso8601String(),
+      'weight_kg': weightKg,
+      'dimensions': dimensions,
+      'category': category,
+      'is_available': isAvailable,
+      'brand': brand,
+      'features': features,
+      'color': color,
+      'size': size,
+      'vendor': vendor,
+      'vendor_logo': vendorLogo,
     };
   }
 
-  // Calculate estimated weight in kg for shipping
-  double getEstimatedWeightKg() {
-    if (weight == null) return 0.5; // Default weight if not specified
-    
-    final weightStr = weight!.toLowerCase();
-    final weightRegex = RegExp(r'(\d+(?:\.\d+)?)');
-    final match = weightRegex.firstMatch(weightStr);
-    
-    if (match != null) {
-      final value = double.tryParse(match.group(1)!) ?? 0.5;
-      
-      if (weightStr.contains('kg')) {
-        return value;
-      } else if (weightStr.contains('lb') || weightStr.contains('pound')) {
-        return value * 0.453592; // Convert lbs to kg
-      } else if (weightStr.contains('oz') || weightStr.contains('ounce')) {
-        return value * 0.0283495; // Convert oz to kg
-      } else if (weightStr.contains('g') && !weightStr.contains('kg')) {
-        return value / 1000; // Convert g to kg
-      }
-    }
-    
-    return 0.5; // Default weight
+  Map<String, dynamic> toMap() => toJson();
+
+  // Getter para obtener la imagen principal
+  String get mainImage {
+    return images.isNotEmpty ? images.first : 'https://via.placeholder.com/300x300/E0E0E0/666666?text=Walmart';
   }
 
-  // Get discount percentage if available
-  double? getDiscountPercentage() {
-    if (originalPrice != null && originalPrice! > price && price > 0) {
-      return ((originalPrice! - price) / originalPrice!) * 100;
-    }
-    return null;
+  // Getter para verificar si tiene descuento
+  bool get hasDiscount {
+    return originalPrice != null && originalPrice! > price;
   }
 
-  // Check if product has good rating
-  bool hasGoodRating() {
-    return rating >= 4.0;
+  // Getters de compatibilidad para walmart_shopping_screen.dart
+  String get id => productId;
+  String get imageUrl => mainImage;
+  int get reviewsCount => reviewCount ?? 0;
+  String get url => 'https://www.walmart.com/ip/$productId';
+
+  // Getter para calcular el porcentaje de descuento
+  double get discountPercentage {
+    if (!hasDiscount) return 0.0;
+    return ((originalPrice! - price) / originalPrice!) * 100;
   }
 
-  // Format price for display
-  String getFormattedPrice() {
+  // Getter para formato de precio
+  String get formattedPrice {
     return '\$${price.toStringAsFixed(2)}';
   }
 
-  // Format original price for display
-  String? getFormattedOriginalPrice() {
-    return originalPrice != null ? '\$${originalPrice!.toStringAsFixed(2)}' : null;
+  // Getter para formato de precio original
+  String? get formattedOriginalPrice {
+    if (originalPrice == null) return null;
+    return '\$${originalPrice!.toStringAsFixed(2)}';
+  }
+
+  // Getter para rating con estrellas
+  String get starsDisplay {
+    if (rating == null) return '☆☆☆☆☆';
+    int fullStars = rating!.floor();
+    bool hasHalfStar = (rating! - fullStars) >= 0.5;
+    
+    String stars = '★' * fullStars;
+    if (hasHalfStar) stars += '☆';
+    stars += '☆' * (5 - fullStars - (hasHalfStar ? 1 : 0));
+    
+    return stars;
+  }
+
+  // Getter para peso formateado
+  String get formattedWeight {
+    if (weight == null || weight!.isEmpty) return 'Peso no especificado';
+    return weight!;
+  }
+
+  // Método para obtener porcentaje de descuento (compatibilidad)
+  double getDiscountPercentage() {
+    return discountPercentage;
+  }
+
+  // Método para obtener peso estimado en kg (compatibilidad)
+  double? getEstimatedWeightKg() {
+    return weightKg;
+  }
+
+  // Métodos de compatibilidad para walmart_shopping_screen.dart
+  String getFormattedPrice() => formattedPrice;
+  String? getFormattedOriginalPrice() => formattedOriginalPrice;
+
+  // Método para verificar si el producto es válido
+  bool get isValid {
+    return productId.isNotEmpty && title.isNotEmpty && price > 0;
   }
 
   @override
   String toString() {
-    return 'WalmartProduct(id: $id, title: $title, price: $price, brand: $brand)';
+    return 'WalmartProduct(productId: $productId, title: $title, price: $price, rating: $rating)';
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is WalmartProduct && other.productId == productId;
+  }
+
+  @override
+  int get hashCode => productId.hashCode;
 }
