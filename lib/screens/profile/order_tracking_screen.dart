@@ -66,14 +66,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       // Parsear los ítems de la orden
       final items = _parseOrderItems(orderData['items']);
 
+      // 💰 CALCULAR TOTAL AUTOMÁTICAMENTE si viene null
+      double calculatedTotal = 0.0;
+      if (items.isNotEmpty) {
+        calculatedTotal = items.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
+        print('💰 Total calculado desde productos: \$${calculatedTotal.toStringAsFixed(2)}');
+      }
+
       final order = Order(
         id: orderData['id'] ?? '',
         userId: orderData['user_id'] ?? '',
         orderNumber: orderData['order_number'] ?? 'N/A',
         items: items,
-        subtotal: (orderData['subtotal'] ?? 0.0).toDouble(),
+        subtotal: calculatedTotal,
         shippingCost: (orderData['shipping_cost'] ?? 0.0).toDouble(),
-        total: (orderData['total'] ?? 0.0).toDouble(),
+        total: (orderData['total_amount'] ?? orderData['total'] ?? calculatedTotal).toDouble(),
         orderStatus: orderData['order_status'] ?? 'pending',
         paymentStatus: orderData['payment_status'] ?? 'pending',
         paymentMethod: orderData['payment_method'] ?? 'card',
