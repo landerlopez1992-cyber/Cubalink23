@@ -334,6 +334,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           children: [
                             _buildOrderInfoCard(),
                             SizedBox(height: 24),
+                            _buildOrderStatusTimeline(),
+                            SizedBox(height: 24),
                             _buildOrderItems(),
                       ],
                     ),
@@ -422,6 +424,142 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderStatusTimeline() {
+    final order = _orders.first;
+    
+    // Estados posibles de la orden
+    List<Map<String, dynamic>> allStates = [
+      {'status': 'created', 'label': 'Creada', 'icon': Icons.receipt},
+      {'status': 'processing', 'label': 'Procesando', 'icon': Icons.settings},
+      {'status': 'shipped', 'label': 'Enviada', 'icon': Icons.local_shipping},
+      {'status': 'delivered', 'label': 'Entregada', 'icon': Icons.check_circle},
+    ];
+    
+    // Agregar estado cancelado solo si la orden está cancelada
+    if (order.orderStatus.toLowerCase() == 'cancelled' || order.orderStatus.toLowerCase() == 'canceled') {
+      allStates = [
+        {'status': 'created', 'label': 'Creada', 'icon': Icons.receipt},
+        {'status': 'cancelled', 'label': 'Cancelada', 'icon': Icons.cancel},
+      ];
+    }
+    
+    // Determinar estado actual
+    String currentStatus = order.orderStatus.toLowerCase();
+    int currentIndex = allStates.indexWhere((state) => state['status'] == currentStatus);
+    if (currentIndex == -1) currentIndex = 0; // Default a primer estado
+    
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Estado de la Orden',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            SizedBox(height: 16),
+            
+            // Timeline horizontal
+            Row(
+              children: allStates.asMap().entries.map((entry) {
+                int index = entry.key;
+                Map<String, dynamic> state = entry.value;
+                bool isActive = index <= currentIndex;
+                bool isCurrent = index == currentIndex;
+                bool isLast = index == allStates.length - 1;
+                
+                return Expanded(
+                  child: Column(
+                    children: [
+                      // Línea horizontal (excepto el último)
+                      Row(
+                        children: [
+                          // Círculo del estado
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isActive 
+                                  ? (state['status'] == 'cancelled' 
+                                      ? Colors.red 
+                                      : Theme.of(context).colorScheme.primary)
+                                  : Colors.grey[300],
+                              border: Border.all(
+                                color: isCurrent 
+                                    ? (state['status'] == 'cancelled' 
+                                        ? Colors.red 
+                                        : Theme.of(context).colorScheme.primary)
+                                    : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              state['icon'],
+                              color: isActive ? Colors.white : Colors.grey[600],
+                              size: 20,
+                            ),
+                          ),
+                          
+                          // Línea conectora (excepto el último)
+                          if (!isLast)
+                            Expanded(
+                              child: Container(
+                                height: 2,
+                                color: isActive && index < currentIndex 
+                                    ? Theme.of(context).colorScheme.primary 
+                                    : Colors.grey[300],
+                              ),
+                            ),
+                        ],
+                      ),
+                      
+                      SizedBox(height: 8),
+                      
+                      // Texto del estado
+                      Text(
+                        state['label'],
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                          color: isActive 
+                              ? (state['status'] == 'cancelled' 
+                                  ? Colors.red 
+                                  : Theme.of(context).colorScheme.primary)
+                              : Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      SizedBox(height: 8),
+                      
+                      // Camioncito debajo del estado actual
+                      if (isCurrent && state['status'] != 'cancelled')
+                        Icon(
+                          Icons.local_shipping,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 24,
+                        )
+                      else
+                        SizedBox(height: 24), // Espacio vacío para mantener alineación
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
           ],
         ),
