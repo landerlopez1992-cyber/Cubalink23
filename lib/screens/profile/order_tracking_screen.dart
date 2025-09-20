@@ -434,10 +434,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Widget _buildOrderStatusTimeline() {
     final order = _orders.first;
     
-    // Estados posibles de la orden
+    // Estados reales de la orden (según la app)
     List<Map<String, dynamic>> allStates = [
       {'status': 'created', 'label': 'Creada', 'icon': Icons.receipt},
-      {'status': 'processing', 'label': 'Procesando', 'icon': Icons.settings},
+      {'status': 'payment_confirmed', 'label': 'Pagada', 'icon': Icons.payment},
       {'status': 'shipped', 'label': 'Enviada', 'icon': Icons.local_shipping},
       {'status': 'delivered', 'label': 'Entregada', 'icon': Icons.check_circle},
     ];
@@ -452,8 +452,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     
     // Determinar estado actual
     String currentStatus = order.orderStatus.toLowerCase();
+    
+    // Si status es null o vacío, usar 'created' como default
+    if (currentStatus.isEmpty || currentStatus == 'null') {
+      currentStatus = 'created';
+    }
+    
     int currentIndex = allStates.indexWhere((state) => state['status'] == currentStatus);
-    if (currentIndex == -1) currentIndex = 0; // Default a primer estado
+    if (currentIndex == -1) {
+      // Si no encuentra el estado, usar 'payment_confirmed' si hay pago completado
+      if (order.paymentStatus.toLowerCase() == 'completed') {
+        currentIndex = 1; // payment_confirmed
+      } else {
+        currentIndex = 0; // created
+      }
+    }
     
     return Card(
       elevation: 4,
