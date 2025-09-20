@@ -434,18 +434,20 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Widget _buildOrderStatusTimeline() {
     final order = _orders.first;
     
-    // Estados reales de la orden (según la app)
+    // Estados reales de la orden (según el código de la app)
     List<Map<String, dynamic>> allStates = [
-      {'status': 'created', 'label': 'Creada', 'icon': Icons.receipt},
-      {'status': 'payment_confirmed', 'label': 'Pagada', 'icon': Icons.payment},
+      {'status': 'created', 'label': 'Creado', 'icon': Icons.receipt},
+      {'status': 'payment_confirmed', 'label': 'Pago Confirmado', 'icon': Icons.payment},
+      {'status': 'preparing', 'label': 'Preparando', 'icon': Icons.restaurant},
       {'status': 'shipped', 'label': 'Enviada', 'icon': Icons.local_shipping},
+      {'status': 'assigned_to_delivery', 'label': 'Asignada Delivery', 'icon': Icons.delivery_dining},
       {'status': 'delivered', 'label': 'Entregada', 'icon': Icons.check_circle},
     ];
     
     // Agregar estado cancelado solo si la orden está cancelada
     if (order.orderStatus.toLowerCase() == 'cancelled' || order.orderStatus.toLowerCase() == 'canceled') {
       allStates = [
-        {'status': 'created', 'label': 'Creada', 'icon': Icons.receipt},
+        {'status': 'created', 'label': 'Creado', 'icon': Icons.receipt},
         {'status': 'cancelled', 'label': 'Cancelada', 'icon': Icons.cancel},
       ];
     }
