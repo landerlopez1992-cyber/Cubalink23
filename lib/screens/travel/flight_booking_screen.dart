@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cubalink23/services/duffel_api_service.dart';
 import 'package:cubalink23/models/flight_offer.dart';
+import 'package:cubalink23/widgets/cubalink_loading_spinner.dart';
 import 'passenger_info_screen.dart';
 import 'flight_results_screen.dart';
 
@@ -63,14 +64,16 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white, // Fondo blanco puro como en los diseños modernos
-      body: CustomScrollView(
+      body: Stack(
+        children: [
+          CustomScrollView(
         slivers: [
           // Header optimizado para Motorola Edge 2024
           SliverAppBar(
             expandedHeight: 100.0, // Reducido de 120 a 100
             floating: false,
             pinned: true,
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
             elevation: 0,
             leading: Container(
               margin: EdgeInsets.all(6), // Reducido de 8 a 6
@@ -87,7 +90,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
-                  color: Colors.blue[600], // Azul sólido moderno como en los diseños
+                  color: Color(0xFF37474F), // Header oficial Cubalink23
                   // Removemos el gradiente para un look más limpio
                 ),
                 child: SafeArea(
@@ -151,12 +154,16 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                         children: [
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => setState(() => _isRoundTrip = false),
+                              onTap: () {
+                                print('🔘 Usuario seleccionó: Solo ida');
+                                setState(() => _isRoundTrip = false);
+                                print('🔘 _isRoundTrip cambiado a: $_isRoundTrip');
+                              },
                               child: Container(
                                 padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16), // Reducido padding
                                 decoration: BoxDecoration(
                                   color: !_isRoundTrip 
-                                      ? Colors.blue[700] 
+                                      ? Color(0xFF2E7D32) // Verde oscuro para seleccionado 
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(14), // Reducido de 16 a 14
                                 ),
@@ -188,12 +195,16 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                           ),
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => setState(() => _isRoundTrip = true),
+                              onTap: () {
+                                print('🔘 Usuario seleccionó: Ida y vuelta');
+                                setState(() => _isRoundTrip = true);
+                                print('🔘 _isRoundTrip cambiado a: $_isRoundTrip');
+                              },
                               child: Container(
                                 padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16), // Reducido padding
                                 decoration: BoxDecoration(
                                   color: _isRoundTrip 
-                                      ? Colors.blue[700] 
+                                      ? Color(0xFF2E7D32) // Verde oscuro para seleccionado 
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(14), // Reducido de 16 a 14
                                 ),
@@ -1111,10 +1122,10 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor: Color(0xFFFF9800), // Botón principal oficial Cubalink23
                           foregroundColor: Colors.white,
                           elevation: 3,
-                          shadowColor: Theme.of(context).colorScheme.primary.withOpacity( 0.3),
+                          shadowColor: Color(0xFFFF9800).withOpacity(0.3),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14), // Reducido de 16 a 14
                           ),
@@ -1126,9 +1137,10 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                                   SizedBox(
                                     width: 18, // Reducido de 20 a 18
                                     height: 18, // Reducido de 20 a 18
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    child: CubalinkLoadingSpinner(
+                                      size: 18,
+                                      primaryColor: Colors.white,
+                                      secondaryColor: Colors.white.withOpacity(0.3),
                                     ),
                                   ),
                                   SizedBox(width: 10), // Reducido de 12 a 10
@@ -1195,6 +1207,48 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
           SliverToBoxAdapter(
             child: SizedBox(height: 40),
           ),
+        ],
+          ),
+          // Overlay de loading en el centro de la pantalla
+          if (_isLoadingFlights)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.all(30),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CubalinkLoadingSpinner(
+                        size: 60,
+                        primaryColor: Color(0xFF1976D2),
+                        secondaryColor: Color(0xFF64B5F6),
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        'Buscando vuelos...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2C2C2C),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -1265,6 +1319,9 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
       if (searchResult['data'] == null) {
         throw Exception('No se recibieron datos del servidor');
       }
+
+      // Delay mínimo para mostrar el spinner
+      await Future.delayed(Duration(milliseconds: 500));
       
       // El backend devuelve directamente los vuelos, no necesita segundo paso
       final flightsData = searchResult['data'];
@@ -1277,9 +1334,10 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
       }
 
       print('✅ Vuelos recibidos directamente del backend: ${flightsData.length}');
+      print('🔍 DEBUG _isRoundTrip ANTES de crear FlightOffer: $_isRoundTrip');
 
       // Convertir a modelos FlightOffer usando los datos directos del backend
-      final offers = flightsData.map((flightData) => FlightOffer.fromBackendJson(flightData)).toList();
+      final offers = flightsData.map((flightData) => FlightOffer.fromBackendJson(flightData, isRoundTrip: _isRoundTrip)).toList();
       
       setState(() {
         _flightOffers = offers;
