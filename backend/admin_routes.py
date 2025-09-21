@@ -526,10 +526,15 @@ def search_flights():
         origin = data.get('origin')
         destination = data.get('destination') 
         departure_date = data.get('departure_date')
+        return_date = data.get('return_date')  # ✅ AGREGADO: Fecha de regreso para ida y vuelta
         passengers = data.get('passengers', 1)
         airline_type = data.get('airline_type', 'comerciales')
         
         print(f"🔍 Búsqueda DUFFEL: {origin} → {destination} | Tipo: {airline_type}")
+        if return_date:
+            print(f"🔄 VUELO IDA Y VUELTA: {departure_date} → {return_date}")
+        else:
+            print(f"✈️ VUELO SOLO IDA: {departure_date}")
         
         flights = []
         
@@ -553,13 +558,24 @@ def search_flights():
             }
             
             # Crear request de ofertas
+            slices = [{
+                'origin': origin,
+                'destination': destination,
+                'departure_date': departure_date
+            }]
+            
+            # ✅ AGREGAR slice de regreso si es ida y vuelta
+            if return_date:
+                slices.append({
+                    'origin': destination,
+                    'destination': origin,
+                    'departure_date': return_date
+                })
+                print(f"✅ AGREGADO SLICE DE REGRESO: {destination} → {origin} el {return_date}")
+            
             offer_request_data = {
                 'data': {
-                    'slices': [{
-                        'origin': origin,
-                        'destination': destination,
-                        'departure_date': departure_date
-                    }],
+                    'slices': slices,
                     'passengers': [{'type': 'adult'}] * passengers,
                     'cabin_class': 'economy'
                 }
