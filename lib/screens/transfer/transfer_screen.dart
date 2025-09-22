@@ -38,8 +38,9 @@ class _TransferScreenState extends State<TransferScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         title: Text(
           'Transferir Saldo',
           style: TextStyle(

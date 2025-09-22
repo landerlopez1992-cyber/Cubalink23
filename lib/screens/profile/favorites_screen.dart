@@ -49,7 +49,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('$productName removido de favoritos'),
-            backgroundColor: Colors.orange,
+            backgroundColor: Color(0xFFFF9800), // Naranja oficial Cubalink23
             duration: Duration(seconds: 2),
           ),
         );
@@ -62,6 +62,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
         title: Text(
           'Mis Favoritos',
@@ -70,7 +71,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Theme.of(context).primaryColor,
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         iconTheme: IconThemeData(color: Colors.white),
         elevation: 0,
       ),
@@ -78,7 +79,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ? Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).primaryColor,
+                  Color(0xFF37474F), // Header oficial Cubalink23
                 ),
               ),
             )
@@ -228,7 +229,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
+                        color: Color(0xFF37474F), // Header oficial Cubalink23
                       ),
                     ),
                     SizedBox(height: 4),
@@ -279,3 +280,4 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
   }
 }
+

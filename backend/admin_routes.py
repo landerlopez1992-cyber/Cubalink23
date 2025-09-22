@@ -2086,3 +2086,19 @@ def delete_vehicle(vehicle_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+            success = supabase_service.delete_vehicle(vehicle_id)
+            if success:
+                return jsonify({'success': True, 'message': 'Vehículo eliminado exitosamente'})
+        except:
+            pass
+        
+        # Si falla Supabase, usar base de datos local
+        success = local_db.delete_vehicle(vehicle_id)
+        if success:
+            return jsonify({'success': True, 'message': 'Vehículo eliminado exitosamente'})
+        else:
+            return jsonify({'success': False, 'error': 'Vehículo no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+

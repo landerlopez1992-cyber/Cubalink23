@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../models/flight_offer.dart';
 import 'flight_booking_enhanced.dart';
 
@@ -17,18 +20,42 @@ class FlightDetailSimple extends StatelessWidget {
     
     // Extraer datos adicionales de Duffel API
     final rawDuffelData = flight.rawData;
-    final slices = rawDuffelData['slices'] as List<dynamic>? ?? [];
-    final conditions = rawDuffelData['conditions'] as Map<String, dynamic>? ?? {};
+    final slices = flight.rawData['slices'] as List<dynamic>? ?? [];
     
-    // Extraer políticas
-    final changeBeforeDeparture = conditions['change_before_departure'] as Map<String, dynamic>? ?? {};
-    final refundBeforeDeparture = conditions['refund_before_departure'] as Map<String, dynamic>? ?? {};
+    // Debug: Ver si hay slices
+    print('🔍 DEBUG FlightDetailSimple:');
+    print('🔍 Slices count: ${slices.length}');
+    print('🔍 RawData keys: ${flight.rawData.keys.toList()}');
+    print('🔍 Flight origin: ${flight.origin}');
+    print('🔍 Flight destination: ${flight.destination}');
+    print('🔍 Flight segments count: ${flight.segments.length}');
+    print('🔍 RawData origin_airport: ${flight.rawData['origin_airport']}');
+    print('🔍 RawData destination_airport: ${flight.rawData['destination_airport']}');
+    if (flight.segments.isNotEmpty) {
+      print('🔍 First segment origin: ${flight.segments[0].originAirport}');
+      print('🔍 First segment destination: ${flight.segments[0].destinationAirport}');
+      if (flight.segments.length > 1) {
+        print('🔍 Last segment origin: ${flight.segments[flight.segments.length - 1].originAirport}');
+        print('🔍 Last segment destination: ${flight.segments[flight.segments.length - 1].destinationAirport}');
+      }
+    }
+    if (slices.isNotEmpty) {
+      print('🔍 First slice keys: ${slices[0].keys.toList()}');
+      final segments = slices[0]['segments'] as List<dynamic>? ?? [];
+      print('🔍 Segments count: ${segments.length}');
+      if (segments.isNotEmpty) {
+        print('🔍 First segment keys: ${segments[0].keys.toList()}');
+        print('🔍 First segment origin: ${segments[0]['origin']}');
+        print('🔍 First segment destination: ${segments[0]['destination']}');
+      }
+    }
     
     return Scaffold(
       appBar: AppBar(
         title: Text('Detalles del Vuelo'),
-        backgroundColor: Colors.blue[600],
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         foregroundColor: Colors.white,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -44,25 +71,11 @@ class FlightDetailSimple extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        // Logo de aerolínea real - MÁS GRANDE Y VISIBLE
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey[300]!, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
-                                blurRadius: 8,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: _buildAirlineLogo(),
-                        ),
+                        // Logo de aerolínea
+                        _buildAirlineLogo(),
                         SizedBox(width: 16),
+                        
+                        // Información del vuelo
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,25 +90,26 @@ class FlightDetailSimple extends StatelessWidget {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                'Vuelo ${flight.flightNumber}',
+                                'Vuelo ${flight.flightNumberValue}',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 14,
                                   color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           ),
                         ),
+                        
+                        // Precio
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
                               flight.formattedPrice,
                               style: TextStyle(
-                                fontSize: 22,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue[600],
+                                color: Color(0xFF37474F),
                               ),
                             ),
                             Text(
@@ -111,7 +125,7 @@ class FlightDetailSimple extends StatelessWidget {
                     ),
                     SizedBox(height: 20),
                     
-                    // RUTA DEL VUELO
+                    // RUTA DEL VUELO COMPLETA
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -119,92 +133,7 @@ class FlightDetailSimple extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[200]!, width: 1),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Text(
-                                  flight.origin,
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[800],
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  flight.formattedDepartureTime,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          Column(
-                            children: [
-                              Text(
-                                flight.formattedDuration,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Container(
-                                width: 60,
-                                height: 2,
-                                color: Colors.grey[400],
-                              ),
-                              SizedBox(height: 8),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: flight.stops == 0 ? Colors.green[100] : Colors.orange[100],
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  flight.stopsText,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: flight.stops == 0 ? Colors.green[700] : Colors.orange[700],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Text(
-                                  flight.destination,
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[800],
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  flight.formattedArrivalTime,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: _buildCompleteRoute(slices),
                     ),
                   ],
                 ),
@@ -238,143 +167,12 @@ class FlightDetailSimple extends StatelessWidget {
                     SizedBox(height: 16),
                     
                     _buildInfoRow('Aerolínea:', flight.airline),
-                    _buildInfoRow('Número de Vuelo:', flight.flightNumber),
-                    _buildInfoRow('Origen:', flight.origin),
-                    _buildInfoRow('Destino:', flight.destination),
+                    _buildInfoRow('Número de Vuelo:', flight.flightNumberValue),
+                    _buildInfoRow('Origen:', flight.rawData['origin_airport'] ?? flight.origin),
+                    _buildInfoRow('Destino:', flight.rawData['destination_airport'] ?? flight.destination),
                     _buildInfoRow('Duración:', flight.formattedDuration),
                     _buildInfoRow('Escalas:', flight.stopsText),
                     _buildInfoRow('Precio:', flight.formattedPrice),
-                  ],
-                ),
-              ),
-            ),
-            
-            SizedBox(height: 16),
-            
-            // 📋 POLÍTICAS DE VUELO
-            if (conditions.isNotEmpty)
-              Card(
-                elevation: 4,
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.policy_outlined, color: Colors.blue[600], size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Políticas del Vuelo',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
-                      
-                      // Política de cambios
-                      if (changeBeforeDeparture.isNotEmpty) ...[
-                        _buildPolicyRow(
-                          icon: Icons.swap_horiz,
-                          title: 'Cambios antes de la salida',
-                          allowed: changeBeforeDeparture['allowed'] == true,
-                          penalty: changeBeforeDeparture['penalty_amount']?.toString(),
-                          currency: changeBeforeDeparture['penalty_currency']?.toString(),
-                        ),
-                        SizedBox(height: 12),
-                      ],
-                      
-                      // Política de reembolsos
-                      if (refundBeforeDeparture.isNotEmpty)
-                        _buildPolicyRow(
-                          icon: Icons.money_off,
-                          title: 'Reembolso antes de la salida',
-                          allowed: refundBeforeDeparture['allowed'] == true,
-                          penalty: refundBeforeDeparture['penalty_amount']?.toString(),
-                          currency: refundBeforeDeparture['penalty_currency']?.toString(),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            
-            SizedBox(height: 16),
-            
-            // 🎒 INFORMACIÓN DE EQUIPAJE
-            if (slices.isNotEmpty)
-              Card(
-                elevation: 4,
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.luggage, color: Colors.blue[600], size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Equipaje Incluido',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
-                      
-                      // Extraer info de equipaje del primer slice
-                      ...slices.map((slice) {
-                        final segments = slice['segments'] as List<dynamic>? ?? [];
-                        if (segments.isNotEmpty) {
-                          final firstSegment = segments[0] as Map<String, dynamic>;
-                          final passengers = firstSegment['passengers'] as List<dynamic>? ?? [];
-                          
-                          if (passengers.isNotEmpty) {
-                            final passenger = passengers[0] as Map<String, dynamic>;
-                            final baggages = passenger['baggages'] as List<dynamic>? ?? [];
-                            
-                            return Column(
-                              children: baggages.map<Widget>((baggage) {
-                                final bag = baggage as Map<String, dynamic>;
-                                final type = bag['type']?.toString() ?? '';
-                                final quantity = bag['quantity']?.toString() ?? '0';
-                                
-                                return _buildBaggageItem(
-                                  icon: type == 'carry_on' ? Icons.luggage : Icons.airport_shuttle,
-                                  title: type == 'carry_on' ? 'Equipaje de Mano' : 'Equipaje Facturado',
-                                  description: '$quantity pieza(s) incluida(s)',
-                                  included: true,
-                                );
-                              }).toList(),
-                            );
-                          }
-                        }
-                        return SizedBox.shrink();
-                      }),
-                      
-                      // Si no hay datos de equipaje, mostrar valores por defecto
-                      if (slices.isEmpty || _getBaggageCount(slices) == 0) ...[
-                        _buildBaggageItem(
-                          icon: Icons.luggage,
-                          title: 'Equipaje de Mano',
-                          description: '1 pieza hasta 8kg',
-                          included: true,
-                        ),
-                        SizedBox(height: 12),
-                        _buildBaggageItem(
-                          icon: Icons.airport_shuttle,
-                          title: 'Equipaje Facturado',
-                          description: 'Consultar con aerolínea',
-                          included: false,
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -449,19 +247,11 @@ class FlightDetailSimple extends StatelessWidget {
                   child: SizedBox(
                     height: 48,
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        print('🔍 DEBUG: Compartir vuelo');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Función de compartir en desarrollo'),
-                            backgroundColor: Colors.blue[600],
-                          ),
-                        );
-                      },
+                      onPressed: () => _shareFlight(flight),
                       icon: Icon(Icons.share, size: 18),
                       label: Text('Compartir'),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.blue[600]!),
+                        side: BorderSide(color: Color(0xFF37474F)), // Azul gris oscuro oficial Cubalink23
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -477,22 +267,14 @@ class FlightDetailSimple extends StatelessWidget {
                   width: 48,
                   height: 48,
                   child: OutlinedButton(
-                    onPressed: () {
-                      print('🔍 DEBUG: Agregar a favoritos');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Agregado a favoritos'),
-                          backgroundColor: Colors.orange[600],
-                        ),
-                      );
-                    },
+                    onPressed: () => _addToFavorites(context, flight),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.orange[600]!),
+                      side: BorderSide(color: Color(0xFFFF9800)), // Naranja oficial Cubalink23
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Icon(Icons.favorite_border, color: Colors.orange[600]),
+                    child: Icon(Icons.favorite_border, color: Color(0xFFFF9800)), // Naranja oficial Cubalink23
                   ),
                 ),
               ],
@@ -514,13 +296,13 @@ class FlightDetailSimple extends StatelessWidget {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600],
+                  backgroundColor: Color(0xFFFF9800), // Naranja oficial Cubalink23
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: Text(
-                  'Reservar Vuelo - ${flight.formattedPrice}',
+                  'Reservar Vuelo',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -537,116 +319,128 @@ class FlightDetailSimple extends StatelessWidget {
 
   /// 🎨 Construir logo de aerolínea con múltiples fuentes
   Widget _buildAirlineLogo() {
-    // Generar múltiples URLs de logo
     final airlineCode = flight.airlineCode;
-    final logoUrls = <String>[];
+    print('🔍 DEBUG Logo: airlineCode = $airlineCode');
     
-    if (airlineCode.isNotEmpty && airlineCode != 'N/A') {
-      // Fuente 1: Daisycon
-      logoUrls.add('https://daisycon.io/images/airline/?width=120&height=120&color=ffffff&iata=$airlineCode');
-      // Fuente 2: Avionero
-      logoUrls.add('https://avionero.com/airline-logos/$airlineCode.png');
-      // Fuente 3: Airline Logos
-      logoUrls.add('https://logos.skyscnr.com/images/airlines/favicon/$airlineCode.png');
-      // Fuente 4: Alternative
-      logoUrls.add('https://images.kiwi.com/airlines/64/$airlineCode.png');
-    }
-    
-    print('🔍 DEBUG: Intentando cargar logos para código: $airlineCode');
-    print('🔍 DEBUG: URLs generadas: $logoUrls');
-    
-    // Si hay URLs disponibles, intentar cargarlas
-    if (logoUrls.isNotEmpty) {
-      return _buildLogoWithFallback(logoUrls);
-    }
-    
-    // Fallback final: ícono genérico más grande
     return Container(
+      width: 80,
+      height: 80,
       decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.flight_takeoff,
-            size: 32,
-            color: Colors.blue[600],
-          ),
-          SizedBox(height: 4),
-          Text(
-            flight.airline.length > 8 
-                ? '${flight.airline.substring(0, 8)}...' 
-                : flight.airline,
-            style: TextStyle(
-              fontSize: 8,
-              fontWeight: FontWeight.w600,
-              color: Colors.blue[700],
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          'https://images.kiwi.com/airlines/64/$airlineCode.png',
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            print('❌ Error cargando logo: $error');
+            return Icon(
+              Icons.business,
+              size: 40,
+              color: Colors.grey[600],
+            );
+          },
+        ),
       ),
     );
   }
 
-  /// 🔄 Construir logo con fallback a múltiples URLs
-  Widget _buildLogoWithFallback(List<String> urls) {
-    if (urls.isEmpty) {
-      return _buildFallbackIcon();
+  /// 🛣️ Construir ruta completa del vuelo
+  Widget _buildCompleteRoute(List<dynamic> slices) {
+    print('🔍 DEBUG _buildCompleteRoute:');
+    print('🔍 Flight segments count: ${flight.segments.length}');
+    print('🔍 Raw slices count: ${slices.length}');
+    
+    // Usar datos directos del backend
+    final originAirport = flight.rawData['origin_airport'] ?? 'N/A';
+    final destinationAirport = flight.rawData['destination_airport'] ?? 'N/A';
+    
+    print('🔍 Origin: $originAirport, Destination: $destinationAirport');
+    
+    // Mostrar ruta simple con datos del backend
+    return _buildSimpleRoute(originAirport, destinationAirport);
+  }
+
+  /// 🛣️ Construir ruta con segmentos
+  Widget _buildSegmentedRoute(List<dynamic> rawSegments) {
+    print('🔍 DEBUG _buildSegmentedRoute:');
+    print('🔍 Raw segments: $rawSegments');
+    
+    // Usar segmentos de flight si están disponibles, sino usar rawSegments
+    List<dynamic> segmentsToUse = flight.segments.isNotEmpty ? flight.segments : rawSegments;
+    
+    if (segmentsToUse.isEmpty) {
+      return _buildSimpleRoute();
     }
     
-    final currentUrl = urls.first;
-    final remainingUrls = urls.skip(1).toList();
+    final List<Widget> routeWidgets = [];
     
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Image.network(
-        currentUrl,
-        width: 80,
-        height: 80,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          print('❌ Error cargando logo desde: $currentUrl');
-          print('❌ Error: $error');
-          
-          // Si hay más URLs, intentar la siguiente
-          if (remainingUrls.isNotEmpty) {
-            print('🔄 Intentando siguiente URL...');
-            return _buildLogoWithFallback(remainingUrls);
-          }
-          
-          // Si no hay más URLs, usar fallback
-          return _buildFallbackIcon();
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          
-          return Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
+    for (int i = 0; i < segmentsToUse.length; i++) {
+      final segment = segmentsToUse[i];
+      
+      String originCode = '';
+      String destinationCode = '';
+      String departureTime = '';
+      String duration = '';
+      
+      // Intentar extraer datos del segmento
+      if (segment is Map<String, dynamic>) {
+        // Es un Map (rawData)
+        final origin = segment['origin'] as Map<String, dynamic>? ?? {};
+        final destination = segment['destination'] as Map<String, dynamic>? ?? {};
+        originCode = origin['iata_code']?.toString() ?? 'N/A';
+        destinationCode = destination['iata_code']?.toString() ?? 'N/A';
+        departureTime = segment['departing_at']?.toString() ?? '';
+        duration = segment['duration']?.toString() ?? '';
+      } else {
+        // Intentar acceder como FlightSegment
+        try {
+          originCode = segment.originAirport.split(' - ')[0];
+          destinationCode = segment.destinationAirport.split(' - ')[0];
+          departureTime = segment.departingAt;
+          duration = segment.duration;
+        } catch (e) {
+          print('❌ Error accediendo a segment: $e');
+          originCode = 'N/A';
+          destinationCode = 'N/A';
+          departureTime = '';
+          duration = '';
+        }
+      }
+      
+      print('🔍 Segment $i: $originCode -> $destinationCode');
+      
+      // Origen del segmento
+      routeWidgets.add(
+        Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
-                    ),
-                  ),
-                  SizedBox(height: 8),
+              Text(
+                originCode,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              SizedBox(height: 4),
                   Text(
-                    'Cargando...',
+                _formatTime(departureTime),
                     style: TextStyle(
-                      fontSize: 8,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                       color: Colors.grey[600],
                     ),
                   ),
@@ -654,187 +448,213 @@ class FlightDetailSimple extends StatelessWidget {
               ),
             ),
           );
-        },
-      ),
-    );
-  }
-
-  /// 🎯 Ícono de fallback mejorado
-  Widget _buildFallbackIcon() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      
+      // Flecha y duración (excepto para el último segmento)
+      if (i < segmentsToUse.length - 1) {
+        routeWidgets.add(
+          Column(
         children: [
-          Icon(
-            Icons.flight_takeoff,
-            size: 32,
-            color: Colors.blue[600],
+              Text(
+                _formatDuration(duration),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[700],
+                ),
           ),
           SizedBox(height: 4),
-          Text(
-            flight.airline.length > 8 
-                ? '${flight.airline.substring(0, 8)}...' 
-                : flight.airline,
+              Icon(Icons.arrow_forward, size: 16, color: Colors.grey[600]),
+              SizedBox(height: 4),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.orange[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Parada',
             style: TextStyle(
               fontSize: 8,
               fontWeight: FontWeight.w600,
-              color: Colors.blue[700],
+                    color: Colors.orange[700],
             ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+                ),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      }
+    }
+    
+    // Destino final
+    final lastSegment = segmentsToUse.last;
+    String finalDestination = '';
+    String finalArrivalTime = '';
+    
+    if (lastSegment is Map<String, dynamic>) {
+      final destination = lastSegment['destination'] as Map<String, dynamic>? ?? {};
+      finalDestination = destination['iata_code']?.toString() ?? 'N/A';
+      finalArrivalTime = lastSegment['arriving_at']?.toString() ?? '';
+    } else {
+      // Intentar acceder como FlightSegment
+      try {
+        finalDestination = lastSegment.destinationAirport.split(' - ')[0];
+        finalArrivalTime = lastSegment.arrivingAt;
+      } catch (e) {
+        print('❌ Error accediendo a lastSegment: $e');
+        finalDestination = 'N/A';
+        finalArrivalTime = '';
+      }
+    }
+    
+    routeWidgets.add(
+      Expanded(
+        child: Column(
         children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
+            Text(
+              finalDestination,
               style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
                 color: Colors.grey[800],
               ),
             ),
+            SizedBox(height: 4),
+            Text(
+              _formatTime(finalArrivalTime),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+            ),
           ),
         ],
+        ),
       ),
+    );
+    
+    return Row(
+      children: routeWidgets,
     );
   }
 
-  Widget _buildPolicyRow({
-    required IconData icon,
-    required String title,
-    required bool allowed,
-    String? penalty,
-    String? currency,
-  }) {
+  /// 🛣️ Construir ruta simple
+  Widget _buildSimpleRoute([String? origin, String? destination]) {
+    final originCode = origin ?? flight.origin;
+    final destinationCode = destination ?? flight.destination;
+    
     return Row(
       children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: allowed ? Colors.green[100] : Colors.red[100],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            color: allowed ? Colors.green[600] : Colors.red[600],
-            size: 16,
-          ),
-        ),
-        SizedBox(width: 12),
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                originCode,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                   color: Colors.grey[800],
                 ),
               ),
+              SizedBox(height: 4),
               Text(
-                allowed 
-                  ? (penalty != null && penalty != '0' ? 'Permitido con cargo de $penalty $currency' : 'Permitido sin cargo')
-                  : 'No permitido',
+                flight.formattedDepartureTime,
                 style: TextStyle(
-                  fontSize: 11,
-                  color: allowed ? Colors.green[600] : Colors.red[600],
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[600],
                 ),
               ),
             ],
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildBaggageItem({
-    required IconData icon,
-    required String title,
-    required String description,
-    required bool included,
-  }) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8),
-      child: Row(
+        
+        Column(
         children: [
+            Text(
+              flight.formattedDuration,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
+            ),
+            SizedBox(height: 8),
           Container(
-            width: 32,
-            height: 32,
+              width: 60,
+              height: 2,
+              color: Colors.grey[400],
+            ),
+            SizedBox(height: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: included ? Colors.green[100] : Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
+                color: flight.stops == 0 ? Colors.green[100] : Colors.orange[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                flight.stopsText,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: flight.stops == 0 ? Colors.green[700] : Colors.orange[700],
+                ),
+              ),
             ),
-            child: Icon(
-              icon,
-              color: included ? Colors.green[600] : Colors.grey[400],
-              size: 16,
-            ),
-          ),
-          SizedBox(width: 12),
+          ],
+        ),
+        
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                destinationCode,
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                     color: Colors.grey[800],
                   ),
                 ),
+              SizedBox(height: 4),
                 Text(
-                  description,
+                flight.formattedArrivalTime,
                   style: TextStyle(
-                    fontSize: 11,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                     color: Colors.grey[600],
                   ),
                 ),
               ],
             ),
           ),
-          if (included)
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.green[100],
-                borderRadius: BorderRadius.circular(8),
+      ],
+    );
+  }
+
+  /// 📝 Construir fila de información
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
               ),
+            ),
+          ),
+          Expanded(
               child: Text(
-                'Incluido',
+              value,
                 style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.green[700],
-                  fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: Colors.grey[800],
                 ),
               ),
             ),
@@ -843,6 +663,7 @@ class FlightDetailSimple extends StatelessWidget {
     );
   }
 
+  /// 🛫 Construir tarjeta de segmento
   Widget _buildSegmentCard(Map<String, dynamic> segment, int segmentNumber) {
     final origin = segment['origin'] as Map<String, dynamic>? ?? {};
     final destination = segment['destination'] as Map<String, dynamic>? ?? {};
@@ -962,8 +783,8 @@ class FlightDetailSimple extends StatelessWidget {
             ],
           ),
           
-          if (aircraftName != 'Aeronave Desconocida') ...[
             SizedBox(height: 8),
+          
             Text(
               'Aeronave: $aircraftName',
               style: TextStyle(
@@ -971,49 +792,139 @@ class FlightDetailSimple extends StatelessWidget {
                 color: Colors.grey[600],
               ),
             ),
-          ],
         ],
       ),
     );
   }
 
-  int _getBaggageCount(List<dynamic> slices) {
-    int count = 0;
-    for (var slice in slices) {
-      final segments = slice['segments'] as List<dynamic>? ?? [];
-      for (var segment in segments) {
-        final passengers = segment['passengers'] as List<dynamic>? ?? [];
-        for (var passenger in passengers) {
-          final baggages = passenger['baggages'] as List<dynamic>? ?? [];
-          count += baggages.length;
-        }
-      }
-    }
-    return count;
-  }
-
-  String _formatTime(String isoTime) {
-    try {
-      final dateTime = DateTime.parse(isoTime);
-      return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
-      return isoTime;
-    }
-  }
-
+  /// ⏱️ Formatear duración
   String _formatDuration(String duration) {
-    // Convertir duración PT1H18M a 1h 18m
-    final regex = RegExp(r'PT(?:(\d+)H)?(?:(\d+)M)?');
-    final match = regex.firstMatch(duration);
-    if (match != null) {
-      final hours = match.group(1);
-      final minutes = match.group(2);
+    if (duration.startsWith('PT')) {
+      final timeStr = duration.substring(2);
       String result = '';
-      if (hours != null) result += '${hours}h ';
-      if (minutes != null) result += '${minutes}m';
+      
+      final hourMatch = RegExp(r'(\d+)H').firstMatch(timeStr);
+      final minuteMatch = RegExp(r'(\d+)M').firstMatch(timeStr);
+      
+      if (hourMatch != null) {
+        result += '${hourMatch.group(1)}h ';
+      }
+      if (minuteMatch != null) {
+        result += '${minuteMatch.group(1)}m';
+      }
+      
       return result.trim();
     }
     return duration;
   }
-}
 
+  /// 🕐 Formatear tiempo
+  String _formatTime(String time) {
+    try {
+      final dateTime = DateTime.parse(time);
+      return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return time;
+    }
+  }
+
+  /// 💖 Agregar vuelo a favoritos
+  Future<void> _addToFavorites(BuildContext context, FlightOffer flight) async {
+    print('💖 Agregando a favoritos: ${flight.airline} - ${flight.flightNumberValue}');
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final favoritesKey = 'favorite_flights';
+      
+      // Obtener favoritos existentes
+      final existingFavorites = prefs.getStringList(favoritesKey) ?? [];
+      
+      // Crear objeto del vuelo para guardar
+      final flightData = {
+        'id': flight.id,
+        'airline': flight.airline,
+        'flightNumber': flight.flightNumberValue,
+        'origin': flight.rawData['origin_airport'] ?? flight.origin,
+        'destination': flight.rawData['destination_airport'] ?? flight.destination,
+        'formattedPrice': flight.formattedPrice,
+        'duration': flight.duration,
+        'stopsText': flight.stopsText,
+        'formattedDepartureTime': flight.formattedDepartureTime,
+        'formattedArrivalTime': flight.formattedArrivalTime,
+        'airlineCode': flight.airlineCode,
+        'rawData': flight.rawData,
+        'addedAt': DateTime.now().toIso8601String(),
+      };
+      
+      // Verificar si ya existe
+      final flightJson = jsonEncode(flightData);
+      if (!existingFavorites.contains(flightJson)) {
+        existingFavorites.add(flightJson);
+        await prefs.setStringList(favoritesKey, existingFavorites);
+        
+        print('✅ Vuelo agregado a favoritos: ${flight.airline}');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.favorite, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Vuelo agregado a favoritos'),
+              ],
+            ),
+            backgroundColor: Color(0xFF4CAF50), // Verde oficial Cubalink23
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      } else {
+        print('⚠️ Vuelo ya está en favoritos');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Este vuelo ya está en tus favoritos'),
+            backgroundColor: Color(0xFFFF9800), // Naranja oficial Cubalink23
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error al agregar a favoritos: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al agregar a favoritos'),
+          backgroundColor: Color(0xFFDC2626), // Rojo oficial Cubalink23
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  /// 📤 Compartir vuelo
+  Future<void> _shareFlight(FlightOffer flight) async {
+    final String shareText = '''
+✈️ ¡Mira este vuelo increíble!
+
+${flight.airline} - Vuelo ${flight.flightNumberValue}
+${flight.origin} → ${flight.destination}
+💰 ${flight.formattedPrice}
+⏰ ${flight.duration} • ${flight.stopsText}
+
+Descarga Cubalink23 para encontrar más vuelos como este! 🚀
+''';
+
+    try {
+      await Share.share(shareText);
+      print('📤 Vuelo compartido: ${flight.airline}');
+    } catch (e) {
+      print('❌ Error al compartir: $e');
+    }
+  }
+}

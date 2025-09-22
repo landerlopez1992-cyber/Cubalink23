@@ -135,18 +135,18 @@ class _AccountScreenState extends State<AccountScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         title: Text(
           'Mi Cuenta',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Colors.white, // Texto sobre header oficial
             fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Colors.white, // Texto sobre header oficial
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -154,7 +154,7 @@ class _AccountScreenState extends State<AccountScreen> {
       body: isLoading
           ? Center(
               child: CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
+                color: Color(0xFF37474F), // Header oficial Cubalink23
               ),
             )
           : SafeArea(
@@ -208,7 +208,7 @@ class _AccountScreenState extends State<AccountScreen> {
                                       width: 30, // Reducido de 36 a 30
                                       height: 30, // Reducido de 36 a 30
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: Color(0xFF37474F), // Header oficial Cubalink23
                                         shape: BoxShape.circle,
                                         border: Border.all(color: Colors.white, width: 2),
                                       ),
@@ -276,7 +276,7 @@ class _AccountScreenState extends State<AccountScreen> {
                               style: TextStyle(
                                 fontSize: 18, // Reducido de 20 a 18
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: Color(0xFF2C2C2C), // Texto principal oficial
                               ),
                             ),
                             const SizedBox(height: 16), // Reducido de 24 a 16
@@ -342,7 +342,7 @@ class _AccountScreenState extends State<AccountScreen> {
                               child: ElevatedButton(
                                 onPressed: isLoading ? null : _updateProfile,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  backgroundColor: Color(0xFFFF9800), // Naranja oficial Cubalink23
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
@@ -389,7 +389,7 @@ class _AccountScreenState extends State<AccountScreen> {
                               style: TextStyle(
                                 fontSize: 18, // Reducido de 20 a 18
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: Color(0xFF2C2C2C), // Texto principal oficial
                               ),
                             ),
                             const SizedBox(height: 8), // Reducido de 12 a 8 para subir botón cerrar sesión
@@ -521,7 +521,7 @@ class _AccountScreenState extends State<AccountScreen> {
         labelText: label,
         prefixIcon: Icon(
           icon,
-          color: Theme.of(context).colorScheme.primary,
+          color: Color(0xFF37474F), // Header oficial Cubalink23
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -529,7 +529,7 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+          borderSide: BorderSide(color: Color(0xFF37474F), width: 2), // Header oficial Cubalink23
         ),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surface,
@@ -604,12 +604,12 @@ class _AccountScreenState extends State<AccountScreen> {
           width: 40, // Reducido de 48 a 40
           height: 40, // Reducido de 48 a 40
           decoration: BoxDecoration(
-            color: (color ?? Theme.of(context).colorScheme.primary).withValues(alpha: 0.1),
+            color: (color ?? Color(0xFF37474F)).withOpacity(0.1), // Header oficial con transparencia
             borderRadius: BorderRadius.circular(10), // Reducido de 12 a 10
           ),
           child: Icon(
             icon,
-            color: color ?? Theme.of(context).colorScheme.primary,
+            color: color ?? Color(0xFF37474F), // Header oficial Cubalink23
             size: 20, // Reducido de 24 a 20
           ),
         ),
@@ -618,27 +618,27 @@ class _AccountScreenState extends State<AccountScreen> {
           style: TextStyle(
             fontSize: 15, // Reducido de 16 a 15
             fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: Color(0xFF2C2C2C), // Texto principal oficial
           ),
         ),
         subtitle: Text(
           subtitle,
           style: TextStyle(
             fontSize: 13, // Reducido de 14 a 13
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            color: Color(0xFF666666), // Texto secundario oficial
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
           size: 14, // Reducido de 16 a 14
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+          color: Color(0xFF9E9E9E), // Gris claro oficial
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4), // Reducido de 6 a 4
-        tileColor: Theme.of(context).colorScheme.surface,
+        tileColor: Color(0xFFFFFFFF), // Blanco oficial
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+            color: Color(0xFFE5E7EB).withOpacity(0.5), // Borde gris claro oficial
           ),
         ),
         onTap: onTap,
@@ -783,7 +783,7 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.primary),
+              leading: Icon(Icons.camera_alt, color: Color(0xFF37474F)), // Header oficial Cubalink23
               title: const Text('Tomar foto'),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),

@@ -159,18 +159,18 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> with WidgetsBinding
     final safeAreaBottom = MediaQuery.of(context).padding.bottom;
     
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general Cubalink23
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2C2C2C)),
+          icon: const Icon(Icons.arrow_back, color: Colors.white), // Texto blanco sobre header oscuro
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Agregar Saldo',
           style: TextStyle(
-            color: Color(0xFF2C2C2C),
+            color: Colors.white, // Texto blanco sobre header oscuro
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),

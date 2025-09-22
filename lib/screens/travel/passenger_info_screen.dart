@@ -47,10 +47,10 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general Cubalink23
       appBar: AppBar(
         title: Text('Información de Pasajeros'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -78,14 +78,14 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
                 Row(
                   children: [
                     Icon(Icons.flight_takeoff, 
-                      color: Theme.of(context).colorScheme.primary, size: 20),
+                      color: Color(0xFF4CAF50), size: 20), // Verde secciones Cubalink23
                     SizedBox(width: 8),
                     Text(
                       'Vuelo Seleccionado',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
+                        color: Color(0xFF2C2C2C), // Texto principal Cubalink23
                       ),
                     ),
                   ],
@@ -126,7 +126,7 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: Color(0xFFFF9800), // Naranja botones principales Cubalink23
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -234,9 +234,9 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
             child: ElevatedButton(
               onPressed: _isCreatingOrder ? null : _createBooking,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
+                backgroundColor: Color(0xFF37474F), // Azul gris oscuro Cubalink23
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: 14), // Reducido de 16 a 14
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -260,13 +260,13 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
                         ),
                       ],
                     )
-                  : Text(
-                      'Crear Reserva',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  :                         Text(
+                          'Crear Reserva',
+                          style: TextStyle(
+                            fontSize: 16, // Reducido de 18 a 16 para mejor proporción
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
             ),
           ),
         ],
@@ -299,12 +299,12 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
               Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity( 0.1),
+                  color: Color(0xFF37474F).withOpacity( 0.1), // Azul gris oscuro Cubalink23
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.person,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Color(0xFF37474F), // Azul gris oscuro Cubalink23
                   size: 20,
                 ),
               ),

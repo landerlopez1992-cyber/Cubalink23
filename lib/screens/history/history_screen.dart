@@ -53,7 +53,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('✅ Transacción eliminada'),
-            backgroundColor: Colors.green,
+            backgroundColor: Color(0xFF4CAF50), // Verde éxito oficial
           ),
         );
       }
@@ -61,7 +61,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al eliminar: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: Color(0xFFDC2626), // Rojo error oficial
         ),
       );
     }
@@ -104,9 +104,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
         title: Text('Historial'),
-        backgroundColor: Colors.blue[600],
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -114,7 +115,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         children: [
           // Filter buttons
           Container(
-            color: Colors.blue[50],
+            color: Color(0xFFFFFFFF), // Blanco oficial
             padding: EdgeInsets.all(16),
             child: Row(
               children: [
@@ -123,8 +124,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     onPressed: () => setState(() => _selectedFilter = 'all'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _selectedFilter == 'all' 
-                        ? Colors.blue[600] 
-                        : Colors.grey[200],
+                        ? Color(0xFF37474F) // Header oficial Cubalink23
+                        : Color(0xFFE5E7EB), // Gris claro oficial
                       foregroundColor: _selectedFilter == 'all' 
                         ? Colors.white 
                         : Colors.black87,
@@ -138,8 +139,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     onPressed: () => setState(() => _selectedFilter = 'completed'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _selectedFilter == 'completed' 
-                        ? Colors.green[600] 
-                        : Colors.grey[200],
+                        ? Color(0xFF4CAF50) // Verde éxito oficial
+                        : Color(0xFFE5E7EB), // Gris claro oficial
                       foregroundColor: _selectedFilter == 'completed' 
                         ? Colors.white 
                         : Colors.black87,
@@ -153,8 +154,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     onPressed: () => setState(() => _selectedFilter = 'pending'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _selectedFilter == 'pending' 
-                        ? Colors.orange[600] 
-                        : Colors.grey[200],
+                        ? Color(0xFFFF9800) // Naranja oficial Cubalink23
+                        : Color(0xFFE5E7EB), // Gris claro oficial
                       foregroundColor: _selectedFilter == 'pending' 
                         ? Colors.white 
                         : Colors.black87,
@@ -179,12 +180,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         SizedBox(height: 16),
                         Text(
                           'No hay transacciones',
-                          style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                          style: TextStyle(fontSize: 18, color: Color(0xFF666666)), // Texto secundario oficial
                         ),
                         SizedBox(height: 8),
                         Text(
                           'Las transacciones aparecerán aquí',
-                          style: TextStyle(color: Colors.grey[500]),
+                          style: TextStyle(color: Color(0xFF9E9E9E)), // Gris claro oficial
                         ),
                       ],
                     ),
@@ -200,10 +201,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           child: ListTile(
                             leading: CircleAvatar(
                               backgroundColor: transaction.status == RechargeStatus.completed
-                                  ? Colors.green
+                                  ? Color(0xFF4CAF50) // Verde éxito oficial
                                   : transaction.status == RechargeStatus.pending
-                                      ? Colors.orange
-                                      : Colors.red,
+                                      ? Color(0xFFFF9800) // Naranja oficial
+                                      : Color(0xFFDC2626), // Rojo error oficial
                               child: Icon(
                                 transaction.status == RechargeStatus.completed
                                     ? Icons.check
@@ -223,8 +224,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: transaction.status == RechargeStatus.completed
-                                    ? Colors.green
-                                    : Colors.orange,
+                                    ? Color(0xFF4CAF50) // Verde éxito oficial
+                                    : Color(0xFFFF9800), // Naranja oficial
                               ),
                             ),
                             onTap: () {

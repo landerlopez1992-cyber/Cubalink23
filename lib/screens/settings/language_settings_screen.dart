@@ -135,9 +135,9 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
-        backgroundColor: Color(0xFF2E7D32),
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         title: Text(
           'Configuración de Idioma',
           style: TextStyle(
@@ -159,7 +159,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2E7D32),
+                color: Color(0xFF37474F), // Header oficial Cubalink23
               ),
             )
           : _buildLanguageList(),

@@ -212,9 +212,9 @@ class _RechargeScreenState extends State<RechargeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Nueva recarga', style: TextStyle(color: colorScheme.onPrimary)),
-        backgroundColor: colorScheme.primary,
-        iconTheme: IconThemeData(color: colorScheme.onPrimary),
+        title: Text('Nueva recarga', style: TextStyle(color: Colors.white)), // Texto blanco sobre header oscuro
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
+        iconTheme: IconThemeData(color: Colors.white), // Iconos blancos sobre header oscuro
       ),
       body: Form(
         key: _formKey,
@@ -229,13 +229,13 @@ class _RechargeScreenState extends State<RechargeScreen> {
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [colorScheme.primary.withOpacity( 0.1), colorScheme.secondary.withOpacity( 0.1)],
+                    colors: [Color(0xFF37474F).withOpacity(0.1), Color(0xFF4CAF50).withOpacity(0.1)], // Colores Cubalink23
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: colorScheme.primary.withOpacity( 0.2),
+                    color: Color(0xFF37474F).withOpacity(0.2), // Azul gris oscuro Cubalink23
                   ),
                 ),
                 child: Column(

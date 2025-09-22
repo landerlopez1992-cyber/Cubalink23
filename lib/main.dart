@@ -18,6 +18,7 @@ import 'package:cubalink23/screens/activity/activity_screen.dart';
 import 'package:cubalink23/screens/transfer/transfer_screen.dart';
 import 'package:cubalink23/screens/recharge/recharge_home_screen.dart';
 import 'package:cubalink23/screens/profile/favorites_screen.dart';
+import 'package:cubalink23/screens/travel/favorite_flights_screen.dart';
 import 'package:cubalink23/screens/travel/flight_booking_screen.dart';
 import 'package:cubalink23/screens/travel/flight_results_screen.dart';
 import 'package:cubalink23/screens/travel/flight_detail_simple.dart';
@@ -126,6 +127,7 @@ class CubaLink23App extends StatelessWidget {
         '/transfer': (context) => const TransferScreen(),
         '/recharge': (context) => const RechargeHomeScreen(),
         '/favorites': (context) => const FavoritesScreen(),
+        '/favorite-flights': (context) => const FavoriteFlightsScreen(),
         '/flights': (context) => const FlightBookingScreen(),
         '/flight-search': (context) => const FlightBookingScreen(),
         '/flight-results': (context) => const FlightResultsScreen(
@@ -149,6 +151,7 @@ class CubaLink23App extends StatelessWidget {
               segments: [],
               rawData: {},
               airlineLogo: '',
+              flightNumber: '',
             )),
         '/amazon-shopping': (context) => const AmazonShoppingScreen(),
         '/welcome': (context) => const WelcomeScreen(),
@@ -227,6 +230,7 @@ class CubaLink23App extends StatelessWidget {
                   segments: [],
                   rawData: {},
                   airlineLogo: '',
+                  flightNumber: '',
                 ),
           );
         },
@@ -241,8 +245,9 @@ class CubaLink23App extends StatelessWidget {
       name: 'Usuario Demo',
       email: 'demo@cubalink23.com',
       phone: '+1234567890',
-      balance: 150.00,
       createdAt: DateTime.now(),
+      balance: 150.00,
     );
   }
 }
+

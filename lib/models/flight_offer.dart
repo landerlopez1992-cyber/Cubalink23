@@ -10,6 +10,7 @@ class FlightOffer {
   final List<FlightSegment> segments;
   final Map<String, dynamic> rawData;
   final String airlineLogo;
+  final String flightNumber;
 
   FlightOffer({
     required this.id,
@@ -23,6 +24,7 @@ class FlightOffer {
     required this.segments,
     required this.rawData,
     required this.airlineLogo,
+    required this.flightNumber,
   });
 
   factory FlightOffer.fromBackendJson(Map<String, dynamic> json) {
@@ -55,6 +57,7 @@ class FlightOffer {
       String departureTime = json['departureTime'] ?? json['departing_at'] ?? 'N/A';
       String arrivalTime = json['arrivalTime'] ?? json['arriving_at'] ?? 'N/A';
       int stops = int.tryParse(json['stops'].toString()) ?? 0;
+      String flightNumber = json['flight_number'] ?? '';
       
       // Extraer segmentos del backend
       final slices = json['slices'] as List<dynamic>? ?? [];
@@ -71,7 +74,20 @@ class FlightOffer {
           try {
             final segmentData = sliceSegments[i];
             if (segmentData != null && segmentData is Map<String, dynamic>) {
-              segments.add(FlightSegment.fromDuffelJson(segmentData));
+              print('🔍 DEBUG Segment $i: $segmentData');
+              
+              // Crear segmento simple para datos del backend
+              segments.add(FlightSegment(
+                id: segmentData['id'] ?? '',
+                departingAt: segmentData['departing_at'] ?? segmentData['departureTime'] ?? '',
+                arrivingAt: segmentData['arriving_at'] ?? segmentData['arrivalTime'] ?? '',
+                originAirport: '${segmentData['origin_airport'] ?? 'N/A'} - ${segmentData['origin_airport'] ?? 'Unknown'}',
+                destinationAirport: '${segmentData['destination_airport'] ?? 'N/A'} - ${segmentData['destination_airport'] ?? 'Unknown'}',
+                airline: segmentData['airline'] ?? 'Unknown',
+                flightNumber: segmentData['flight_number'] ?? '',
+                aircraft: 'Unknown Aircraft',
+                duration: segmentData['duration'] ?? '',
+              ));
             }
           } catch (e) {
             print('⚠️ Error parseando segment $i: $e');
@@ -98,6 +114,7 @@ class FlightOffer {
         segments: segments,
         rawData: json,
         airlineLogo: airlineLogo,
+        flightNumber: flightNumber,
       );
     } catch (e) {
       print('❌ Error parsing Backend FlightOffer: $e');
@@ -114,6 +131,7 @@ class FlightOffer {
         segments: [],
         rawData: json,
         airlineLogo: '',
+        flightNumber: '',
       );
     }
   }
@@ -165,6 +183,7 @@ class FlightOffer {
       String departureTime = 'N/A';
       String arrivalTime = 'N/A';
       int stops = 0;
+      String flightNumber = json['flight_number'] ?? '';
 
       if (slices.isNotEmpty) {
         final firstSlice = slices[0] as Map<String, dynamic>;
@@ -238,6 +257,7 @@ class FlightOffer {
         segments: segments,
         rawData: json,
         airlineLogo: airlineLogo,
+        flightNumber: flightNumber,
       );
     } catch (e) {
       print('❌ Error parsing FlightOffer: $e');
@@ -254,6 +274,7 @@ class FlightOffer {
         segments: [],
         rawData: json,
         airlineLogo: '',
+        flightNumber: '',
       );
     }
   }
@@ -447,10 +468,23 @@ class FlightOffer {
 
   /// Código de la aerolínea (extraído del segmento)
   String get airlineCode {
-    if (segments.isNotEmpty) {
-      final flightNumber = segments[0].flightNumber;
-      // Extraer las primeras letras del flight number que corresponden al código IATA
+    // Priorizar rawData del backend
+    if (rawData['airline_code'] != null && rawData['airline_code'].toString().isNotEmpty) {
+      return rawData['airline_code'].toString().toUpperCase();
+    }
+    
+    // Usar el campo flightNumber directamente
+    if (flightNumber.isNotEmpty) {
       final match = RegExp(r'^([A-Z]{2,3})').firstMatch(flightNumber);
+      if (match != null) {
+        return match.group(1) ?? 'N/A';
+      }
+    }
+    
+    // Fallback a segmentos
+    if (segments.isNotEmpty) {
+      final segmentFlightNumber = segments[0].flightNumber;
+      final match = RegExp(r'^([A-Z]{2,3})').firstMatch(segmentFlightNumber);
       if (match != null) {
         return match.group(1) ?? 'N/A';
       }
@@ -459,7 +493,13 @@ class FlightOffer {
   }
 
   /// Número de vuelo principal
-  String get flightNumber {
+  String get flightNumberValue {
+    // Usar el campo flightNumber directamente si está disponible
+    if (flightNumber.isNotEmpty) {
+      return flightNumber;
+    }
+    
+    // Fallback a segmentos
     if (segments.isNotEmpty) {
       return segments[0].flightNumber;
     }

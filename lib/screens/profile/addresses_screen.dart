@@ -86,7 +86,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Error cargando direcciones: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Color(0xFFDC2626), // Rojo error oficial
           ),
         );
       }
@@ -177,7 +177,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(editingAddressId != null ? '✅ Dirección actualizada exitosamente' : '✅ Dirección guardada exitosamente'),
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xFF4CAF50), // Verde éxito oficial
         ),
       );
     } catch (e) {
@@ -213,7 +213,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('✅ Dirección eliminada'),
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xFF4CAF50), // Verde éxito oficial
         ),
       );
     } catch (e) {
@@ -297,9 +297,9 @@ class _AddressesScreenState extends State<AddressesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         title: const Text(
           'Mis Direcciones',
           style: TextStyle(
@@ -322,7 +322,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
       body: isLoading
           ? Center(
               child: CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
+                color: Color(0xFF37474F), // Header oficial Cubalink23
               ),
             )
           : SingleChildScrollView(
@@ -367,7 +367,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Color(0xFF37474F), // Header oficial Cubalink23
                                   ),
                                 ),
                                 const SizedBox(height: 16),
@@ -457,7 +457,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                       child: ElevatedButton(
                                         onPressed: isLoading ? null : _saveAddress,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Theme.of(context).colorScheme.primary,
+                                          backgroundColor: Color(0xFF4CAF50), // Verde oficial Cubalink23
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(vertical: 12),
                                           shape: RoundedRectangleBorder(
@@ -522,7 +522,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                               icon: const Icon(Icons.add),
                               label: const Text('Agregar Primera Dirección'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                backgroundColor: Color(0xFFFF9800), // Naranja oficial Cubalink23
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                 shape: RoundedRectangleBorder(
@@ -591,7 +591,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
               children: [
                 Icon(
                   Icons.location_on,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Color(0xFF37474F), // Header oficial Cubalink23
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -667,7 +667,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
               _deleteAddress(address['id'] ?? '');
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: Color(0xFFDC2626), // Rojo error oficial
               foregroundColor: Colors.white,
             ),
             child: const Text('Eliminar'),

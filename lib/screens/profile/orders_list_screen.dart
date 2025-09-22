@@ -15,7 +15,6 @@ class OrdersListScreen extends StatefulWidget {
 class _OrdersListScreenState extends State<OrdersListScreen> {
   List<Order> _orders = [];
   bool _isLoading = true;
-  final FirebaseRepository _repository = FirebaseRepository.instance;
 
   @override
   void initState() {
@@ -103,9 +102,9 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         title: Text(
           'Mis Órdenes',
           style: TextStyle(
@@ -134,7 +133,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                 children: [
                   CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary,
+                      Color(0xFF37474F), // Header oficial Cubalink23
                     ),
                   ),
                   SizedBox(height: 16),
@@ -142,7 +141,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                     'Cargando órdenes...',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[600],
+                      color: Color(0xFF666666), // Texto secundario oficial
                     ),
                   ),
                 ],
@@ -162,7 +161,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
           Icon(
             Icons.shopping_bag_outlined,
             size: 80,
-            color: Colors.grey[400],
+            color: Color(0xFF9E9E9E), // Gris claro oficial
           ),
           SizedBox(height: 24),
           Text(
@@ -190,7 +189,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
             icon: Icon(Icons.shopping_cart),
             label: Text('Ir a la Tienda'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -247,7 +246,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Color(0xFF37474F), // Header oficial Cubalink23
                       ),
                     ),
                   ),
@@ -274,24 +273,24 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
               // Información básica
               Row(
                 children: [
-                  Icon(Icons.monetization_on, size: 16, color: Colors.green[600]),
+                  Icon(Icons.monetization_on, size: 16, color: Color(0xFF4CAF50)), // Verde éxito oficial
                   SizedBox(width: 8),
                   Text(
                     'Total: \$${order.total.toStringAsFixed(2)}',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green[600],
+                      color: Color(0xFF4CAF50), // Verde éxito oficial
                     ),
                   ),
                   Spacer(),
-                  Icon(Icons.payment, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.payment, size: 16, color: Color(0xFF666666)), // Texto secundario oficial
                   SizedBox(width: 4),
                   Text(
                     _getPaymentMethodText(order.paymentMethod),
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Color(0xFF666666), // Texto secundario oficial
                     ),
                   ),
                 ],
@@ -302,23 +301,23 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
               // Fecha y método de envío
               Row(
                 children: [
-                  Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.access_time, size: 16, color: Color(0xFF666666)), // Texto secundario oficial
                   SizedBox(width: 8),
                   Text(
                     _formatDate(order.createdAt),
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Color(0xFF666666), // Texto secundario oficial
                     ),
                   ),
                   Spacer(),
-                  Icon(Icons.local_shipping, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.local_shipping, size: 16, color: Color(0xFF666666)), // Texto secundario oficial
                   SizedBox(width: 4),
                   Text(
                     _getShippingMethodText(order.shippingMethod),
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Color(0xFF666666), // Texto secundario oficial
                     ),
                   ),
                 ],
@@ -329,14 +328,14 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
               // Dirección de envío
               Row(
                 children: [
-                  Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.location_on, size: 16, color: Color(0xFF666666)), // Texto secundario oficial
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${order.shippingAddress.city}, ${order.shippingAddress.province}',
+                      _getShippingAddressText(order.shippingAddress),
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Color(0xFF666666), // Texto secundario oficial
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -344,7 +343,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                   Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
-                    color: Colors.grey[400],
+                    color: Color(0xFF9E9E9E), // Gris claro oficial
                   ),
                 ],
               ),
@@ -359,19 +358,19 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     switch (status) {
       case 'created':
       case 'payment_pending':
-        return Colors.orange[600]!;
+        return Color(0xFFFF9800); // Naranja oficial Cubalink23
       case 'payment_confirmed':
       case 'processing':
-        return Colors.blue[600]!;
+        return Color(0xFF37474F); // Header oficial Cubalink23
       case 'shipped':
       case 'out_for_delivery':
-        return Colors.purple[600]!;
+        return Color(0xFF37474F); // Header oficial Cubalink23
       case 'delivered':
-        return Colors.green[600]!;
+        return Color(0xFF4CAF50); // Verde éxito oficial
       case 'cancelled':
-        return Colors.red[600]!;
+        return Color(0xFFDC2626); // Rojo error oficial
       default:
-        return Colors.grey[600]!;
+        return Color(0xFF666666); // Texto secundario oficial
     }
   }
 
@@ -405,6 +404,35 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
       case 'pickup': return 'Recoger';
       default: return method;
     }
+  }
+
+  String _getShippingAddressText(OrderAddress address) {
+    // Construir dirección completa con verificación de campos vacíos
+    List<String> addressParts = [];
+    
+    if (address.recipient.isNotEmpty && address.recipient != 'Sin destinatario') {
+      addressParts.add(address.recipient);
+    }
+    
+    if (address.address.isNotEmpty) {
+      addressParts.add(address.address);
+    }
+    
+    if (address.city.isNotEmpty) {
+      addressParts.add(address.city);
+    }
+    
+    if (address.province.isNotEmpty && address.province != 'Cuba') {
+      addressParts.add(address.province);
+    } else if (address.province.isEmpty && address.city.isNotEmpty) {
+      addressParts.add('Cuba'); // Fallback si no hay provincia
+    }
+    
+    if (addressParts.isEmpty) {
+      return 'Dirección no disponible';
+    }
+    
+    return addressParts.join(', ');
   }
 
   String _formatDate(DateTime date) {

@@ -47,17 +47,22 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
-        title: Text(
-          '${widget.fromAirport} → ${widget.toAirport}',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+        title: Center(
+          child: Text(
+            '${widget.fromAirport} → ${widget.toAirport}',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         foregroundColor: Colors.grey[800],
+        centerTitle: true,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(kToolbarHeight),
@@ -88,7 +93,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     Text(
                       widget.airlineType == 'comerciales' 
                           ? 'Aerolíneas Comerciales' 
-                          : 'Vuelos Charter',
+                          : 'Aerolíneas Comerciales',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -226,7 +231,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           SizedBox(height: 8),
           Text(
             widget.airlineType == 'comerciales'
-                ? 'Intenta cambiar las fechas o buscar vuelos charter'
+                ? 'Intenta cambiar las fechas o buscar otras aerolíneas'
                 : 'Intenta cambiar las fechas o buscar aerolíneas comerciales',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -491,13 +496,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     if (flight.changeable)
                       _buildBadge('Modificable', Colors.blue),
                     Spacer(),
-                    Text(
-                      '${flight.availableSeats} asientos',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
-                    ),
                   ],
                 ),
               ],

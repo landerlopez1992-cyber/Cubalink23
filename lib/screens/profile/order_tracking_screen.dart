@@ -276,12 +276,100 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
+  void _openSupportChat() async {
+    final order = _orders.first;
+    
+    // Mostrar modal con información
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.support_agent, color: Color(0xFF37474F)),
+              SizedBox(width: 8),
+              Text(
+                'Soporte Técnico',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF37474F), // Header oficial
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Orden: ${order.orderNumber}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2C2C2C), // Texto principal oficial
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Se abrirá el chat de soporte donde podrás conversar directamente con nuestro equipo de atención al cliente sobre tu orden.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF666666), // Texto secundario oficial
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Tu número de orden se enviará automáticamente al agente de soporte.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF666666),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: Color(0xFF666666)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _navigateToSupportChat(order.orderNumber);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF37474F), // Header oficial
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Abrir Soporte'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _navigateToSupportChat(String orderNumber) {
+    // Navegar al chat de soporte con el número de orden
+    Navigator.pushNamed(
+      context, 
+      '/support-chat',
+      arguments: {
+        'orderNumber': orderNumber,
+        'autoMessage': 'Hola, necesito ayuda con mi orden: $orderNumber',
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial (header "Información de Envío")
         title: Text(
           'Rastreo de Mi Orden',
           style: TextStyle(
@@ -329,18 +417,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               : SingleChildScrollView(
                       child: Padding(
                         padding: EdgeInsets.all(16),
+                        child: SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildOrderInfoCard(),
                             SizedBox(height: 24),
-                            _buildOrderStatusTimeline(),
+                              _buildOrderStatusTimeline(),
                             SizedBox(height: 24),
-                            _buildCancelButton(),
-                            SizedBox(height: 16),
                             _buildOrderItems(),
-                      ],
-                    ),
+                            SizedBox(height: 24),
+                            _buildActionButtons(),
+                              SizedBox(height: 24), // Espacio extra para asegurar que se vea
+                          ],
+                        ),
+                      ),
         ),
       ),
     );
@@ -348,7 +439,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Widget _buildOrderInfoCard() {
     final order = _orders.first;
-    final firstItem = order.items.isNotEmpty ? order.items.first : null;
     
     return Card(
       elevation: 4,
@@ -362,13 +452,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               height: 80,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Color(0xFF37474F).withOpacity(0.1), // Header oficial con transparencia
               ),
               child: Icon(
                 Icons.shopping_cart,
-                color: Theme.of(context).colorScheme.primary,
+                color: Color(0xFF37474F), // Azul gris oscuro oficial
                 size: 40,
-              ),
+                    ),
             ),
             SizedBox(width: 16),
             Expanded(
@@ -380,7 +470,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: Color(0xFF37474F), // Header oficial Cubalink23
                     ),
                   ),
                   SizedBox(height: 4),
@@ -389,7 +479,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.green[600],
+                      color: Color(0xFF4CAF50), // Verde éxito oficial
                     ),
                   ),
                   SizedBox(height: 4),
@@ -397,7 +487,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     'Método: ${_getPaymentMethodName(order.paymentMethod)}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Color(0xFF666666), // Texto secundario oficial
                     ),
                   ),
                   SizedBox(height: 4),
@@ -405,7 +495,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     'Destinatario: ${order.shippingAddress.recipient}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Color(0xFF666666), // Texto secundario oficial
                     ),
                   ),
                   SizedBox(height: 2),
@@ -413,7 +503,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     'Teléfono: ${order.shippingAddress.phone}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Color(0xFF666666), // Texto secundario oficial
                     ),
                   ),
                   SizedBox(height: 2),
@@ -421,7 +511,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     'Destino: ${order.shippingAddress.city}, ${order.shippingAddress.province}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Color(0xFF666666), // Texto secundario oficial
                     ),
                   ),
                 ],
@@ -485,7 +575,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Color(0xFF2C2C2C), // Texto principal oficial
               ),
             ),
             SizedBox(height: 16),
@@ -493,7 +583,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             // Timeline horizontal
             Row(
               children: allStates.asMap().entries.map((entry) {
-                int index = entry.key;
+                      int index = entry.key;
                 Map<String, dynamic> state = entry.value;
                 bool isActive = index <= currentIndex;
                 bool isCurrent = index == currentIndex;
@@ -501,31 +591,31 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 
                 return Expanded(
                   child: Column(
-                    children: [
+        children: [
                       // Línea horizontal (excepto el último)
                       Row(
                         children: [
                           // Círculo del estado (más pequeño)
-                          Container(
+          Container(
                             width: 30,
                             height: 30,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
                               color: isActive 
                                   ? (state['status'] == 'cancelled' 
-                                      ? Colors.red 
-                                      : Theme.of(context).colorScheme.primary)
-                                  : Colors.grey[300],
-                              border: Border.all(
+                                      ? Color(0xFFDC2626) // Rojo error oficial
+                                      : Color(0xFF37474F)) // Header oficial
+                                  : Color(0xFFE5E7EB), // Gris claro oficial
+              border: Border.all(
                                 color: isCurrent 
                                     ? (state['status'] == 'cancelled' 
-                                        ? Colors.red 
-                                        : Theme.of(context).colorScheme.primary)
+                                        ? Color(0xFFDC2626) // Rojo error oficial
+                                        : Color(0xFF37474F)) // Header oficial
                                     : Colors.transparent,
                                 width: 1.5,
-                              ),
-                            ),
-                            child: Icon(
+              ),
+            ),
+            child: Icon(
                               state['icon'],
                               color: isActive ? Colors.white : Colors.grey[600],
                               size: 14,
@@ -534,30 +624,30 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           
                           // Línea conectora (excepto el último)
                           if (!isLast)
-                            Expanded(
-                              child: Container(
+          Expanded(
+                        child: Container(
                                 height: 2,
                                 color: isActive && index < currentIndex 
-                                    ? Theme.of(context).colorScheme.primary 
-                                    : Colors.grey[300],
-                              ),
-                            ),
-                        ],
-                      ),
+                                    ? Color(0xFF37474F) // Header oficial
+                                    : Color(0xFFE5E7EB), // Gris claro oficial
+                  ),
+                ),
+              ],
+            ),
                       
                       SizedBox(height: 8),
                       
                       // Texto del estado (más pequeño)
-                      Text(
+            Text(
                         state['label'],
-                        style: TextStyle(
+              style: TextStyle(
                           fontSize: 10,
                           fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                           color: isActive 
                               ? (state['status'] == 'cancelled' 
-                                  ? Colors.red 
-                                  : Theme.of(context).colorScheme.primary)
-                              : Colors.grey[600],
+                                  ? Color(0xFFDC2626) // Rojo error oficial
+                                  : Color(0xFF37474F)) // Header oficial
+                              : Color(0xFF666666), // Texto secundario oficial
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 2,
@@ -569,8 +659,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       // Camioncito debajo del estado actual (más pequeño)
                       if (isCurrent && state['status'] != 'cancelled')
                         Icon(
-                          Icons.local_shipping,
-                          color: Theme.of(context).colorScheme.primary,
+              Icons.local_shipping,
+                          color: Color(0xFF37474F), // Header oficial
                           size: 18,
                         )
                       else
@@ -583,6 +673,82 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    final order = _orders.first;
+    bool canCancel = _canCancelOrder(order.orderStatus);
+    
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          children: [
+        // Botón de Soporte (siempre visible)
+                  Container(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () => _openSupportChat(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                Icon(Icons.support_agent, size: 18),
+                SizedBox(width: 8),
+                        Text(
+                  'Soporte',
+                          style: TextStyle(
+                            fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+        ),
+        
+        // Espacio entre botones
+        if (canCancel) SizedBox(height: 12),
+        
+        // Botón de Cancelar (solo si se puede cancelar)
+        if (canCancel)
+          Container(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _showCancelOrderDialog(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFDC2626), // Rojo error oficial Cubalink23
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                  Icon(Icons.cancel, size: 18),
+                  SizedBox(width: 8),
+                Text(
+                    'Cancelar Pedido',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                ),
+              ],
+            ),
+            ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -601,24 +767,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       child: ElevatedButton(
         onPressed: () => _showCancelOrderDialog(),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red[600],
+          backgroundColor: Color(0xFFDC2626), // Color oficial de error
           foregroundColor: Colors.white,
           padding: EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-        child: Row(
+      child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+        children: [
             Icon(Icons.cancel, size: 18),
             SizedBox(width: 8),
-            Text(
+                Text(
               'Cancelar Pedido',
-              style: TextStyle(
+                  style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ],
         ),
@@ -648,23 +814,23 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
+              crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+                Text(
                 'Orden: ${order.orderNumber}',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
-              Text(
+          Text(
                 'El sistema intentará cancelar la orden. Si ya está en preparación, no se podrá cancelar.',
                 style: TextStyle(fontSize: 14),
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
+            child: Text(
                 'Salir',
                 style: TextStyle(color: Colors.grey[600]),
               ),
@@ -738,8 +904,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         return AlertDialog(
           title: Text(
             '¡Orden Cancelada!',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
               color: Colors.green[700],
             ),
           ),
@@ -789,15 +955,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Widget _buildOrderItems() {
     final order = _orders.first;
-
+    
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: EdgeInsets.all(20),
-        child: Column(
+                child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+                  children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -806,7 +972,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Color(0xFF2C2C2C), // Texto principal oficial
               ),
             ),
           Container(
@@ -817,16 +983,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                   child: Text(
                     '${order.items.length} ${order.items.length == 1 ? 'producto' : 'productos'}',
-                  style: TextStyle(
+                      style: TextStyle(
                     fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                  ),
-            ),
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
           ),
         ],
             ),
-            SizedBox(height: 16),
+                    SizedBox(height: 16),
             
             if (order.items.isEmpty)
               Container(
@@ -834,10 +1000,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 alignment: Alignment.center,
                 child: Text(
                   'No hay productos en esta orden',
-              style: TextStyle(
-                    color: Colors.grey[500],
-                    fontStyle: FontStyle.italic,
-                  ),
+                      style: TextStyle(
+              color: Color(0xFF666666), // Texto secundario oficial
+              fontStyle: FontStyle.italic,
+            ),
                 ),
               )
             else
@@ -852,7 +1018,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.grey[200]!),
                     ),
               child: Row(
@@ -888,33 +1054,33 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   SizedBox(width: 12),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
                           item.name,
                           style: TextStyle(
                             fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: Color(0xFF2C2C2C), // Texto principal oficial
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                               SizedBox(height: 4),
-                        Text(
+            Text(
                           'Cantidad: ${item.quantity}',
-                          style: TextStyle(
-                            fontSize: 12,
-                                  color: Colors.grey[600],
-                          ),
-                        ),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
                               SizedBox(height: 2),
                   Text(
                                 '\$${(item.price * item.quantity).toStringAsFixed(2)}',
                     style: TextStyle(
                                   fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green[600],
+                    color: Color(0xFF4CAF50), // Verde éxito oficial
                   ),
                 ),
               ],
@@ -925,10 +1091,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
                 },
               ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
   }
 
   @override

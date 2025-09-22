@@ -28,10 +28,10 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
     final orderId = orderData['id'] ?? '';
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general Cubalink23
       appBar: AppBar(
         title: Text('Confirmación de Reserva'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         foregroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
@@ -49,8 +49,8 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.green[400]!,
-                    Colors.green[600]!,
+                    Color(0xFF37474F), // Azul gris oscuro Cubalink23
+                    Color(0xFF4CAF50), // Verde secciones Cubalink23
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
@@ -65,7 +65,7 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                     ),
                     child: Icon(
                       Icons.check_circle,
-                      color: Colors.green[600],
+                      color: Color(0xFF4CAF50), // Verde éxito Cubalink23
                       size: 48,
                     ),
                   ),
@@ -100,7 +100,7 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.blue[200]!, width: 2),
+                border: Border.all(color: Color(0xFF37474F).withOpacity(0.3), width: 2), // Azul gris oscuro Cubalink23
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity( 0.08),
@@ -115,7 +115,7 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                   Row(
                     children: [
                       Icon(Icons.confirmation_number, 
-                        color: Colors.blue[600], size: 20),
+                        color: Color(0xFF4CAF50), size: 20), // Verde secciones Cubalink23
                       SizedBox(width: 8),
                       Text(
                         'Código de Reserva',
@@ -183,7 +183,7 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                   Row(
                     children: [
                       Icon(Icons.flight_takeoff, 
-                        color: Theme.of(context).colorScheme.primary, size: 20),
+                        color: Color(0xFF4CAF50), size: 20), // Verde secciones Cubalink23
                       SizedBox(width: 8),
                       Text(
                         'Detalles del Vuelo',
@@ -228,7 +228,7 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
+                          color: Color(0xFFFF9800), // Naranja botones principales Cubalink23
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -321,7 +321,7 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                   Row(
                     children: [
                       Icon(Icons.person, 
-                        color: Colors.green[600], size: 20),
+                        color: Color(0xFF4CAF50), size: 20), // Verde secciones Cubalink23
                       SizedBox(width: 8),
                       Text(
                         'Información del Pasajero',
@@ -353,9 +353,9 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                   child: ElevatedButton(
                     onPressed: () => _checkOrderStatus(orderId),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[600],
+                      backgroundColor: Color(0xFF37474F), // Azul gris oscuro Cubalink23
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: 14), // Reducido de 16 a 14
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -389,7 +389,7 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                     ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: Colors.grey[400]!),
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: 14), // Reducido de 16 a 14
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

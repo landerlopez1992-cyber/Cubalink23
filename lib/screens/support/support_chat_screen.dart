@@ -24,7 +24,14 @@ class Message {
 enum MessageStatus { sending, sent, delivered, read }
 
 class SupportChatScreen extends StatefulWidget {
-  const SupportChatScreen({super.key});
+  final String? orderNumber;
+  final String? autoMessage;
+  
+  const SupportChatScreen({
+    super.key,
+    this.orderNumber,
+    this.autoMessage,
+  });
 
   @override
   _SupportChatScreenState createState() => _SupportChatScreenState();
@@ -47,6 +54,22 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   void initState() {
     super.initState();
     _checkAuthAndLoadData();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Obtener argumentos de navegación si existen
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null && args['autoMessage'] != null && _messages.isEmpty && currentUser != null && mounted) {
+      // Enviar mensaje automáticamente después de un pequeño delay
+      Future.delayed(Duration(seconds: 1), () {
+        if (mounted) {
+          _sendAutoMessage(args['autoMessage'] as String);
+        }
+      });
+    }
   }
 
   Future<void> _checkAuthAndLoadData() async {
@@ -266,6 +289,12 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     }
   }
 
+  void _sendAutoMessage(String message) {
+    if (message.isNotEmpty && !isSendingMessage) {
+      _sendRealMessage(message);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -277,9 +306,9 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

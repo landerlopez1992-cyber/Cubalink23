@@ -121,10 +121,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general Cubalink23
       appBar: AppBar(
         title: const Text('💳 Procesar Pago'), // ✅ TÍTULO GENÉRICO
-        backgroundColor: Colors.blue[600],
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -136,7 +136,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               width: double.infinity,
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                color: Colors.blue[600],
+                color: Color(0xFF37474F), // Azul gris oscuro Cubalink23
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),

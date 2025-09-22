@@ -1429,7 +1429,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
         print('✅ Vuelos obtenidos directamente: ${flights.length}');
         
         // Convertir a FlightOffer
-        final flightOffers = flights.map((flight) => FlightOffer.fromDuffelJson(flight)).toList();
+        final flightOffers = flights.map((flight) => FlightOffer.fromDuffelJson(flight, isRoundTrip: _isRoundTrip)).toList();
         
         // 🚫 CERRAR MODAL DE CARGA
         Navigator.of(context).pop();
@@ -1480,7 +1480,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
       }
 
       // Convertir a modelos FlightOffer
-      final offers = offersData.map((offerData) => FlightOffer.fromDuffelJson(offerData)).toList();
+      final offers = offersData.map((offerData) => FlightOffer.fromDuffelJson(offerData, isRoundTrip: _isRoundTrip)).toList();
       
       // 🚫 CERRAR MODAL DE CARGA
       Navigator.of(context).pop();

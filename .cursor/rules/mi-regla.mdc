@@ -1,6 +1,141 @@
-prohivido parar---
-description:no parar asta que cumpla la orden, no preguntar que si quiere cuando anteriormnete ordenen resolver el problema
-
-globs:
+---
 alwaysApply: true
 ---
+
+**REGLA CRÍTICA DE DESARROLLO - VERIFICACIÓN OBLIGATORIA PARA TODO**
+
+🚫 PROHIBIDO compilar/instalar sin verificar PRIMERO
+✅ OBLIGATORIO seguir este proceso EXACTO antes de cada compilación:
+
+**PASO 1 - VERIFICACIÓN COMPLETA DE CÓDIGO:**
+- Leer TODOS los archivos modificados para confirmar cambios
+- Usar grep/search para verificar que TODOS los cambios están aplicados
+- Confirmar que no hay errores de sintaxis en ningún archivo
+- Verificar que todas las importaciones son correctas
+- Revisar que no hay código duplicado o conflictivo
+
+**PASO 2 - VERIFICACIÓN DE FUNCIONALIDAD:**
+- Confirmar que los datos llegan correctamente del backend (usar curl)
+- Verificar que TODAS las funciones devuelven valores correctos
+- Comprobar que TODAS las URLs/APIs funcionan
+- Validar que TODAS las respuestas son reales (no demo/N/A)
+- Probar CADA endpoint y servicio manualmente
+
+**PASO 3 - VERIFICACIÓN CRÍTICA DE ELEMENTOS VISUALES:**
+🚨 **ATENCIÓN ESPECIAL A TODO LO VISUAL:**
+- Verificar que TODOS los elementos solicitados funcionan (logos, botones, textos, colores)
+- Probar URLs/recursos manualmente 
+- Confirmar que Image.network, iconos, y elementos visuales tienen fallbacks
+- Verificar que el tamaño, posición y colores son correctos
+- Hacer 100% de pruebas de que TODOS los elementos se mostrarán
+- Confirmar conectividad y carga de recursos externos
+
+**PASO 4 - VERIFICACIÓN DE DISEÑO Y UX:**
+- Confirmar que TODOS los AppBars están centrados y proporcionados
+- Verificar que TODOS los tamaños son correctos
+- Comprobar que TODOS los colores son oficiales Cubalink23
+- Validar que TODOS los elementos están alineados
+- Confirmar que TODOS los textos están corregidos
+- Verificar que no hay elementos cortados o mal posicionados
+
+**PASO 5 - VERIFICACIÓN DE DATOS Y CONTENIDO:**
+- Revisar que NO hay campos N/A, vacíos o demo
+- Confirmar que TODA la información es real y actualizada
+- Verificar que TODOS los modelos tienen datos correctos
+- Validar que TODAS las pantallas muestran contenido real
+- Comprobar que TODAS las funcionalidades están conectadas
+
+**PASO 6 - VERIFICACIÓN FINAL COMPLETA:**
+- Revisar ABSOLUTAMENTE TODOS los cambios solicitados
+- Confirmar que CADA elemento funciona perfectamente
+- Verificar que NO hay regresiones o problemas nuevos
+- Validar que TODA la funcionalidad está operativa
+- Hacer pruebas exhaustivas de CADA característica
+
+**PASO 7 - SOLO DESPUÉS DE VERIFICAR ABSOLUTAMENTE TODO:**
+- Ejecutar flutter build apk --debug UNA SOLA VEZ
+- Instalar en dispositivo UNA SOLA VEZ
+- Probar funcionalidad completa
+
+**PROHIBIDO ABSOLUTAMENTE:**
+- Compilar sin verificar al 100% TODOS los cambios
+- Instalar sin confirmar que TODO funciona
+- Decir "ya está arreglado" sin probar EXHAUSTIVAMENTE
+- Hacer múltiples compilaciones seguidas
+- Ignorar CUALQUIER problema o elemento solicitado
+- Compilar con esperanza de que "tal vez funcione"
+
+**OBLIGATORIO SIEMPRE:**
+- UNA SOLA compilación por sesión después de verificar TODO
+- Verificar 100% de TODOS los elementos antes de compilar
+- Confirmar con el usuario antes de instalar
+- Probar EXHAUSTIVAMENTE cada funcionalidad
+- NO compilar hasta estar 100% seguro de que TODO funciona**REGLA CRÍTICA DE DESARROLLO - VERIFICACIÓN OBLIGATORIA PARA TODO**
+
+🚫 PROHIBIDO compilar/instalar sin verificar PRIMERO
+✅ OBLIGATORIO seguir este proceso EXACTO antes de cada compilación:
+
+**PASO 1 - VERIFICACIÓN COMPLETA DE CÓDIGO:**
+- Leer TODOS los archivos modificados para confirmar cambios
+- Usar grep/search para verificar que TODOS los cambios están aplicados
+- Confirmar que no hay errores de sintaxis en ningún archivo
+- Verificar que todas las importaciones son correctas
+- Revisar que no hay código duplicado o conflictivo
+
+**PASO 2 - VERIFICACIÓN DE FUNCIONALIDAD:**
+- Confirmar que los datos llegan correctamente del backend (usar curl)
+- Verificar que TODAS las funciones devuelven valores correctos
+- Comprobar que TODAS las URLs/APIs funcionan
+- Validar que TODAS las respuestas son reales (no demo/N/A)
+- Probar CADA endpoint y servicio manualmente
+
+**PASO 3 - VERIFICACIÓN CRÍTICA DE ELEMENTOS VISUALES:**
+🚨 **ATENCIÓN ESPECIAL A TODO LO VISUAL:**
+- Verificar que TODOS los elementos solicitados funcionan (logos, botones, textos, colores)
+- Probar URLs/recursos manualmente 
+- Confirmar que Image.network, iconos, y elementos visuales tienen fallbacks
+- Verificar que el tamaño, posición y colores son correctos
+- Hacer 100% de pruebas de que TODOS los elementos se mostrarán
+- Confirmar conectividad y carga de recursos externos
+
+**PASO 4 - VERIFICACIÓN DE DISEÑO Y UX:**
+- Confirmar que TODOS los AppBars están centrados y proporcionados
+- Verificar que TODOS los tamaños son correctos
+- Comprobar que TODOS los colores son oficiales Cubalink23
+- Validar que TODOS los elementos están alineados
+- Confirmar que TODOS los textos están corregidos
+- Verificar que no hay elementos cortados o mal posicionados
+
+**PASO 5 - VERIFICACIÓN DE DATOS Y CONTENIDO:**
+- Revisar que NO hay campos N/A, vacíos o demo
+- Confirmar que TODA la información es real y actualizada
+- Verificar que TODOS los modelos tienen datos correctos
+- Validar que TODAS las pantallas muestran contenido real
+- Comprobar que TODAS las funcionalidades están conectadas
+
+**PASO 6 - VERIFICACIÓN FINAL COMPLETA:**
+- Revisar ABSOLUTAMENTE TODOS los cambios solicitados
+- Confirmar que CADA elemento funciona perfectamente
+- Verificar que NO hay regresiones o problemas nuevos
+- Validar que TODA la funcionalidad está operativa
+- Hacer pruebas exhaustivas de CADA característica
+
+**PASO 7 - SOLO DESPUÉS DE VERIFICAR ABSOLUTAMENTE TODO:**
+- Ejecutar flutter build apk --debug UNA SOLA VEZ
+- Instalar en dispositivo UNA SOLA VEZ
+- Probar funcionalidad completa
+
+**PROHIBIDO ABSOLUTAMENTE:**
+- Compilar sin verificar al 100% TODOS los cambios
+- Instalar sin confirmar que TODO funciona
+- Decir "ya está arreglado" sin probar EXHAUSTIVAMENTE
+- Hacer múltiples compilaciones seguidas
+- Ignorar CUALQUIER problema o elemento solicitado
+- Compilar con esperanza de que "tal vez funcione"
+
+**OBLIGATORIO SIEMPRE:**
+- UNA SOLA compilación por sesión después de verificar TODO
+- Verificar 100% de TODOS los elementos antes de compilar
+- Confirmar con el usuario antes de instalar
+- Probar EXHAUSTIVAMENTE cada funcionalidad
+- NO compilar hasta estar 100% seguro de que TODO funciona

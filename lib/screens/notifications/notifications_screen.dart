@@ -89,10 +89,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
+        foregroundColor: Colors.white, // Texto blanco sobre header oscuro
         title: Text(
           'Notificaciones',
           style: TextStyle(fontWeight: FontWeight.bold),

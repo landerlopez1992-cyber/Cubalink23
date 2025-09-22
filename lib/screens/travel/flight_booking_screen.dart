@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cubalink23/services/duffel_api_service.dart';
 import 'package:cubalink23/models/flight_offer.dart';
-import 'package:cubalink23/widgets/cubalink_loading_spinner.dart';
+// import 'package:cubalink23/widgets/cubalink_loading_spinner.dart'; // Archivo eliminado
 import 'passenger_info_screen.dart';
 import 'flight_results_screen.dart';
 
@@ -74,6 +74,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
             floating: false,
             pinned: true,
             backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
+            centerTitle: true,
             elevation: 0,
             leading: Container(
               margin: EdgeInsets.all(6), // Reducido de 8 a 6
@@ -339,7 +340,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                               // Dropdown de resultados "Desde"
                               if (_showFromDropdown && _fromSearchResults.isNotEmpty)
                                 Container(
-                                  margin: EdgeInsets.only(top: 10),
+                                  margin: EdgeInsets.only(top: 50),
                                   constraints: BoxConstraints(maxHeight: 300),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
@@ -528,7 +529,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                               // Dropdown de resultados "Hasta"
                               if (_showToDropdown && _toSearchResults.isNotEmpty)
                                 Container(
-                                  margin: EdgeInsets.only(top: 10),
+                                  margin: EdgeInsets.only(top: 50),
                                   constraints: BoxConstraints(maxHeight: 300),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
@@ -1137,10 +1138,9 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                                   SizedBox(
                                     width: 18, // Reducido de 20 a 18
                                     height: 18, // Reducido de 20 a 18
-                                    child: CubalinkLoadingSpinner(
-                                      size: 18,
-                                      primaryColor: Colors.white,
-                                      secondaryColor: Colors.white.withOpacity(0.3),
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      strokeWidth: 2,
                                     ),
                                   ),
                                   SizedBox(width: 10), // Reducido de 12 a 10
@@ -1230,10 +1230,9 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CubalinkLoadingSpinner(
-                        size: 60,
-                        primaryColor: Color(0xFF1976D2),
-                        secondaryColor: Color(0xFF64B5F6),
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1976D2)),
+                        strokeWidth: 4,
                       ),
                       SizedBox(height: 20),
                       Text(
@@ -1337,7 +1336,7 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
       print('🔍 DEBUG _isRoundTrip ANTES de crear FlightOffer: $_isRoundTrip');
 
       // Convertir a modelos FlightOffer usando los datos directos del backend
-      final offers = flightsData.map((flightData) => FlightOffer.fromBackendJson(flightData, isRoundTrip: _isRoundTrip)).toList();
+      final offers = flightsData.map((flightData) => FlightOffer.fromBackendJson(flightData)).toList();
       
       setState(() {
         _flightOffers = offers;

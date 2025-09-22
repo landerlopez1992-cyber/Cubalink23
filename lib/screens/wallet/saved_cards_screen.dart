@@ -142,7 +142,7 @@ class _SavedCardsScreenState extends State<SavedCardsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('✅ Tarjeta eliminada exitosamente'),
-              backgroundColor: Colors.green,
+              backgroundColor: Color(0xFF4CAF50), // Verde éxito oficial
             ),
           );
         }
@@ -151,7 +151,7 @@ class _SavedCardsScreenState extends State<SavedCardsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('❌ Error eliminando tarjeta: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: Color(0xFFDC2626), // Rojo error oficial
             ),
           );
         }
@@ -351,16 +351,16 @@ class _SavedCardsScreenState extends State<SavedCardsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2C2C2C)),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Mis Tarjetas Guardadas',
           style: TextStyle(
-            color: Color(0xFF2C2C2C),
+            color: Colors.white, // Texto sobre header oficial
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),

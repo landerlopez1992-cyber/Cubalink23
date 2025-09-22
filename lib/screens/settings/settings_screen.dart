@@ -65,21 +65,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         elevation: 0,
         title: Text(
           'Ajustes',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Colors.white, // Texto sobre header oficial
             fontSize: 18,
             fontWeight: FontWeight.w500,
           ),
         ),
         centerTitle: true,
         iconTheme: IconThemeData(
-          color: Theme.of(context).colorScheme.onPrimary,
+          color: Colors.white, // Texto sobre header oficial
         ),
       ),
       body: ListView(
@@ -103,7 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: ListTile(
                   leading: Icon(
                     Icons.admin_panel_settings,
-                    color: Colors.orange,
+                    color: Color(0xFFFF9800), // Naranja botones principales Cubalink23
                     size: 28,
                   ),
                   title: Text(
@@ -111,18 +111,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
-                      color: Colors.orange[800],
+                      color: Color(0xFF2C2C2C), // Texto principal Cubalink23
                     ),
                   ),
                   subtitle: Text(
                     'Panel de control administrativo',
                     style: TextStyle(
-                      color: Colors.orange[600],
+                      color: Color(0xFF666666), // Texto secundario Cubalink23
                     ),
                   ),
                   trailing: Icon(
                     Icons.chevron_right,
-                    color: Colors.orange,
+                    color: Color(0xFFFF9800), // Naranja botones principales Cubalink23
                   ),
                   onTap: () {
                     Navigator.push(
@@ -144,7 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: ListTile(
               leading: Icon(
                 Icons.language,
-                color: Theme.of(context).colorScheme.primary,
+                color: Color(0xFF4CAF50), // Verde secciones Cubalink23
               ),
               title: Text(
                 'Idioma',
@@ -166,7 +166,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: SwitchListTile(
               secondary: Icon(
                 _isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                color: Theme.of(context).colorScheme.primary,
+                color: Color(0xFF37474F), // Header oficial Cubalink23
               ),
               title: Text(
                 'Modo Oscuro',
@@ -183,7 +183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 });
                 _saveSetting('dark_mode', value);
               },
-              activeThumbColor: Theme.of(context).colorScheme.primary,
+              activeThumbColor: Color(0xFF37474F), // Header oficial Cubalink23
             ),
           ),
           
@@ -194,7 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: SwitchListTile(
               secondary: Icon(
                 Icons.notifications,
-                color: Theme.of(context).colorScheme.primary,
+                color: Color(0xFF37474F), // Header oficial Cubalink23
               ),
               title: Text(
                 'Notificaciones Push',
@@ -219,11 +219,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ? 'Notificaciones push activadas'
                         : 'Notificaciones push desactivadas'
                     ),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
                   ),
                 );
               },
-              activeThumbColor: Theme.of(context).colorScheme.primary,
+              activeThumbColor: Color(0xFF37474F), // Header oficial Cubalink23
             ),
           ),
           
@@ -234,7 +234,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: SwitchListTile(
               secondary: Icon(
                 Icons.email,
-                color: Theme.of(context).colorScheme.primary,
+                color: Color(0xFF37474F), // Header oficial Cubalink23
               ),
               title: Text(
                 'Emails Promocionales',
@@ -259,11 +259,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ? 'Emails promocionales activados'
                         : 'Emails promocionales desactivados'
                     ),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
                   ),
                 );
               },
-              activeThumbColor: Theme.of(context).colorScheme.primary,
+              activeThumbColor: Color(0xFF37474F), // Header oficial Cubalink23
             ),
           ),
         ],
@@ -297,7 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Idioma cambiado a Español'),
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
                         ),
                       );
                     }
@@ -321,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Language changed to English'),
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
                         ),
                       );
                     }

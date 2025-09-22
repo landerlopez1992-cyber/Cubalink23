@@ -105,7 +105,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general Cubalink23
       appBar: AppBar(
         title: Text(
           'Refiere y Gana',
@@ -114,7 +114,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: Theme.of(context).primaryColor,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         iconTheme: IconThemeData(color: Colors.white),
         elevation: 0,
       ),
@@ -165,14 +165,14 @@ class _ReferralScreenState extends State<ReferralScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).primaryColor,
-            Theme.of(context).primaryColor.withOpacity(0.8),
+            Color(0xFF37474F), // Azul gris oscuro Cubalink23
+            Color(0xFF4CAF50), // Verde secciones Cubalink23
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            color: Color(0xFF37474F).withOpacity(0.3), // Azul gris oscuro Cubalink23
             blurRadius: 12,
             offset: Offset(0, 6),
           ),

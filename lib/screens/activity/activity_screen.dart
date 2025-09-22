@@ -125,20 +125,20 @@ class _ActivityScreenState extends State<ActivityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         title: Text(
           'Mi Actividad',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Colors.white, // Texto sobre header oficial
             fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Colors.white, // Texto sobre header oficial
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -146,7 +146,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
           IconButton(
             icon: Icon(
               Icons.refresh,
-              color: Theme.of(context).colorScheme.onPrimary,
+              color: Colors.white, // Texto sobre header oficial
             ),
             onPressed: _loadUserActivity,
           ),
@@ -155,7 +155,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
       body: isLoading
           ? Center(
               child: CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
+                color: Color(0xFF37474F), // Header oficial Cubalink23
               ),
             )
           : activities.isEmpty

@@ -22,9 +22,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general oficial Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Header oficial Cubalink23
         title: Text(
           'Cambiar Contraseña',
           style: TextStyle(
@@ -48,8 +48,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
+                    Color(0xFF37474F), // Header oficial Cubalink23
+                    Color(0xFF4CAF50), // Verde secciones oficial
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -176,7 +176,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _changePassword,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor: Color(0xFFFF9800), // Naranja oficial Cubalink23
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
@@ -440,7 +440,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Color(0xFF4CAF50), // Verde éxito oficial
             duration: Duration(seconds: 3),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -480,7 +480,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
               ],
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: Color(0xFFDC2626), // Rojo error oficial
             duration: Duration(seconds: 4),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(

@@ -810,15 +810,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
           'Inicio',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Colors.white, // Texto blanco sobre fondo azul gris
             fontSize: 18,
             fontWeight: FontWeight.w500,
           ),
@@ -1133,9 +1133,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+        bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white70,
         currentIndex: 0,
@@ -1145,7 +1145,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               // Ya estamos en inicio
               break;
             case 1:
-              Navigator.pushNamed(context, '/news');
+              Navigator.pushNamed(context, '/favorite-flights');
               break;
             case 2:
               Navigator.pushNamed(context, '/settings');
@@ -1161,8 +1161,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             label: 'Inicio',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.newspaper_outlined),
-            label: 'Noticias',
+            icon: Icon(Icons.favorite, color: Color(0xFFFF9800)), // Naranja oficial Cubalink23
+            label: 'Favoritos',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
@@ -1265,9 +1265,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.secondary,
-            Theme.of(context).colorScheme.tertiary,
+            Color(0xFF37474F), // Azul gris oscuro Cubalink23
+            Color(0xFF4CAF50), // Verde secciones Cubalink23
+            Color(0xFFFF9800), // Naranja botones principales Cubalink23
           ],
         ),
       ),
@@ -1666,7 +1666,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         height: 200,
         child: Center(
           child: CircularProgressIndicator(
-            color: Theme.of(context).colorScheme.primary,
+            color: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
           ),
         ),
       );
@@ -1704,17 +1704,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 4),
           child: Row(
-            children: [
-              Icon(Icons.restaurant, color: Theme.of(context).colorScheme.primary, size: 24),
-              SizedBox(width: 8),
-              Text(
-                'Productos Alimenticios',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
+                children: [
+                  Icon(Icons.restaurant, color: Color(0xFF4CAF50), size: 24), // Verde secciones Cubalink23
+                  SizedBox(width: 8),
+                  Text(
+                    'Productos Alimenticios',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2C2C2C), // Texto principal Cubalink23
+                    ),
+                  ),
             ],
           ),
         ),
@@ -1816,7 +1816,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: Color(0xFF4CAF50), // Verde éxito Cubalink23
                                       ),
                                     ),
                                     Text(
@@ -1832,7 +1832,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Color(0xFFFF9800), // Naranja botones principales Cubalink23
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
@@ -1901,14 +1901,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           padding: EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: [
-              Icon(Icons.category, color: Theme.of(context).colorScheme.primary, size: 24),
+              Icon(Icons.category, color: Color(0xFF4CAF50), size: 24), // Verde secciones Cubalink23
               SizedBox(width: 8),
               Text(
                 'Categorías',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Color(0xFF2C2C2C), // Texto principal Cubalink23
                 ),
               ),
             ],
@@ -1920,7 +1920,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           child: _categories.isEmpty
               ? Center(
                   child: CircularProgressIndicator(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
                   ),
                 )
               : ListView.builder(
@@ -2017,7 +2017,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Color(0xFF2C2C2C), // Texto principal Cubalink23
                 ),
               ),
               SizedBox(width: 8),
@@ -2045,7 +2045,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           child: _bestSellers.isEmpty
               ? Center(
                   child: CircularProgressIndicator(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
                   ),
                 )
               : ListView.builder(
@@ -2162,7 +2162,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).colorScheme.primary,
+                                            color: Color(0xFF4CAF50), // Verde éxito Cubalink23
                                           ),
                                         ),
                                         Text(
@@ -2178,7 +2178,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                       width: 32,
                                       height: 32,
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: Color(0xFFFF9800), // Naranja botones principales Cubalink23
                                         shape: BoxShape.circle,
                                       ),
                                       child: IconButton(
@@ -2398,9 +2398,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF2E7D32), // Verde oscuro
-              Color(0xFF4CAF50), // Verde medio
-              Color(0xFF66BB6A), // Verde claro
+              Color(0xFF37474F), // Azul gris oscuro Cubalink23
+              Color(0xFF4CAF50), // Verde secciones Cubalink23
+              Color(0xFFFF9800), // Naranja botones principales Cubalink23
             ],
           ),
           boxShadow: [
@@ -2523,7 +2523,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     Text(
                       'Aplicar Ahora',
                       style: TextStyle(
-                        color: Color(0xFF2E7D32),
+                        color: Color(0xFF37474F), // Azul gris oscuro Cubalink23
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
@@ -2531,7 +2531,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     SizedBox(width: 6),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      color: Color(0xFF2E7D32),
+                      color: Color(0xFF37474F), // Azul gris oscuro Cubalink23
                       size: 18,
                     ),
                   ],
@@ -2572,9 +2572,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.info_outline, color: Color(0xFF2E7D32), size: 16),
+                        Icon(Icons.info_outline, color: Color(0xFF4CAF50), size: 16), // Verde secciones Cubalink23
                         SizedBox(width: 6),
-                        Text('Legal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
+                        Text('Legal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2C2C2C))), // Texto principal Cubalink23
                       ],
                     ),
                     SizedBox(height: 8),
@@ -2601,9 +2601,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.contact_phone, color: Color(0xFF2E7D32), size: 16),
+                        Icon(Icons.contact_phone, color: Color(0xFF4CAF50), size: 16), // Verde secciones Cubalink23
                         SizedBox(width: 6),
-                        Text('Contacto', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
+                        Text('Contacto', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2C2C2C))), // Texto principal Cubalink23
                       ],
                     ),
                     SizedBox(height: 8),
@@ -2642,7 +2642,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               // Acreditaciones
               Row(
                 children: [
-                  Icon(Icons.verified, color: Color(0xFF2E7D32), size: 16),
+                  Icon(Icons.verified, color: Color(0xFF4CAF50), size: 16), // Verde secciones Cubalink23
                   SizedBox(width: 6),
                   Text('Miembro IATA', style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w500)),
                 ],

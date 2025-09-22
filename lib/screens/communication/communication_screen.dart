@@ -7,9 +7,9 @@ class CommunicationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5), // Fondo general Cubalink23
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Color(0xFF37474F), // Azul gris oscuro oficial Cubalink23
         title: Text(
           'Comunicación',
           style: TextStyle(
@@ -98,7 +98,7 @@ class CommunicationScreen extends StatelessWidget {
                     icon: Icons.chat_bubble,
                     title: 'Mensajería',
                     subtitle: 'Enviar mensajes, fotos y archivos',
-                    color: Colors.green,
+                    color: Color(0xFF4CAF50), // Verde secciones Cubalink23
                     onTap: () {
                       Navigator.push(
                         context,
