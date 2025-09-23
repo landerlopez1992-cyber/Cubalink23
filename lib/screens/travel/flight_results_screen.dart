@@ -398,7 +398,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             ),
                           ),
                           Text(
-                            flight.origin,
+                            flight.rawData['origin_airport'] ?? flight.origin,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -474,7 +474,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             ),
                           ),
                           Text(
-                            flight.destination,
+                            flight.rawData['destination_airport'] ?? flight.destination,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],

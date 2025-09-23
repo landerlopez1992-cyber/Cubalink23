@@ -114,26 +114,30 @@ class _FavoriteFlightsScreenState extends State<FavoriteFlightsScreen> {
       final favoritesKey = 'favorite_flights';
       final existingFavorites = prefs.getStringList(favoritesKey) ?? [];
       
-      // Crear objeto del vuelo para comparar
-      final flightData = {
-        'id': flight.id,
-        'airline': flight.airline,
-        'flightNumber': flight.flightNumber,
-        'origin': flight.origin,
-        'destination': flight.destination,
-        'formattedPrice': flight.formattedPrice,
-        'duration': flight.duration,
-        'stopsText': flight.stopsText,
-        'formattedDepartureTime': flight.formattedDepartureTime,
-        'formattedArrivalTime': flight.formattedArrivalTime,
-        'airlineCode': flight.airlineCode,
-        'rawData': flight.rawData,
-        'addedAt': DateTime.now().toIso8601String(),
-      };
+      print('🔍 DEBUG _removeFavorite:');
+      print('🔍 Flight ID: ${flight.id}');
+      print('🔍 Existing favorites count: ${existingFavorites.length}');
       
-      final flightJson = jsonEncode(flightData);
-      existingFavorites.remove(flightJson);
-      await prefs.setStringList(favoritesKey, existingFavorites);
+      // Buscar y eliminar por ID del vuelo
+      final updatedFavorites = existingFavorites.where((favoriteJson) {
+        try {
+          final favoriteData = jsonDecode(favoriteJson) as Map<String, dynamic>;
+          final favoriteId = favoriteData['id']?.toString() ?? '';
+          final flightId = flight.id.toString();
+          
+          print('🔍 Comparing: $favoriteId vs $flightId');
+          
+          // Eliminar si coincide el ID
+          return favoriteId != flightId;
+        } catch (e) {
+          print('❌ Error parsing favorite: $e');
+          return true; // Mantener si hay error
+        }
+      }).toList();
+      
+      print('🔍 Updated favorites count: ${updatedFavorites.length}');
+      
+      await prefs.setStringList(favoritesKey, updatedFavorites);
       
       // Recargar la lista
       await _loadFavoriteFlights();

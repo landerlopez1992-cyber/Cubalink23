@@ -227,19 +227,51 @@ class FlightOffer {
         duration = json['duration']?.toString() ?? 'N/A';
         stops = int.tryParse(json['stops'].toString()) ?? 0;
         
-        // Crear segmento simple para backend local
+        // Crear segmentos para backend local
         if (json['origin_airport'] != null && json['destination_airport'] != null) {
-          segments.add(FlightSegment(
-            id: id,
-            departingAt: departureTime,
-            arrivingAt: arrivalTime,
-            originAirport: '${json['origin_airport']} - ${json['origin_airport']}',
-            destinationAirport: '${json['destination_airport']} - ${json['destination_airport']}',
-            airline: airline,
-            flightNumber: json['airline_code'] ?? '',
-            aircraft: 'Unknown Aircraft',
-            duration: duration,
-          ));
+          final stops = int.tryParse(json['stops'].toString()) ?? 0;
+          
+          if (stops > 0) {
+            // Vuelo con paradas - crear segmentos múltiples
+            // Segmento 1: Origen → Parada intermedia
+            segments.add(FlightSegment(
+              id: '${id}_1',
+              departingAt: departureTime,
+              arrivingAt: 'TBD', // Tiempo estimado de parada
+              originAirport: json['origin_airport'],
+              destinationAirport: 'PARADA', // Aeropuerto de parada
+              airline: airline,
+              flightNumber: json['flight_number'] ?? json['airline_code'] ?? '',
+              aircraft: 'Unknown Aircraft',
+              duration: 'TBD',
+            ));
+            
+            // Segmento 2: Parada intermedia → Destino final
+            segments.add(FlightSegment(
+              id: '${id}_2',
+              departingAt: 'TBD', // Tiempo de salida de parada
+              arrivingAt: arrivalTime,
+              originAirport: 'PARADA', // Aeropuerto de parada
+              destinationAirport: json['destination_airport'],
+              airline: airline,
+              flightNumber: json['flight_number'] ?? json['airline_code'] ?? '',
+              aircraft: 'Unknown Aircraft',
+              duration: 'TBD',
+            ));
+          } else {
+            // Vuelo directo - crear un solo segmento
+            segments.add(FlightSegment(
+              id: id,
+              departingAt: departureTime,
+              arrivingAt: arrivalTime,
+              originAirport: json['origin_airport'],
+              destinationAirport: json['destination_airport'],
+              airline: airline,
+              flightNumber: json['flight_number'] ?? json['airline_code'] ?? '',
+              aircraft: 'Unknown Aircraft',
+              duration: duration,
+            ));
+          }
         }
       }
 

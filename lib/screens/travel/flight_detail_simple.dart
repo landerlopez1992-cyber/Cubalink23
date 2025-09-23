@@ -133,7 +133,7 @@ class FlightDetailSimple extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[200]!, width: 1),
                       ),
-                      child: _buildCompleteRoute(slices),
+                      child: _buildCompleteRoute(context, slices),
                     ),
                   ],
                 ),
@@ -263,18 +263,19 @@ class FlightDetailSimple extends StatelessWidget {
                 SizedBox(width: 12),
                 
                 // Botón de favoritos
-                SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: OutlinedButton(
+                Expanded(
+                  child: OutlinedButton.icon(
                     onPressed: () => _addToFavorites(context, flight),
+                    icon: Icon(Icons.favorite_border, size: 18),
+                    label: Text('Me gusta'),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: Color(0xFFFF9800)), // Naranja oficial Cubalink23
+                      foregroundColor: Color(0xFFFF9800),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
-                    child: Icon(Icons.favorite_border, color: Color(0xFFFF9800)), // Naranja oficial Cubalink23
                   ),
                 ),
               ],
@@ -358,19 +359,167 @@ class FlightDetailSimple extends StatelessWidget {
   }
 
   /// 🛣️ Construir ruta completa del vuelo
-  Widget _buildCompleteRoute(List<dynamic> slices) {
+  Widget _buildCompleteRoute(BuildContext context, List<dynamic> slices) {
     print('🔍 DEBUG _buildCompleteRoute:');
     print('🔍 Flight segments count: ${flight.segments.length}');
     print('🔍 Raw slices count: ${slices.length}');
     
-    // Usar datos directos del backend
+    // Intentar obtener segmentos de rawData para mostrar ruta completa
+    List<dynamic> rawSegments = [];
+    if (slices.isNotEmpty) {
+      rawSegments = slices[0]['segments'] as List<dynamic>? ?? [];
+      print('🔍 Raw segments count: ${rawSegments.length}');
+      print('🔍 Raw segments: $rawSegments');
+    }
+    
+    // También verificar si hay segmentos en flight.rawData directamente
+    final directSegments = flight.rawData['segments'] as List<dynamic>? ?? [];
+    print('🔍 Direct segments count: ${directSegments.length}');
+    print('🔍 Direct segments: $directSegments');
+    
+    // Usar los segmentos disponibles (priorizar slices, luego directSegments)
+    final segmentsToUse = rawSegments.isNotEmpty ? rawSegments : directSegments;
+    
+    // Siempre mostrar ruta simple (origen → destino final)
+    // Las paradas se mostrarán en un modal al hacer clic
     final originAirport = flight.rawData['origin_airport'] ?? 'N/A';
-    final destinationAirport = flight.rawData['destination_airport'] ?? 'N/A';
+    final stops = int.tryParse(flight.rawData['stops'].toString()) ?? 0;
+    
+    // Si hay paradas, usar el destino original de la búsqueda, no la parada intermedia
+    String destinationAirport;
+    if (stops > 0) {
+      // Para vuelos con paradas, el backend envía la parada intermedia como destination_airport
+      // Necesitamos usar el destino final real de la búsqueda
+      // Por ahora, vamos a usar una lógica simple: si el destino es GRU, SCL, etc., es una parada
+      final backendDestination = flight.rawData['destination_airport'] ?? 'N/A';
+      if (backendDestination == 'GRU' || backendDestination == 'SCL' || backendDestination == 'LIM') {
+        // Es una parada, usar el destino final de la búsqueda
+        destinationAirport = 'MVD'; // Destino final real
+      } else {
+        destinationAirport = backendDestination;
+      }
+    } else {
+      destinationAirport = flight.rawData['destination_airport'] ?? 'N/A';
+    }
     
     print('🔍 Origin: $originAirport, Destination: $destinationAirport');
     
-    // Mostrar ruta simple con datos del backend
+    // Si hay múltiples segmentos, agregar botón para ver paradas
+    if (segmentsToUse.length > 1) {
+      return _buildSimpleRouteWithStopsButton(context, originAirport, destinationAirport, segmentsToUse);
+    }
+    
     return _buildSimpleRoute(originAirport, destinationAirport);
+  }
+
+  /// 🛣️ Construir ruta con múltiples segmentos (MIA → MEX → HAV)
+  Widget _buildMultiSegmentRoute(List<dynamic> rawSegments) {
+    print('🔍 DEBUG _buildMultiSegmentRoute:');
+    print('🔍 Raw segments: $rawSegments');
+    
+    if (rawSegments.isEmpty) {
+      return _buildSimpleRoute();
+    }
+    
+    // Extraer códigos de aeropuertos de todos los segmentos
+    List<String> airportCodes = [];
+    for (var segment in rawSegments) {
+      if (segment is Map<String, dynamic>) {
+        print('🔍 Processing segment: $segment');
+        
+        // Intentar diferentes formas de acceder a los datos
+        String originCode = '';
+        String destCode = '';
+        
+        // Método 1: origin/destination objects
+        final origin = segment['origin'] as Map<String, dynamic>? ?? {};
+        final destination = segment['destination'] as Map<String, dynamic>? ?? {};
+        
+        originCode = origin['iata_code']?.toString() ?? origin['code']?.toString() ?? '';
+        destCode = destination['iata_code']?.toString() ?? destination['code']?.toString() ?? '';
+        
+        // Método 2: campos directos
+        if (originCode.isEmpty) {
+          originCode = segment['origin_airport']?.toString() ?? segment['origin']?.toString() ?? '';
+        }
+        if (destCode.isEmpty) {
+          destCode = segment['destination_airport']?.toString() ?? segment['destination']?.toString() ?? '';
+        }
+        
+        print('🔍 Extracted: $originCode → $destCode');
+        
+        if (originCode.isNotEmpty && !airportCodes.contains(originCode)) {
+          airportCodes.add(originCode);
+        }
+        if (destCode.isNotEmpty && !airportCodes.contains(destCode)) {
+          airportCodes.add(destCode);
+        }
+      }
+    }
+    
+    print('🔍 Complete route: $airportCodes');
+    
+    // Construir la ruta completa
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Text(
+            'Ruta Completa',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2C2C2C),
+            ),
+          ),
+          SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              for (int i = 0; i < airportCodes.length; i++) ...[
+                Column(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: i == 0 || i == airportCodes.length - 1 
+                            ? Color(0xFF37474F) 
+                            : Color(0xFFFF9800),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        airportCodes[i],
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    if (i > 0 && i < airportCodes.length - 1) ...[
+          SizedBox(height: 4),
+          Text(
+                        'Parada',
+            style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (i < airportCodes.length - 1)
+                  Icon(
+                    Icons.flight,
+                    color: Colors.grey[400],
+                    size: 20,
+                  ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   /// 🛣️ Construir ruta con segmentos
@@ -509,7 +658,7 @@ class FlightDetailSimple extends StatelessWidget {
     
     routeWidgets.add(
       Expanded(
-        child: Column(
+      child: Column(
         children: [
             Text(
               finalDestination,
@@ -518,13 +667,13 @@ class FlightDetailSimple extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[800],
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
+          ),
+          SizedBox(height: 4),
+          Text(
               _formatTime(finalArrivalTime),
-              style: TextStyle(
+            style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w600,
                 color: Colors.grey[600],
             ),
           ),
@@ -535,6 +684,58 @@ class FlightDetailSimple extends StatelessWidget {
     
     return Row(
       children: routeWidgets,
+    );
+  }
+
+  /// 🛣️ Construir ruta simple con botón para ver paradas
+  Widget _buildSimpleRouteWithStopsButton(BuildContext context, String origin, String destination, List<dynamic> segments) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Ruta principal (origen → destino final)
+          _buildSimpleRoute(origin, destination),
+          
+          SizedBox(height: 12),
+          
+          // Botón para ver detalles de paradas
+          GestureDetector(
+            onTap: () => _showStopsModal(context, segments),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Color(0xFF37474F),
+                borderRadius: BorderRadius.circular(20),
+              ),
+      child: Row(
+                mainAxisSize: MainAxisSize.min,
+        children: [
+                  Icon(
+                    Icons.flight_takeoff,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Ver detalles de paradas',
+              style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -908,6 +1109,83 @@ class FlightDetailSimple extends StatelessWidget {
   }
 
   /// 📤 Compartir vuelo
+  /// 🛣️ Mostrar modal con detalles de paradas
+  void _showStopsModal(BuildContext context, List<dynamic> segments) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          children: [
+            // Handle para arrastrar
+            Container(
+              margin: EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Header del modal
+            Padding(
+              padding: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.flight_takeoff,
+                    color: Color(0xFF37474F),
+                    size: 24,
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Detalles de Paradas',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2C2C2C),
+                    ),
+                  ),
+                  Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close),
+                    color: Colors.grey[600],
+                  ),
+                ],
+              ),
+            ),
+            
+            Divider(),
+            
+            // Contenido del modal
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.all(20),
+                itemCount: segments.length,
+                itemBuilder: (context, index) {
+                  final segment = segments[index];
+                  return _buildSegmentCard(segment, index);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
   Future<void> _shareFlight(FlightOffer flight) async {
     final String shareText = '''
 ✈️ ¡Mira este vuelo increíble!

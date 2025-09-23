@@ -287,12 +287,21 @@ class _FlightDetailFavoritesState extends State<FlightDetailFavorites> {
 
   /// 🔍 Buscar vuelos similares
   void _searchSimilarFlights(BuildContext context, FlightOffer flight) {
+    // Usar los datos reales guardados en lugar de los getters que pueden devolver N/A
+    final origin = flight.rawData['origin_airport'] ?? flight.origin;
+    final destination = flight.rawData['destination_airport'] ?? flight.destination;
+    
+    print('🔍 DEBUG _searchSimilarFlights:');
+    print('🔍 Origin: $origin');
+    print('🔍 Destination: $destination');
+    print('🔍 RawData: ${flight.rawData}');
+    
     Navigator.pushNamed(
       context,
       '/flight-search',
       arguments: {
-        'origin': flight.origin,
-        'destination': flight.destination,
+        'origin': origin,
+        'destination': destination,
         'airline': flight.airline,
       },
     );

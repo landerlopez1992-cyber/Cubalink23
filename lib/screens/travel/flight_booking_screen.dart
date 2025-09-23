@@ -54,10 +54,41 @@ class _FlightBookingScreenState extends State<FlightBookingScreen> {
   Timer? _toSearchTimer;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadArguments();
+  }
+
+  @override
   void dispose() {
     _fromSearchTimer?.cancel();
     _toSearchTimer?.cancel();
     super.dispose();
+  }
+
+  /// 🔍 Cargar argumentos de navegación (desde favoritos)
+  void _loadArguments() {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null) {
+      print('🔍 DEBUG _loadArguments: $args');
+      
+      final origin = args['origin']?.toString();
+      final destination = args['destination']?.toString();
+      
+      if (origin != null && origin.isNotEmpty && origin != 'N/A') {
+        setState(() {
+          _fromController.text = origin;
+        });
+        print('🔍 Origin set to: $origin');
+      }
+      
+      if (destination != null && destination.isNotEmpty && destination != 'N/A') {
+        setState(() {
+          _toController.text = destination;
+        });
+        print('🔍 Destination set to: $destination');
+      }
+    }
   }
 
   @override
