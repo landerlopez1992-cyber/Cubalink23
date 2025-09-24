@@ -164,7 +164,8 @@ def search_flights():
         origin = data.get('origin', '')
         destination = data.get('destination', '')
         departure_date = data.get('departure_date', '')
-        passengers = data.get('passengers', 1)
+        passengers_data = data.get('passengers', [{"type": "adult"}])
+        passengers_count = len(passengers_data) if isinstance(passengers_data, list) else 1
         cabin_class_raw = data.get('cabin_class', 'economy')
         
         # Mapear cabin_class a valores válidos de Duffel
@@ -183,7 +184,7 @@ def search_flights():
         print(f"🎯 Cabin class mapeado: '{cabin_class_raw}' → '{cabin_class}'")
         
         print(f"🔍 Buscando vuelos: {origin} → {destination}")
-        print(f"📅 Fecha: {departure_date} | Pasajeros: {passengers}")
+        print(f"📅 Fecha: {departure_date} | Pasajeros: {passengers_count}")
         
         if not DUFFEL_API_KEY:
             return jsonify({"error": "API key no configurada"}), 500
@@ -207,7 +208,7 @@ def search_flights():
                             "departure_date": departure_date
                         }
                     ],
-                    "passengers": [{"type": "adult"}] * passengers,
+                    "passengers": passengers_data,
                     "cabin_class": cabin_class
                 }
             }
