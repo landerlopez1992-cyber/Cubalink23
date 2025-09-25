@@ -601,78 +601,83 @@ def search_flights():
                     offers_data = offers_response.json()
                     offers = offers_data.get('data', [])
                     print(f"🔍 DEBUG: {len(offers)} ofertas recibidas de Duffel")
-                    
-                    # Transformar a formato Flutter
-                    for i, offer in enumerate(offers):
-                        print(f"🔍 DEBUG: Procesando oferta {i+1}/{len(offers)}: {offer.get('id', 'sin_id')}")
-                        if offer.get('slices') and len(offer['slices']) > 0:
-                            slice_data = offer['slices'][0]
-                            print(f"🔍 DEBUG: Slice encontrado con {len(slice_data.get('segments', []))} segmentos")
-                            if slice_data.get('segments') and len(slice_data['segments']) > 0:
-                                first_segment = slice_data['segments'][0]
-                                print(f"🔍 DEBUG: Primer segmento: origin={first_segment.get('origin')}, destination={first_segment.get('destination')}")
+                    print(f"🔍 DEBUG: Respuesta completa: {offers_data}")
+                else:
+                    print(f"❌ ERROR: Duffel API respondió con código {offers_response.status_code}")
+                    print(f"❌ ERROR: Respuesta: {offers_response.text}")
+                    offers = []
+                
+                # Transformar a formato Flutter
+                for i, offer in enumerate(offers):
+                    print(f"🔍 DEBUG: Procesando oferta {i+1}/{len(offers)}: {offer.get('id', 'sin_id')}")
+                    if offer.get('slices') and len(offer['slices']) > 0:
+                        slice_data = offer['slices'][0]
+                        print(f"🔍 DEBUG: Slice encontrado con {len(slice_data.get('segments', []))} segmentos")
+                        if slice_data.get('segments') and len(slice_data['segments']) > 0:
+                            first_segment = slice_data['segments'][0]
+                            print(f"🔍 DEBUG: Primer segmento: origin={first_segment.get('origin')}, destination={first_segment.get('destination')}")
+                            
+                            # Obtener información de aerolínea
+                            airline_name = 'Aerolínea'
+                            airline_code = ''
+                            airline_logo = ''
+                            
+                            if first_segment.get('marketing_carrier'):
+                                carrier = first_segment['marketing_carrier']
+                                airline_name = carrier.get('name', 'Aerolínea')
+                                airline_code = carrier.get('iata_code', '')
+                                if carrier.get('logo_symbol_url'):
+                                    # Convertir SVG a PNG para compatibilidad con Android
+                                    svg_url = carrier['logo_symbol_url']
+                                    airline_logo = svg_url.replace('.svg', '.png')
                                 
-                                # Obtener información de aerolínea
-                                airline_name = 'Aerolínea'
-                                airline_code = ''
-                                airline_logo = ''
-                                
-                                if first_segment.get('marketing_carrier'):
-                                    carrier = first_segment['marketing_carrier']
-                                    airline_name = carrier.get('name', 'Aerolínea')
-                                    airline_code = carrier.get('iata_code', '')
-                                    if carrier.get('logo_symbol_url'):
-                                        # Convertir SVG a PNG para compatibilidad con Android
-                                        svg_url = carrier['logo_symbol_url']
-                                        airline_logo = svg_url.replace('.svg', '.png')
-                                
-                                # Extraer origen y destino de forma segura
-                                origin_data = first_segment.get('origin') or {}
-                                destination_data = first_segment.get('destination') or {}
-                                
-                                # Construir información detallada de segmentos
-                                segment_details = []
-                                for segment in slice_data['segments']:
-                                    segment_origin = segment.get('origin', {}) if isinstance(segment.get('origin'), dict) else {}
-                                    segment_destination = segment.get('destination', {}) if isinstance(segment.get('destination'), dict) else {}
-                                    marketing_carrier = segment.get('marketing_carrier', {}) if isinstance(segment.get('marketing_carrier'), dict) else {}
-                                    operating_carrier = segment.get('operating_carrier', {}) if isinstance(segment.get('operating_carrier'), dict) else {}
-                                    aircraft_data = segment.get('aircraft', {}) if isinstance(segment.get('aircraft'), dict) else {}
+                            # Extraer origen y destino de forma segura
+                            origin_data = first_segment.get('origin') or {}
+                            destination_data = first_segment.get('destination') or {}
+                            
+                            # Construir información detallada de segmentos
+                            segment_details = []
+                            for segment in slice_data['segments']:
+                                segment_origin = segment.get('origin', {}) if isinstance(segment.get('origin'), dict) else {}
+                                segment_destination = segment.get('destination', {}) if isinstance(segment.get('destination'), dict) else {}
+                                marketing_carrier = segment.get('marketing_carrier', {}) if isinstance(segment.get('marketing_carrier'), dict) else {}
+                                operating_carrier = segment.get('operating_carrier', {}) if isinstance(segment.get('operating_carrier'), dict) else {}
+                                aircraft_data = segment.get('aircraft', {}) if isinstance(segment.get('aircraft'), dict) else {}
 
-                                    segment_details.append({
-                                        'origin_airport': segment_origin.get('iata_code') or segment_origin.get('code') or '',
-                                        'origin_name': segment_origin.get('name') or segment_origin.get('city'),
-                                        'origin_terminal': segment_origin.get('terminal'),
-                                        'destination_airport': segment_destination.get('iata_code') or segment_destination.get('code') or '',
-                                        'destination_name': segment_destination.get('name') or segment_destination.get('city'),
-                                        'destination_terminal': segment_destination.get('terminal'),
-                                        'departing_at': segment.get('departing_at', ''),
-                                        'arriving_at': segment.get('arriving_at', ''),
-                                        'duration': segment.get('duration', ''),
-                                        'marketing_carrier': marketing_carrier,
-                                        'operating_carrier': operating_carrier,
-                                        'aircraft': aircraft_data,
-                                        'flight_number': segment.get('flight_number') or segment.get('marketing_carrier_flight_number') or segment.get('operating_carrier_flight_number') or ''
-                                    })
-                                
-                                flight_data = {
-                                    'id': offer['id'],
-                                    'airline': airline_name,
-                                    'airline_code': airline_code,
-                                    'airline_logo': airline_logo,
-                                    'departureTime': first_segment.get('departing_at', ''),
-                                    'arrivalTime': first_segment.get('arriving_at', ''),
-                                    'duration': slice_data.get('duration', ''),
-                                    'stops': len(slice_data['segments']) - 1,
-                                    'total_amount': float(offer.get('total_amount', '0')),  # CORREGIR: usar total_amount
-                                    'total_currency': offer.get('total_currency', 'USD'),  # CORREGIR: usar total_currency
-                                    'price': float(offer.get('total_amount', '0')),  # Mantener para compatibilidad
-                                    'currency': offer.get('total_currency', 'USD'),  # Mantener para compatibilidad
-                                    'origin_airport': origin_data.get('iata_code', origin),
-                                    'destination_airport': destination_data.get('iata_code', destination),
-                                    'segments': segment_details  # Agregar información detallada de segmentos
-                                }
-                                flights.append(flight_data)
+                                segment_details.append({
+                                    'origin_airport': segment_origin.get('iata_code') or segment_origin.get('code') or '',
+                                    'origin_name': segment_origin.get('name') or segment_origin.get('city'),
+                                    'origin_terminal': segment_origin.get('terminal'),
+                                    'destination_airport': segment_destination.get('iata_code') or segment_destination.get('code') or '',
+                                    'destination_name': segment_destination.get('name') or segment_destination.get('city'),
+                                    'destination_terminal': segment_destination.get('terminal'),
+                                    'departing_at': segment.get('departing_at', ''),
+                                    'arriving_at': segment.get('arriving_at', ''),
+                                    'duration': segment.get('duration', ''),
+                                    'marketing_carrier': marketing_carrier,
+                                    'operating_carrier': operating_carrier,
+                                    'aircraft': aircraft_data,
+                                    'flight_number': segment.get('flight_number') or segment.get('marketing_carrier_flight_number') or segment.get('operating_carrier_flight_number') or ''
+                                })
+                            
+                            flight_data = {
+                                'id': offer['id'],
+                                'airline': airline_name,
+                                'airline_code': airline_code,
+                                'airline_logo': airline_logo,
+                                'departureTime': first_segment.get('departing_at', ''),
+                                'arrivalTime': first_segment.get('arriving_at', ''),
+                                'duration': slice_data.get('duration', ''),
+                                'stops': len(slice_data['segments']) - 1,
+                                'total_amount': float(offer.get('total_amount', '0')),  # CORREGIR: usar total_amount
+                                'total_currency': offer.get('total_currency', 'USD'),  # CORREGIR: usar total_currency
+                                'price': float(offer.get('total_amount', '0')),  # Mantener para compatibilidad
+                                'currency': offer.get('total_currency', 'USD'),  # Mantener para compatibilidad
+                                'origin_airport': origin_data.get('iata_code', origin),
+                                'destination_airport': destination_data.get('iata_code', destination),
+                                'segments': segment_details  # Agregar información detallada de segmentos
+                            }
+                            flights.append(flight_data)
             
             print(f"✈️ Vuelos Duffel encontrados: {len(flights)}")
         
