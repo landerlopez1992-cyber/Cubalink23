@@ -600,13 +600,17 @@ def search_flights():
                 if offers_response.status_code == 200:
                     offers_data = offers_response.json()
                     offers = offers_data.get('data', [])
+                    print(f"🔍 DEBUG: {len(offers)} ofertas recibidas de Duffel")
                     
                     # Transformar a formato Flutter
-                    for offer in offers:
+                    for i, offer in enumerate(offers):
+                        print(f"🔍 DEBUG: Procesando oferta {i+1}/{len(offers)}: {offer.get('id', 'sin_id')}")
                         if offer.get('slices') and len(offer['slices']) > 0:
                             slice_data = offer['slices'][0]
+                            print(f"🔍 DEBUG: Slice encontrado con {len(slice_data.get('segments', []))} segmentos")
                             if slice_data.get('segments') and len(slice_data['segments']) > 0:
                                 first_segment = slice_data['segments'][0]
+                                print(f"🔍 DEBUG: Primer segmento: origin={first_segment.get('origin')}, destination={first_segment.get('destination')}")
                                 
                                 # Obtener información de aerolínea
                                 airline_name = 'Aerolínea'
