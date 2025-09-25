@@ -622,6 +622,35 @@ def search_flights():
                                         svg_url = carrier['logo_symbol_url']
                                         airline_logo = svg_url.replace('.svg', '.png')
                                 
+                                # Extraer origen y destino de forma segura
+                                origin_data = first_segment.get('origin') or {}
+                                destination_data = first_segment.get('destination') or {}
+                                
+                                # Construir información detallada de segmentos
+                                segment_details = []
+                                for segment in slice_data['segments']:
+                                    segment_origin = segment.get('origin', {}) if isinstance(segment.get('origin'), dict) else {}
+                                    segment_destination = segment.get('destination', {}) if isinstance(segment.get('destination'), dict) else {}
+                                    marketing_carrier = segment.get('marketing_carrier', {}) if isinstance(segment.get('marketing_carrier'), dict) else {}
+                                    operating_carrier = segment.get('operating_carrier', {}) if isinstance(segment.get('operating_carrier'), dict) else {}
+                                    aircraft_data = segment.get('aircraft', {}) if isinstance(segment.get('aircraft'), dict) else {}
+
+                                    segment_details.append({
+                                        'origin_airport': segment_origin.get('iata_code') or segment_origin.get('code') or '',
+                                        'origin_name': segment_origin.get('name') or segment_origin.get('city'),
+                                        'origin_terminal': segment_origin.get('terminal'),
+                                        'destination_airport': segment_destination.get('iata_code') or segment_destination.get('code') or '',
+                                        'destination_name': segment_destination.get('name') or segment_destination.get('city'),
+                                        'destination_terminal': segment_destination.get('terminal'),
+                                        'departing_at': segment.get('departing_at', ''),
+                                        'arriving_at': segment.get('arriving_at', ''),
+                                        'duration': segment.get('duration', ''),
+                                        'marketing_carrier': marketing_carrier,
+                                        'operating_carrier': operating_carrier,
+                                        'aircraft': aircraft_data,
+                                        'flight_number': segment.get('flight_number') or segment.get('marketing_carrier_flight_number') or segment.get('operating_carrier_flight_number') or ''
+                                    })
+                                
                                 flight_data = {
                                     'id': offer['id'],
                                     'airline': airline_name,
@@ -635,8 +664,9 @@ def search_flights():
                                     'total_currency': offer.get('total_currency', 'USD'),  # CORREGIR: usar total_currency
                                     'price': float(offer.get('total_amount', '0')),  # Mantener para compatibilidad
                                     'currency': offer.get('total_currency', 'USD'),  # Mantener para compatibilidad
-                                    'origin_airport': first_segment.get('origin', {}).get('iata_code', origin),
-                                    'destination_airport': first_segment.get('destination', {}).get('iata_code', destination)
+                                    'origin_airport': origin_data.get('iata_code', origin),
+                                    'destination_airport': destination_data.get('iata_code', destination),
+                                    'segments': segment_details  # Agregar información detallada de segmentos
                                 }
                                 flights.append(flight_data)
             
